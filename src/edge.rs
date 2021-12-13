@@ -27,6 +27,15 @@ impl Edge {
 	pub fn iter(&self) -> Iter {
 		Iter {edge: &self, iter_index: 0}
 	}
+	pub fn other(&self, val: i32) -> Option<i32> {
+		if self.0 == val {
+			Some(self.1)
+		} else if self.1 == val {
+			Some(self.0)
+		} else {
+			None
+		}
+	}
 }
 
 impl From<Edge> for Vec<i32> {
@@ -59,5 +68,11 @@ impl<'a> Iterator for Iter<'a> {
 		};
 		self.iter_index += 1;
 		result
+	}
+}
+
+impl<'a> ExactSizeIterator for Iter<'a> {
+	fn len(&self) -> usize {
+		2
 	}
 }

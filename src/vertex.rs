@@ -1,19 +1,25 @@
 use std::cmp::{Ordering, Ordering::{Equal, Greater, Less}};
+use crate::vector::Vector2;
 // X, Y
 #[derive(PartialEq, PartialOrd, Clone, Debug, Copy, Default)]
-pub struct MapVertex(f32, f32);
+pub struct MapVertex {
+	pub p: Vector2
+}
 pub struct MapVertexEx {
 	pub p: MapVertex,
 	pub floor_height: Option<f32>,
 	pub ceiling_height: Option<f32>
 }
 
+impl From<Vector2> for MapVertex {
+	fn from(v: Vector2) -> MapVertex {
+		MapVertex { p: v }
+	}
+}
+
 impl From<&[f32]> for MapVertex {
 	fn from(v: &[f32]) -> MapVertex {
-		MapVertex(
-			v.get(0).cloned().expect("No X position!"),
-			v.get(1).cloned().expect("No Y position!"),
-		)
+		MapVertex { p: Vector2::from(v) }
 	}
 }
 
@@ -27,17 +33,16 @@ impl From<&[f32]> for MapVertexEx {
 	}
 }
 
-impl Eq for MapVertex {}
-
+impl Eq for MapVertex{}
 impl Ord for MapVertex {
 	fn cmp(&self, other: &Self) -> Ordering {
-		if other.1 > self.1 {
-			if other.0 > self.0 {
+		if other.p.0 == self.p.0 {
+			if other.p.1 > self.p.1 {
 				Greater
 			} else {
 				Less
 			}
-		} else if other.0 > self.0 {
+		} else if other.p.0 > self.p.0 {
 			Less
 		} else {
 			Equal
