@@ -30,6 +30,13 @@ impl Add<&Vector2> for Vector2 {
 	}
 }
 
+impl Add<&Vector2> for &Vector2 {
+	type Output = Vector2;
+	fn add(self, other: &Vector2) -> Vector2 {
+		Vector2(self.0 + other.0, self.1 + other.1)
+	}
+}
+
 impl Add<f32> for Vector2 {
 	type Output = Vector2;
 	fn add(self, other: f32) -> Vector2 {
@@ -45,6 +52,13 @@ impl Sub<Vector2> for Vector2 {
 }
 
 impl Sub<&Vector2> for Vector2 {
+	type Output = Vector2;
+	fn sub(self, other: &Vector2) -> Vector2 {
+		Vector2(self.0 - other.0, self.1 - other.1)
+	}
+}
+
+impl Sub<&Vector2> for &Vector2 {
 	type Output = Vector2;
 	fn sub(self, other: &Vector2) -> Vector2 {
 		Vector2(self.0 - other.0, self.1 - other.1)
@@ -72,6 +86,13 @@ impl Mul<&Vector2> for Vector2 {
 	}
 }
 
+impl Mul<&Vector2> for &Vector2 {
+	type Output = Vector2;
+	fn mul(self, other: &Vector2) -> Vector2 {
+		Vector2(self.0 * other.0, self.1 * other.1)
+	}
+}
+
 impl Mul<f32> for Vector2 {
 	type Output = Vector2;
 	fn mul(self, other: f32) -> Vector2 {
@@ -87,6 +108,13 @@ impl Div<Vector2> for Vector2 {
 }
 
 impl Div<&Vector2> for Vector2 {
+	type Output = Vector2;
+	fn div(self, other: &Vector2) -> Vector2 {
+		Vector2(self.0 / other.0, self.1 / other.1)
+	}
+}
+
+impl Div<&Vector2> for &Vector2 {
 	type Output = Vector2;
 	fn div(self, other: &Vector2) -> Vector2 {
 		Vector2(self.0 / other.0, self.1 / other.1)

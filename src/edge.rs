@@ -18,6 +18,7 @@ fn sort_edge(edge: Edge) -> Edge {
 }
 
 impl Edge {
+	// Ensures deterministic order for edges
 	pub fn new(a: i32, b: i32) -> Edge {
 		sort_edge(Edge(a, b))
 	}
@@ -34,6 +35,13 @@ impl Edge {
 			Some(self.0)
 		} else {
 			None
+		}
+	}
+	pub fn other_unchecked(&self, val: i32) -> i32 {
+		if self.0 == val {
+			self.1
+		} else {
+			self.0
 		}
 	}
 }
