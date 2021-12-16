@@ -11,6 +11,23 @@ fn rget<T: Copy>(vec: &Vec<T>, index: usize) -> T {
 	vec[index]
 }
 
+fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
+	// Based on https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
+	let mut inside = false;
+	for i in 0..polygon.len() {
+		let j = if i == 0 { polygon.len() - 1 } else { i - 1 };
+		let vi = polygon[i];
+		let vj = polygon[j];
+		if (
+			(vi.1 > point.1) != (vj.1 > point.1)) && (
+			point.0 < (vj.0 - vi.0) * (point.1 - vi.1) / (vj.1 - vi.1) + vi.0
+		) {
+			inside = !inside;
+		}
+	}
+	inside
+}
+
 fn angle_between(
 	p1: &Vector2,
 	p2: &Vector2,
@@ -22,6 +39,15 @@ fn angle_between(
 	let dot = ab.dot(&cb);
 	let cross = ab.cross(&cb);
 	f32::atan2(if clockwise {cross} else {-cross}, -dot)
+}
+
+#[test]
+fn test_angle_between() {
+	let p1 = Vector2::from([0.0, 5.0].as_slice());
+	let p2 = Vector2::from([5.0, 0.0].as_slice());
+	let center = Vector2::from([0.0, 0.0].as_slice());
+	let angle = angle_between(&p1, &p2, &center, false);
+	assert_eq!(angle, std::f32::consts::PI / 2.)
 }
 
 pub fn build_polygons(
@@ -56,7 +82,11 @@ pub fn build_polygons(
 				if is_polygon_complete(&polygons.last().unwrap(), vertex) {
 					let first_edge = find_next_start_edge(false, &edges_used, vertices);
 					match first_edge {
-						Some(edge) => polygons.push(edge),
+						Some(edge) => {
+							polygons.push(edge.clone());
+							let edge = Edge::from(&edge[..]);
+							edges_used.insert(edge, true);
+						},
 						None => break
 					}
 				} else {
@@ -66,7 +96,14 @@ pub fn build_polygons(
 				}
 			},
 			None => {
-				polygons.push(vec![]);
+				match find_next_start_edge(false, &edges_used, vertices) {
+					Some(edge) => {
+						polygons.push(edge.clone());
+						let edge = Edge::from(&edge[..]);
+						edges_used.insert(edge, true);
+					},
+					None => break
+				}
 			}
 		};
 	}
