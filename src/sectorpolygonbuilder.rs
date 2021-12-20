@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
+#[inline]
 fn rget<T: Copy>(vec: &Vec<T>, index: usize) -> T {
 	let index = vec.len() - index;
 	vec[index]
@@ -28,6 +29,22 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 	inside
 }
 
+fn edge_in_polygon(
+	edge: &Edge,
+	polygon: &Vec<i32>,
+	map_vertices: &Vec<MapVertex>
+) -> bool {
+	let vertices = (
+		map_vertices[edge.start() as usize].p,
+		map_vertices[edge.end() as usize].p
+	);
+	let midpoint = edge.midpoint(&vertices);
+	let polygon: Vec<Vector2> = polygon.iter()
+		.map(|&index| map_vertices[index as usize].p)
+		.collect();
+	point_in_polygon(midpoint, &polygon)
+}
+
 fn angle_between(
 	p1: &Vector2,
 	p2: &Vector2,
@@ -43,9 +60,9 @@ fn angle_between(
 
 #[test]
 fn test_angle_between() {
-	let p1 = Vector2::from([0.0, 5.0].as_slice());
-	let p2 = Vector2::from([5.0, 0.0].as_slice());
-	let center = Vector2::from([0.0, 0.0].as_slice());
+	let p1 = Vector2::from([0.0, 5.0].as_slice());		// p1
+	let p2 = Vector2::from([5.0, 0.0].as_slice());		// |
+	let center = Vector2::from([0.0, 0.0].as_slice());	// c -- p2
 	let angle = angle_between(&p1, &p2, &center, false);
 	assert_eq!(angle, std::f32::consts::PI / 2.)
 }
@@ -65,30 +82,24 @@ pub fn build_polygons(
 		Some(edge) => edge,
 		None => return vec![]
 	};
-	let edge_count = edges_used.len();
+	// let edge_count = edges_used.len();
 	let mut polygons: Vec<Vec<i32>> = vec![first_edge];
+	let mut incomplete_polygons: Vec<Vec<i32>> = Vec::new();
 	let mut clockwise = false;
-	for _ in 0..edge_count {
+	loop {
 		// polygons.last()[-2];
 		let previous_vertex = rget(polygons.last().unwrap(), 2);
 		// polygons.last()[-1];
 		let current_vertex = rget(polygons.last().unwrap(), 1);
 		let next_vertex = find_next_vertex(
 			&current_vertex, &previous_vertex,
-			&false, &edges_used, vertices
+			&clockwise, &edges_used, vertices
 		);
+		let mut new_polygon = false;
 		match next_vertex {
 			Some(vertex) => {
 				if is_polygon_complete(&polygons.last().unwrap(), vertex) {
-					let first_edge = find_next_start_edge(false, &edges_used, vertices);
-					match first_edge {
-						Some(edge) => {
-							polygons.push(edge.clone());
-							let edge = Edge::from(&edge[..]);
-							edges_used.insert(edge, true);
-						},
-						None => break
-					}
+					new_polygon = true;
 				} else {
 					let edge = Edge::new(current_vertex, vertex);
 					polygons.last_mut().unwrap().push(vertex);
@@ -96,16 +107,26 @@ pub fn build_polygons(
 				}
 			},
 			None => {
-				match find_next_start_edge(false, &edges_used, vertices) {
-					Some(edge) => {
-						polygons.push(edge.clone());
-						let edge = Edge::from(&edge[..]);
-						edges_used.insert(edge, true);
-					},
-					None => break
-				}
+				// The current polygon is probably incomplete
+				let bad_polygon = polygons.pop().unwrap();
+				incomplete_polygons.push(bad_polygon);
+				new_polygon = true;
 			}
 		};
+		if new_polygon {
+			if let Some(edge) = find_next_start_edge(false, &edges_used, vertices) {
+				polygons.push(edge.clone());
+				let edge = Edge::from(edge.as_slice());
+				edges_used.insert(edge, true);
+				polygons.iter().for_each(|polygon| {
+					if edge_in_polygon(&edge, polygon, &vertices) {
+						clockwise = !clockwise
+					}
+				});
+			} else {
+				break
+			}
+		}
 	}
 	polygons
 }
@@ -116,9 +137,9 @@ fn find_next_start_edge(
 	vertices: &Vec<MapVertex>
 ) -> Option<Vec<i32>> {
 	// Filter out used edges
-	let usable_edges = edges.iter()
+	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
 		.filter(|(&_key, &val)| val == false)
-		.collect::<HashMap<&Edge, &bool>>();
+		.collect();
 	let rightmost_vertex = usable_edges.keys()
 		// Find usable vertices by destructuring the edges
 		.fold(HashSet::<i32>::new(), |mut set, &edge| {
@@ -183,10 +204,14 @@ fn find_next_vertex(
 	// - Have not been added to a polygon
 	// - Are attached to the "from" vertex
 	// - Are not the "previous" vertex
-	let usable_vertices = edges.keys()
-		.filter(|&key| key.contains(from) && !key.contains(previous))
-		.map(|&edge| edge.other_unchecked(from))
-		.collect::<Vec<i32>>();
+	let usable_vertices: Vec<i32> = edges.iter()
+		.filter_map(|(&key, &val)|
+			if val == false && key.contains(from) && !key.contains(previous) {
+				Some(key.other_unchecked(from))
+			} else {
+				None
+			}
+		).collect();
 	if usable_vertices.len() == 0 { return None; }
 	if usable_vertices.len() == 1 { return Some(usable_vertices[0]); }
 	// Find the vertex with the lowest angle in comparison to "from"

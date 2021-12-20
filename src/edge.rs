@@ -1,4 +1,6 @@
 use std::fmt;
+use crate::vertex::MapVertex;
+use crate::vector::Vector2;
 
 #[derive(Hash, PartialEq, Eq, Ord, PartialOrd, Clone, Debug, Copy)]
 pub struct Edge(i32, i32);
@@ -44,6 +46,15 @@ impl Edge {
 			self.0
 		}
 	}
+	pub fn midpoint(&self, vertices: &(Vector2, Vector2)) -> Vector2 {
+		(vertices.0 + vertices.1) / 2.0
+	}
+	pub fn length(&self, vertices: &(Vector2, Vector2)) -> f32 {
+		let relative_position = vertices.1 - vertices.0;
+		relative_position.dot(&relative_position).sqrt()
+	}
+	pub fn start(&self) -> i32 { self.0 }
+	pub fn end(&self) -> i32 { self.1 }
 }
 
 impl From<Edge> for Vec<i32> {
