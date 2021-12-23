@@ -1,4 +1,4 @@
-pub mod vector;
+mod vector;
 mod vertex;
 mod edge;
 mod secplane;
