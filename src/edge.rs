@@ -1,6 +1,6 @@
 use std::fmt;
-// use std::str::FromStr;
-// use std::num::ParseIntError;
+use std::str::FromStr;
+use std::num::ParseIntError;
 use crate::vector::Vector2;
 
 pub type EdgeVertexIndex = i32;
@@ -50,14 +50,16 @@ impl Edge {
 		}
 	}
 	pub fn midpoint(&self, vertices: &(Vector2, Vector2)) -> Vector2 {
-		(vertices.0 + vertices.1) / 2.0
+		let (a, b) = vertices;
+		(a + b) / 2.0
 	}
 	pub fn length(&self, vertices: &(Vector2, Vector2)) -> f32 {
-		let relative_position = vertices.1 - vertices.0;
+		let (a, b) = vertices;
+		let relative_position = b - a;
 		relative_position.dot(&relative_position).sqrt()
 	}
-	pub fn start(&self) -> EdgeVertexIndex { self.0 }
-	pub fn end(&self) -> EdgeVertexIndex { self.1 }
+	pub fn lo(&self) -> EdgeVertexIndex { self.0 }
+	pub fn hi(&self) -> EdgeVertexIndex { self.1 }
 }
 
 impl From<Edge> for Vec<EdgeVertexIndex> {
@@ -75,20 +77,51 @@ impl From<&[EdgeVertexIndex]> for Edge {
 	}
 }
 
-/*
-impl FromStr for Edge {
-	type Err = ParseIntError;
-	fn from_str(text: &str) -> Result<Self, Self::Err> {
-		if let Some((a, b)) = text.split_once(" ") {
-			let a = a.parse::<EdgeVertexIndex>()?;
-			let b = b.parse::<EdgeVertexIndex>()?;
-			Ok(Edge::new(a, b))
-		} else {
-			"a".parse::<EdgeVertexIndex>()
+impl From<(EdgeVertexIndex, EdgeVertexIndex)> for Edge {
+	fn from(v: (EdgeVertexIndex, EdgeVertexIndex)) -> Edge {
+		Edge::new(v.0, v.1)
+	}
+}
+
+pub enum EdgeFromStrError {
+	ParseError(ParseIntError),
+	ValueError
+}
+
+impl From<ParseIntError> for EdgeFromStrError {
+	fn from(err: ParseIntError) -> EdgeFromStrError {
+		EdgeFromStrError::ParseError(err)
+	}
+}
+
+impl fmt::Display for EdgeFromStrError {
+	fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+		match self {
+			EdgeFromStrError::ParseError(err) => {
+				err.fmt(f)
+			},
+			EdgeFromStrError::ValueError => {
+				f.write_fmt(format_args!("{}", "Insufficient values available"))
+			}
 		}
 	}
 }
-*/
+
+impl FromStr for Edge {
+	type Err = EdgeFromStrError;
+	fn from_str(text: &str) -> Result<Self, Self::Err> {
+
+		use EdgeFromStrError::ValueError;
+
+		let mut nums_iter = text.split_ascii_whitespace();
+		let a = nums_iter.next().ok_or(ValueError)?;
+		let b = nums_iter.next().ok_or(ValueError)?;
+
+		let a = a.parse::<EdgeVertexIndex>()?;
+		let b = b.parse::<EdgeVertexIndex>()?;
+		Ok(Edge::new(a, b))
+	}
+}
 
 
 pub struct Iter<'a> {

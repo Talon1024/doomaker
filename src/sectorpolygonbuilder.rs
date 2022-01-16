@@ -35,8 +35,8 @@ fn edge_in_polygon(
 	map_vertices: &Vec<MapVertex>
 ) -> bool {
 	let vertices = (
-		map_vertices[edge.start() as usize].p,
-		map_vertices[edge.end() as usize].p
+		map_vertices[edge.lo() as usize].p,
+		map_vertices[edge.hi() as usize].p
 	);
 	let midpoint = edge.midpoint(&vertices);
 	let polygon: Vec<Vector2> = polygon.iter()
