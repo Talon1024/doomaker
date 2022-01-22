@@ -1,15 +1,15 @@
 #[forbid(unsafe_code)]
 use crate::vector::Vector2;
 use crate::edge::Edge;
-use crate::vertex::MapVertex;
+use crate::vertex::{self, MapVertex};
 use std::collections::{HashMap, HashSet};
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
 #[inline]
-fn rget<T: Copy>(vec: &Vec<T>, index: usize) -> T {
+fn rget<T: Copy>(vec: &Vec<T>, index: usize) -> Option<&T> {
 	let index = vec.len() - index;
-	vec[index]
+	vec.get(index)
 }
 
 fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
@@ -38,7 +38,7 @@ fn edge_in_polygon(
 		map_vertices[edge.lo() as usize].p,
 		map_vertices[edge.hi() as usize].p
 	);
-	let midpoint = edge.midpoint(&vertices);
+	let midpoint = vertex::midpoint(&vertices);
 	let polygon: Vec<Vector2> = polygon.iter()
 		.map(|&index| map_vertices[index as usize].p)
 		.collect();
@@ -88,9 +88,13 @@ pub fn build_polygons(
 	let mut clockwise = false;
 	loop {
 		// polygons.last()[-2];
-		let previous_vertex = rget(polygons.last().unwrap(), 2);
+		let previous_vertex = rget(polygons.last().unwrap(), 2)
+			.copied()
+			.expect("A polygon should have at least one edge (two vertices)");
 		// polygons.last()[-1];
-		let current_vertex = rget(polygons.last().unwrap(), 1);
+		let current_vertex = rget(polygons.last().unwrap(), 1)
+			.copied()
+			.expect("A polygon should have at least one edge (two vertices)");
 		let next_vertex = find_next_vertex(
 			&current_vertex, &previous_vertex,
 			&clockwise, &edges_used, vertices

@@ -1,4 +1,4 @@
-use std::cmp::{Ordering, Ordering::{Equal, Greater, Less}};
+use std::cmp::Ordering::{self, Equal, Greater, Less};
 use crate::vector::Vector2;
 // X, Y
 #[derive(PartialEq, PartialOrd, Clone, Debug, Copy, Default)]
@@ -48,4 +48,14 @@ impl Ord for MapVertex {
 			Equal
 		}
 	}
+}
+
+pub fn midpoint(vertices: &(Vector2, Vector2)) -> Vector2 {
+	let (a, b) = vertices;
+	(a + b) / 2.0
+}
+pub fn edge_length(vertices: &(Vector2, Vector2)) -> f32 {
+	let (a, b) = vertices;
+	let relative_position = b - a;
+	relative_position.dot(&relative_position).sqrt()
 }

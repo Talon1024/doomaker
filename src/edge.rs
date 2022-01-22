@@ -1,7 +1,6 @@
 use std::fmt;
 use std::str::FromStr;
 use std::num::ParseIntError;
-use crate::vector::Vector2;
 
 pub type EdgeVertexIndex = i32;
 
@@ -48,15 +47,6 @@ impl Edge {
 		} else {
 			self.0
 		}
-	}
-	pub fn midpoint(&self, vertices: &(Vector2, Vector2)) -> Vector2 {
-		let (a, b) = vertices;
-		(a + b) / 2.0
-	}
-	pub fn length(&self, vertices: &(Vector2, Vector2)) -> f32 {
-		let (a, b) = vertices;
-		let relative_position = b - a;
-		relative_position.dot(&relative_position).sqrt()
 	}
 	pub fn lo(&self) -> EdgeVertexIndex { self.0 }
 	pub fn hi(&self) -> EdgeVertexIndex { self.1 }
