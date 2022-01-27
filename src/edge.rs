@@ -24,6 +24,9 @@ fn sort_edge(edge: Edge) -> Edge {
 impl Edge {
 	// Ensures deterministic order for edges
 	pub fn new(a: EdgeVertexIndex, b: EdgeVertexIndex) -> Edge {
+		if a == b {
+			panic!("The edge should use two different vertices");
+		}
 		sort_edge(Edge(a, b))
 	}
 	pub fn contains(&self, val: EdgeVertexIndex) -> bool {
