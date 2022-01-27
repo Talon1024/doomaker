@@ -36,13 +36,13 @@ impl From<&[f32]> for MapVertexEx {
 impl Eq for MapVertex{}
 impl Ord for MapVertex {
 	fn cmp(&self, other: &Self) -> Ordering {
-		if other.p.0 == self.p.0 {
-			if other.p.1 > self.p.1 {
+		if other.p.x() == self.p.x() {
+			if other.p.y() > self.p.y() {
 				Greater
 			} else {
 				Less
 			}
-		} else if other.p.0 > self.p.0 {
+		} else if other.p.x() > self.p.x() {
 			Less
 		} else {
 			Equal

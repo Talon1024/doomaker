@@ -20,8 +20,8 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 		let vi = polygon[i];
 		let vj = polygon[j];
 		if (
-			(vi.1 > point.1) != (vj.1 > point.1)) && (
-			point.0 < (vj.0 - vi.0) * (point.1 - vi.1) / (vj.1 - vi.1) + vi.0
+			(vi.y() > point.y()) != (vj.y() > point.y())) && (
+			point.x() < (vj.x() - vi.x()) * (point.y() - vi.y()) / (vj.y() - vi.y()) + vi.x()
 		) {
 			inside = !inside;
 		}

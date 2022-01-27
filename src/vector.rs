@@ -2,7 +2,7 @@ use std::ops::{Add,Sub,AddAssign,SubAssign,Mul,MulAssign,Div,DivAssign};
 
 // #[derive(Hash, PartialEq, Eq, Clone, Debug)]
 #[derive(PartialEq, PartialOrd, Clone, Debug, Copy, Default)]
-pub struct Vector2(pub f32, pub f32);
+pub struct Vector2(f32, f32);
 
 impl Vector2 {
 	pub fn dot(&self, other: &Vector2) -> f32 {
@@ -13,6 +13,12 @@ impl Vector2 {
 	}
 	pub fn angle(&self) -> f32 {
 		f32::atan2(self.1, self.0)
+	}
+	pub fn x(&self) -> f32 {
+		self.0
+	}
+	pub fn y(&self) -> f32 {
+		self.1
 	}
 }
 
