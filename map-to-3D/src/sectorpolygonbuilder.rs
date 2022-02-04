@@ -3,6 +3,7 @@ use crate::vector::Vector2;
 use crate::edge::Edge;
 use crate::vertex::{self, MapVertex};
 use std::collections::{HashMap, HashSet};
+use ahash::RandomState;
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
@@ -74,7 +75,7 @@ pub fn build_polygons(
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
 	// edges should be taken care of when the level is being pre-processed.
-	let mut edges_used = HashMap::<Edge, bool>::new();
+	let mut edges_used: HashMap<Edge, bool, RandomState> = HashMap::default();
 	lines.iter().for_each(|&line| {
 		edges_used.insert(line, false);
 	});
@@ -137,7 +138,7 @@ pub fn build_polygons(
 
 fn find_next_start_edge(
 	clockwise: bool,
-	edges: &HashMap<Edge, bool>,
+	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
 ) -> Option<Vec<i32>> {
 	// Filter out used edges
@@ -198,7 +199,7 @@ fn find_next_vertex(
 	from: &i32,
 	previous: &i32,
 	clockwise: &bool,
-	edges: &HashMap<Edge, bool>,
+	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
 ) -> Option<i32> {
 	let from = from.clone();
