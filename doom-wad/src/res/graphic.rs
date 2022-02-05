@@ -127,13 +127,15 @@ impl<'a> ToImage for DoomPicture<'a> {
 		});
 		let format = {
 			if opaque_pixels == width * height {
-				ImageFormat::Indexed
+				ImageFormat::Indexed  // Fully opaque
 			} else {
 				ImageFormat::IndexedAlpha
 			}
 		};
+		// Partially or fully transparent
 		if format == ImageFormat::IndexedAlpha {
-			let mut pixels = vec![0u8; width * height * format.channels()];
+			// 2 channels - index and alpha
+			let mut pixels = vec![0u8; width * height * 2];
 			pixels.chunks_mut(2).zip(data).zip(alpha)
 			.for_each(|((chunk, index), alpha)| {
 				chunk[0] = index; chunk[1] = alpha;
@@ -142,7 +144,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 				width, height, data: pixels, format,
 				x: x as i32, y: y as i32
 			}
-		} else {
+		} else {  // Fully opaque
 			Image {
 				width, height, data, format,
 				x: x as i32, y: y as i32
