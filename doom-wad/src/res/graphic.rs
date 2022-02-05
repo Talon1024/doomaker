@@ -106,13 +106,12 @@ impl<'a> ToImage for DoomPicture<'a> {
 		}).for_each(|col_posts| {
 			let mut coly = 0usize;
 			col_posts.iter().for_each(|post| {
-				let mut y = coly;
 				let top_delta = post.top_delta as usize;
-				if top_delta <= y {
-					y += top_delta;
+				let y = if top_delta <= coly {
+					coly + top_delta
 				} else {
-					y = top_delta;
-				}
+					top_delta
+				};
 				coly = y;
 				post.pixels.iter().enumerate()
 				.for_each(|(pixpos, &pixel)| {
