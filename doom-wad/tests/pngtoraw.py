@@ -31,16 +31,20 @@ if trns > 0:
     trns_len = unpack_from(">I", pngdata, trns - 4)[0]
     trns = pngdata[trns+4:trns+4+trns_len]
     alphas[:trns_len] = trns
-idat = pngdata.find(b"IDAT")
-if idat < 0:
-    print("no IDAT chunks! WTF!?")
+idat = bytearray()
+idatc = pngdata.find(b"IDAT")
+while idatc != -1:
+    idat_len = unpack_from(">I", pngdata, idatc - 4)[0]
+    idat += pngdata[idatc + 4:idatc + 4 + idat_len]
+    idatc += idat_len
+    idatc = pngdata.find(b"IDAT", idatc)
+if len(idat) == 0:
+    print("No IDAT chunks! WTF?!")
     exit(1)
-idat_len = unpack_from(">I", pngdata, idat - 4)[0]
-idat = pngdata[idat + 4:idat + 4 + idat_len]
 rawdata = bytearray(zlib.decompress(idat, bufsize=(width+1)*height))
-for feet in reversed(range(0, (width+1)*height, width+1)):
-    # print(rawdata[feet], feet)
-    del rawdata[feet]
+for rowstart in reversed(range(0, (width+1)*height, width+1)):
+    # print(rawdata[rowstart], rowstart)
+    del rawdata[rowstart]
 
 with open(rawf, "wb") as rawf:
     for byte in rawdata:

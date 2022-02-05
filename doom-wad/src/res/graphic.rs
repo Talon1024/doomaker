@@ -239,4 +239,32 @@ mod tests {
 
 		assert!(image.data.iter().eq(expected.data.iter()));
 	}
+
+	#[test]
+	fn converts_deepsea_tall_patches_correctly() {
+		let patch_lump = DoomWadLump {
+			name: String::from("CYBRE1"),
+			data: Vec::from(include_bytes!("../../tests/data/CYBRE1.lmp").as_slice())
+		};
+		let expected = Image {
+			width: 277,
+			height: 335,
+			x: 138,
+			y: 331,
+			data: Vec::from(include_bytes!("../../tests/data/CYBRE1.raw").as_slice()),
+			format: ImageFormat::IndexedAlpha
+		};
+
+		let picture = DoomPicture {lump: &patch_lump};
+		let image = picture.to_image();
+
+		assert_eq!(image.width, expected.width);
+		assert_eq!(image.height, expected.height);
+		assert_eq!(image.x, expected.x);
+		assert_eq!(image.y, expected.y);
+		assert_eq!(image.format, expected.format);
+		assert_eq!(image.data.len(), expected.data.len());
+
+		assert!(image.data.iter().eq(expected.data.iter()));
+	}
 }
