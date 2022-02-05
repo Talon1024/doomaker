@@ -5,8 +5,8 @@ from struct import unpack_from
 import zlib
 
 parser = argparse.ArgumentParser()
-parser.add_argument("pngf")
-parser.add_argument("--alpha", action="store_true")
+parser.add_argument("pngf", help="The PNG file")
+parser.add_argument("--alpha", action="store_true", help="IndexedAlpha format")
 args = parser.parse_args()
 
 with open(args.pngf, "rb") as pngf:

@@ -54,9 +54,10 @@ impl<'a> ToImage for DoomPicture<'a> {
 			return bad_image;
 		}
 		let column_offsets = column_offsets.unwrap();
-		let channels = ImageFormat::IndexedAlpha.channels();
 
-		let mut data = vec![0u8; width * height * channels];
+		let mut data = vec![0u8; width * height];
+		let mut alpha = vec![0u8; width * height];
+		let mut opaque_pixels: usize = 0;
 		// let mut col_heights = vec![0usize; width];
 		// let mut pixel_count = vec![0usize; 255];
 
@@ -116,18 +117,37 @@ impl<'a> ToImage for DoomPicture<'a> {
 				post.pixels.iter().enumerate()
 				.for_each(|(pixpos, &pixel)| {
 					if let Some(bp) = res::xy_to_bufpos(
-							post.column, y + pixpos, width, height, channels) {
+							post.column, y + pixpos, width, height, 1) {
 						// pixel_count[pixel as usize] += 1;
 						data[bp] = pixel; // Index
-						data[bp + 1] = 255; // Alpha
+						alpha[bp] = 255; // Alpha
+						opaque_pixels += 1;
 					}
 				});
 			});
 		});
-		Image {
-			width, height, data,
-			format: ImageFormat::IndexedAlpha,
-			x: x as i32, y: y as i32
+		let format = {
+			if opaque_pixels == width * height {
+				ImageFormat::Indexed
+			} else {
+				ImageFormat::IndexedAlpha
+			}
+		};
+		if format == ImageFormat::IndexedAlpha {
+			let mut pixels = vec![0u8; width * height * format.channels()];
+			pixels.chunks_mut(2).zip(data).zip(alpha)
+			.for_each(|((chunk, index), alpha)| {
+				chunk[0] = index; chunk[1] = alpha;
+			});
+			Image {
+				width, height, data: pixels, format,
+				x: x as i32, y: y as i32
+			}
+		} else {
+			Image {
+				width, height, data, format,
+				x: x as i32, y: y as i32
+			}
 		}
 	}
 }
@@ -148,7 +168,7 @@ mod tests {
 			x: 64,
 			y: 123,
 			data: Vec::from(include_bytes!("../../tests/data/MOSSBRK8.raw").as_slice()),
-			format: ImageFormat::IndexedAlpha
+			format: ImageFormat::Indexed
 		};
 
 		let picture = DoomPicture {lump: &patch_lump};
