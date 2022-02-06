@@ -7,21 +7,25 @@ pub struct DoomPicture<'a> {
 	lump: &'a DoomWadLump
 }
 
-struct DoomPicturePost {
-	column: usize,
-	top_delta: u8,
-	pixels: Vec<u8>
-}
-
 impl<'a> ToImage for DoomPicture<'a> {
 	fn to_image(&self) -> Image {
+
+		struct DoomPicturePost {
+			column: usize,
+			top_delta: u8,
+			pixels: Vec<u8>
+		}
+
 		let mut short_buffer: [u8; 2] = [0; 2];
 		let mut long_buffer: [u8; 4] = [0; 4];
 		let mut pos = Cursor::new(&self.lump.data);
+
+		// In case the patch is bad
 		let bad_image = Image {
 			width: 0, height: 0, x: 0, y: 0,
 			format: ImageFormat::Indexed, data: Vec::new()
 		};
+
 		let width = {
 			if pos.read_exact(&mut short_buffer).is_err() {
 				return bad_image;
@@ -46,6 +50,8 @@ impl<'a> ToImage for DoomPicture<'a> {
 			}
 			i16::from_le_bytes(short_buffer)
 		};
+
+		// Column offsets are relative to the start of the lump
 		let column_offsets: Result<Vec<usize>, Box<dyn Error>> = (0usize..width).map(|_| {
 			pos.read_exact(&mut long_buffer)?;
 			Ok(u32::from_le_bytes(long_buffer) as usize)
@@ -55,11 +61,10 @@ impl<'a> ToImage for DoomPicture<'a> {
 		}
 		let column_offsets = column_offsets.unwrap();
 
-		let mut data = vec![0u8; width * height];
-		let mut alpha = vec![0u8; width * height];
+		let image_pixels = width * height;
+		let mut data = vec![0u8; image_pixels];
+		let mut alpha = vec![0u8; image_pixels];
 		let mut opaque_pixels: usize = 0;
-		// let mut col_heights = vec![0usize; width];
-		// let mut pixel_count = vec![0usize; 255];
 
 		column_offsets.iter()
 		.enumerate().map(|(column, &offset)| {
@@ -126,7 +131,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 			});
 		});
 		let format = {
-			if opaque_pixels == width * height {
+			if opaque_pixels == image_pixels {
 				ImageFormat::Indexed  // Fully opaque
 			} else {
 				ImageFormat::IndexedAlpha
@@ -135,8 +140,9 @@ impl<'a> ToImage for DoomPicture<'a> {
 		// Partially or fully transparent
 		if format == ImageFormat::IndexedAlpha {
 			// 2 channels - index and alpha
-			let mut pixels = vec![0u8; width * height * 2];
-			pixels.chunks_mut(2).zip(data).zip(alpha)
+			let channels = format.channels();
+			let mut pixels = vec![0u8; image_pixels * channels];
+			pixels.chunks_exact_mut(channels).zip(data).zip(alpha)
 			.for_each(|((chunk, index), alpha)| {
 				chunk[0] = index; chunk[1] = alpha;
 			});
