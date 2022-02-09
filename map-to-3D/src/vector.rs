@@ -234,3 +234,54 @@ impl From<(f32, f32)> for Vector2 {
 }
 
 impl Eq for Vector2 {}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn dot_product() {
+		let a = Vector2::from((1.0, 0.0));
+		let b = Vector2::from((0.0, 1.0));
+		let c = Vector2::from((-1.0, 0.0));
+		let d = Vector2::from((0.0, -1.0));
+		assert_eq!(a.dot(&a), 1.0);
+		assert_eq!(a.dot(&b), 0.0);
+		assert_eq!(a.dot(&c), -1.0);
+		assert_eq!(a.dot(&d), 0.0);
+
+		assert_eq!(b.dot(&a), 0.0);
+		assert_eq!(b.dot(&b), 1.0);
+		assert_eq!(b.dot(&c), 0.0);
+		assert_eq!(b.dot(&d), -1.0);
+	}
+
+	#[test]
+	fn cross_product() {
+		let a = Vector2::from((1.0, 0.0));
+		let b = Vector2::from((0.0, 1.0));
+		let c = Vector2::from((-1.0, 0.0));
+		let d = Vector2::from((0.0, -1.0));
+		assert_eq!(a.cross(&a), 0.0);
+		assert_eq!(a.cross(&b), 1.0);
+		assert_eq!(a.cross(&c), 0.0);
+		assert_eq!(a.cross(&d), -1.0);
+
+		assert_eq!(b.cross(&a), -1.0);
+		assert_eq!(b.cross(&b), 0.0);
+		assert_eq!(b.cross(&c), 1.0);
+		assert_eq!(b.cross(&d), 0.0);
+	}
+
+	#[test]
+	fn angle() {
+		let a = Vector2::from((1.0, 0.0));
+		let b = Vector2::from((0.0, 1.0));
+		let c = Vector2::from((-1.0, 0.0));
+		let d = Vector2::from((0.0, -1.0));
+		assert_eq!(a.angle(), 0.0);
+		assert_eq!(b.angle(), std::f32::consts::FRAC_PI_2);
+		assert_eq!(c.angle(), std::f32::consts::PI);
+		assert_eq!(d.angle(), -std::f32::consts::FRAC_PI_2);
+	}
+}
