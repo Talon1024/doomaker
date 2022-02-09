@@ -5,11 +5,6 @@ use crate::vector::Vector2;
 pub struct MapVertex {
 	pub p: Vector2
 }
-pub struct MapVertexEx {
-	pub p: MapVertex,
-	pub floor_height: Option<f32>,
-	pub ceiling_height: Option<f32>
-}
 
 impl From<Vector2> for MapVertex {
 	fn from(v: Vector2) -> MapVertex {
@@ -20,16 +15,6 @@ impl From<Vector2> for MapVertex {
 impl From<&[f32]> for MapVertex {
 	fn from(v: &[f32]) -> MapVertex {
 		MapVertex { p: Vector2::from(v) }
-	}
-}
-
-impl From<&[f32]> for MapVertexEx {
-	fn from(v: &[f32]) -> MapVertexEx {
-		MapVertexEx {
-			p: MapVertex::from(v),
-			floor_height: v.get(2).cloned(),
-			ceiling_height: v.get(3).cloned()
-		}
 	}
 }
 
@@ -84,7 +69,29 @@ mod tests {
 	fn correct_max_vertex() {
 		let verts = test_case_simple();
 		assert_eq!(
-			MapVertex { p: Vector2::from((64., -64.)) },	// l
-			verts.iter().max().cloned().unwrap());			// r
+			MapVertex { p: Vector2::from((64., -64.)) },
+			verts.iter().max().cloned().unwrap());
+	}
+
+	#[test]
+	fn correct_min_vertex() {
+		let verts = test_case_simple();
+		assert_eq!(
+			MapVertex { p: Vector2::from((-64., 64.)) },
+			verts.iter().min().cloned().unwrap());
+	}
+
+	#[test]
+	fn correct_lt_comparison() {
+		let verts = test_case_simple();
+		assert!(verts[1] < verts[2]);
+		assert!(verts[3] < verts[2]);
+	}
+
+	#[test]
+	fn correct_gt_comparison() {
+		let verts = test_case_simple();
+		assert!(verts[0] > verts[4]);
+		assert!(verts[0] > verts[5]);
 	}
 }
