@@ -131,7 +131,7 @@ fn find_next_start_edge(
 		.collect();
 	let rightmost_vertex = usable_edges.keys()
 		// Find usable vertices by destructuring the edges
-		.fold(HashSet::<i32>::new(), |mut set, &edge| {
+		.fold(HashSet::<i32, RandomState>::default(), |mut set, &edge| {
 			edge.iter().for_each(|vertex_index| {
 				set.insert(vertex_index);
 			});
@@ -145,9 +145,7 @@ fn find_next_start_edge(
 			} else {
 				current_index
 			}
-		});
-	if rightmost_vertex.is_none() { return None; }
-	let rightmost_vertex = rightmost_vertex.unwrap();
+		})?;
 	let other_vertex = usable_edges.keys()
 		.filter(|&key| key.contains(rightmost_vertex))
 		.map(|&edge| edge.other_unchecked(rightmost_vertex))
@@ -160,22 +158,17 @@ fn find_next_start_edge(
 			let other_vertex = vertices[other_index as usize].p;
 			let current_angle = (rightmost_vertex - current_vertex).angle();
 			let other_angle = (rightmost_vertex - other_vertex).angle();
-			if !clockwise {
-				if other_angle < current_angle {
-					other_index
-				} else {
-					current_index
+			if clockwise {
+				if current_angle > other_angle  {
+					return other_index;
 				}
 			} else {
 				if current_angle < other_angle {
-					other_index
-				} else {
-					current_index
+					return other_index;
 				}
 			}
-		});
-	if other_vertex.is_none() { return None; }
-	let other_vertex = other_vertex.unwrap();
+			current_index
+		})?;
 	Some(vec![rightmost_vertex, other_vertex])
 }
 
@@ -295,6 +288,21 @@ mod tests {
 		let prev = poly_iter.next().unwrap();
 		let actual_vertex = find_next_vertex(&cur, &prev, false, &edges, &verts).unwrap();
 		let expected_vertex = 1;
+		assert_eq!(expected_vertex, actual_vertex);
+	}
+
+	#[test]
+	fn correct_next_vertex_with_multiple_connected_edges_ccw() {
+		let (verts, mut edges) = test_case_simple();
+
+		// Use some edges
+		edges.insert(Edge::new(0, 1), true);
+		edges.insert(Edge::new(1, 2), true);
+		edges.insert(Edge::new(2, 3), true);
+		edges.insert(Edge::new(3, 0), true);
+
+		let actual_vertex = find_next_vertex(&0, &3, false, &edges, &verts);
+		let expected_vertex = Some(1);
 		assert_eq!(expected_vertex, actual_vertex);
 	}
 
