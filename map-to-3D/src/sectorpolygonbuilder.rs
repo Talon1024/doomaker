@@ -159,11 +159,11 @@ fn find_next_start_edge(
 			let current_angle = (rightmost_vertex - current_vertex).angle();
 			let other_angle = (rightmost_vertex - other_vertex).angle();
 			if clockwise {
-				if current_angle > other_angle  {
+				if other_angle > current_angle {
 					return other_index;
 				}
 			} else {
-				if current_angle < other_angle {
+				if other_angle < current_angle {
 					return other_index;
 				}
 			}
@@ -181,14 +181,13 @@ fn find_next_vertex(
 ) -> Option<i32> {
 	let from = from.clone();
 	let previous = previous.clone();
-	let clockwise = clockwise.clone();
 	// Find all edges that:
 	// - Have not been added to a polygon
 	// - Are attached to the "from" vertex
 	// - Are not the "previous" vertex
-	let usable_vertices: Vec<i32> = edges.iter()
-		.filter_map(|(&key, &val)|
-			if val == false && key.contains(from) && !key.contains(previous) {
+	let usable_vertices: Vec<i32> = edges.keys()
+		.filter_map(|&key|
+			if key.contains(from) && !key.contains(previous) {
 				Some(key.other_unchecked(from))
 			} else {
 				None
@@ -280,7 +279,7 @@ mod tests {
 	}
 
 	#[test]
-	fn correct_next_vertex_ccw() {
+	fn correct_next_vertex() {
 		let (verts, edges) = test_case_simple();
 		let first_edge: Vec<i32> = vec![3, 0];
 		let mut poly_iter = first_edge.iter().copied().rev();
@@ -293,16 +292,45 @@ mod tests {
 
 	#[test]
 	fn correct_next_vertex_with_multiple_connected_edges_ccw() {
-		let (verts, mut edges) = test_case_simple();
+		let (verts, edges) = test_case_simple();
+		let from = 0;
+		let previous = 3;
 
-		// Use some edges
-		edges.insert(Edge::new(0, 1), true);
-		edges.insert(Edge::new(1, 2), true);
-		edges.insert(Edge::new(2, 3), true);
-		edges.insert(Edge::new(3, 0), true);
-
-		let actual_vertex = find_next_vertex(&0, &3, false, &edges, &verts);
+		let actual_vertex = find_next_vertex(&from, &previous, false, &edges, &verts);
 		let expected_vertex = Some(1);
+		assert_eq!(expected_vertex, actual_vertex);
+	}
+
+	#[test]
+	fn correct_next_vertex_with_multiple_connected_edges_ccw_b() {
+		let (verts, edges) = test_case_simple();
+		let from = 0;
+		let previous = 4;
+
+		let actual_vertex = find_next_vertex(&from, &previous, false, &edges, &verts);
+		let expected_vertex = Some(6);
+		assert_eq!(expected_vertex, actual_vertex);
+	}
+
+	#[test]
+	fn correct_next_vertex_with_multiple_connected_edges_cw() {
+		let (verts, edges) = test_case_simple();
+		let from = 0;
+		let previous = 1;
+
+		let actual_vertex = find_next_vertex(&from, &previous, true, &edges, &verts);
+		let expected_vertex = Some(3);
+		assert_eq!(expected_vertex, actual_vertex);
+	}
+
+	#[test]
+	fn correct_next_vertex_with_multiple_connected_edges_cw_b() {
+		let (verts, edges) = test_case_simple();
+		let from = 0;
+		let previous = 6;
+
+		let actual_vertex = find_next_vertex(&from, &previous, true, &edges, &verts);
+		let expected_vertex = Some(4);
 		assert_eq!(expected_vertex, actual_vertex);
 	}
 
