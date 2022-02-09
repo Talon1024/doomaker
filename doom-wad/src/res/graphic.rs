@@ -274,4 +274,32 @@ mod tests {
 
 		assert!(image.data.iter().eq(expected.data.iter()));
 	}
+
+	#[test]
+	fn converts_tswgb0_correctly() {
+		let patch_lump = DoomWadLump {
+			name: String::from("TSWGB0"),
+			data: Vec::from(include_bytes!("../../tests/data/TSWGB0.lmp").as_slice())
+		};
+		let expected = Image {
+			width: 179,
+			height: 333,
+			x: -249,
+			y: 155,
+			data: Vec::from(include_bytes!("../../tests/data/TSWGB0.raw").as_slice()),
+			format: ImageFormat::IndexedAlpha
+		};
+
+		let picture = DoomPicture {lump: &patch_lump};
+		let image = picture.to_image();
+
+		assert_eq!(image.width, expected.width);
+		assert_eq!(image.height, expected.height);
+		assert_eq!(image.x, expected.x);
+		assert_eq!(image.y, expected.y);
+		assert_eq!(image.format, expected.format);
+		assert_eq!(image.data.len(), expected.data.len());
+
+		assert!(image.data.iter().eq(expected.data.iter()));
+	}
 }
