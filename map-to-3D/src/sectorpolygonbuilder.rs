@@ -71,8 +71,8 @@ pub fn build_polygons(
 		None => return vec![]
 	};
 	// let edge_count = edges_used.len();
-	edges_used.insert(Edge::from(&first_edge[..]), true);
-	let mut polygons: Vec<Vec<i32>> = vec![first_edge];
+	edges_used.insert(Edge::from(first_edge), true);
+	let mut polygons: Vec<Vec<i32>> = vec![vec![first_edge.0, first_edge.1]];
 	let mut incomplete_polygons: Vec<Vec<i32>> = Vec::new();
 	let mut clockwise = false;
 	loop {
@@ -109,8 +109,8 @@ pub fn build_polygons(
 		};
 		if new_polygon {
 			if let Some(edge) = find_next_start_edge(false, &edges_used, vertices) {
-				polygons.push(edge.clone());
-				let edge = Edge::from(edge.as_slice());
+				polygons.push(vec![edge.0, edge.1]);
+				let edge = Edge::from(edge);
 				edges_used.insert(edge, true);
 				polygons.iter().for_each(|polygon| {
 					if edge_in_polygon(&edge, polygon, &vertices) {
@@ -129,7 +129,7 @@ fn find_next_start_edge(
 	clockwise: bool,
 	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
-) -> Option<Vec<i32>> {
+) -> Option<(i32, i32)> {
 	// Filter out used edges
 	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
 		.filter(|(&_key, &val)| val == false)
@@ -174,7 +174,7 @@ fn find_next_start_edge(
 			}
 			current_index
 		})?;
-	Some(vec![rightmost_vertex, other_vertex])
+	Some((rightmost_vertex, other_vertex))
 }
 
 fn find_next_vertex(
@@ -273,14 +273,14 @@ mod tests {
 	fn correct_first_edge_ccw() {
 		let (verts, edges) = test_case_simple();
 		let first_edge = find_next_start_edge(false, &edges, &verts);
-		assert_eq!(first_edge, Some(vec![2, 1]));
+		assert_eq!(first_edge, Some((2, 1)));
 	}
 
 	#[test]
 	fn correct_first_edge_cw() {
 		let (verts, edges) = test_case_simple();
 		let first_edge = find_next_start_edge(true, &edges, &verts);
-		assert_eq!(first_edge, Some(vec![2, 3]));
+		assert_eq!(first_edge, Some((2, 3)));
 	}
 
 	#[test]
