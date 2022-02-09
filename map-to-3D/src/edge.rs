@@ -1,6 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 use std::num::ParseIntError;
+use crate::vector::Vector2;
 
 pub type EdgeVertexIndex = i32;
 
@@ -53,6 +54,9 @@ impl Edge {
 	}
 	pub fn lo(&self) -> EdgeVertexIndex { self.0 }
 	pub fn hi(&self) -> EdgeVertexIndex { self.1 }
+	pub fn vectors(&self, vecs: &[Vector2]) -> (Vector2, Vector2) {
+		(vecs[self.lo() as usize], vecs[self.hi() as usize])
+	}
 }
 
 impl From<Edge> for Vec<EdgeVertexIndex> {
