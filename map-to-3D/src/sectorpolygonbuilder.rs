@@ -50,9 +50,9 @@ fn angle_between(
 	let cb = p2 - center;
 	let dot = ab.dot(&cb);
 	let cross = ab.cross(&cb);
-	#[cfg(test)]
-	println!("ab: {} {}, cb: {} {}, dot: {}, cross: {}", ab.x(), ab.y(), cb.x(), cb.y(), dot, cross);
-	f32::atan2(if clockwise {-cross} else {cross}, dot)
+	// #[cfg(test)]
+	// println!("ab: {} {}, cb: {} {}, dot: {}, cross: {}", ab.x(), ab.y(), cb.x(), cb.y(), dot, cross);
+	f32::atan2(if clockwise {cross} else {-cross}, dot)
 }
 
 pub fn build_polygons(
@@ -71,6 +71,7 @@ pub fn build_polygons(
 		None => return vec![]
 	};
 	// let edge_count = edges_used.len();
+	edges_used.insert(Edge::from(&first_edge[..]), true);
 	let mut polygons: Vec<Vec<i32>> = vec![first_edge];
 	let mut incomplete_polygons: Vec<Vec<i32>> = Vec::new();
 	let mut clockwise = false;
@@ -86,15 +87,17 @@ pub fn build_polygons(
 			&current_vertex, &previous_vertex,
 			clockwise, &edges_used, vertices
 		);
+		#[cfg(test)]
+		println!("pv {:<12} ls {:<12} nx {:<12}", previous_vertex, current_vertex, next_vertex.unwrap_or(-1));
 		let mut new_polygon = false;
 		match next_vertex {
 			Some(vertex) => {
+				let edge = Edge::new(current_vertex, vertex);
+				edges_used.insert(edge, true);
 				if is_polygon_complete(&polygons.last().unwrap(), vertex) {
 					new_polygon = true;
 				} else {
-					let edge = Edge::new(current_vertex, vertex);
 					polygons.last_mut().unwrap().push(vertex);
-					edges_used.insert(edge, true);
 				}
 			},
 			None => {
@@ -231,7 +234,7 @@ fn is_polygon_complete(polygon: &Vec<i32>, last: i32) -> bool {
 		return false;
 	}
 	let first = polygon[0];
-	return first == last;
+	first == last
 }
 
 #[cfg(test)]
@@ -283,12 +286,11 @@ mod tests {
 	#[test]
 	fn correct_next_vertex() {
 		let (verts, edges) = test_case_simple();
-		let first_edge: Vec<i32> = vec![3, 0];
-		let mut poly_iter = first_edge.iter().copied().rev();
-		let cur = poly_iter.next().unwrap();
-		let prev = poly_iter.next().unwrap();
-		let actual_vertex = find_next_vertex(&cur, &prev, false, &edges, &verts).unwrap();
-		let expected_vertex = 1;
+		let from = 2;
+		let previous = 3;
+
+		let actual_vertex = find_next_vertex(&from, &previous, false, &edges, &verts);
+		let expected_vertex = Some(1);
 		assert_eq!(expected_vertex, actual_vertex);
 	}
 
@@ -301,11 +303,7 @@ mod tests {
 		let actual_vertex = find_next_vertex(&from, &previous, false, &edges, &verts);
 		let expected_vertex = Some(1);
 		assert_eq!(expected_vertex, actual_vertex);
-	}
 
-	#[test]
-	fn correct_next_vertex_with_multiple_connected_edges_ccw_b() {
-		let (verts, edges) = test_case_simple();
 		let from = 0;
 		let previous = 4;
 
@@ -323,11 +321,7 @@ mod tests {
 		let actual_vertex = find_next_vertex(&from, &previous, true, &edges, &verts);
 		let expected_vertex = Some(3);
 		assert_eq!(expected_vertex, actual_vertex);
-	}
 
-	#[test]
-	fn correct_next_vertex_with_multiple_connected_edges_cw_b() {
-		let (verts, edges) = test_case_simple();
 		let from = 0;
 		let previous = 6;
 
@@ -350,13 +344,14 @@ mod tests {
 
 	#[test]
 	fn test_angle_between_ccw() {
+		let clockwise = false;
 		// p1
 		// |  270 degrees
 		// c -- p2
 		let p1 = Vector2::from((0.0, 1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, false);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, -std::f32::consts::FRAC_PI_2);
 
 		// c----p2
@@ -365,7 +360,7 @@ mod tests {
 		let p1 = Vector2::from((1.0, -1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, false);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, std::f32::consts::FRAC_PI_4);
 
 		//   c----p2
@@ -374,7 +369,7 @@ mod tests {
 		let p1 = Vector2::from((-1.0, -1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, false);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, std::f32::consts::PI * (3./4.));
 
 		// p1
@@ -383,7 +378,7 @@ mod tests {
 		let p1 = Vector2::from((-1.0, 1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, false);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, -std::f32::consts::PI * (3./4.));
 
 		//   p1
@@ -392,19 +387,20 @@ mod tests {
 		let p1 = Vector2::from((1.0, 1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, false);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, -std::f32::consts::FRAC_PI_4);
 	}
 
 	#[test]
 	fn test_angle_between_cw() {
+		let clockwise = true;
 		// p1
 		// |  90 degrees
 		// c -- p2
 		let p1 = Vector2::from((0.0, 1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, true);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, std::f32::consts::FRAC_PI_2);
 
 		// c----p2
@@ -413,7 +409,7 @@ mod tests {
 		let p1 = Vector2::from((1.0, -1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, true);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, -std::f32::consts::FRAC_PI_4);
 
 		//   c----p2
@@ -422,7 +418,7 @@ mod tests {
 		let p1 = Vector2::from((-1.0, -1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, true);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, -std::f32::consts::PI * (3./4.));
 
 		// p1
@@ -431,7 +427,7 @@ mod tests {
 		let p1 = Vector2::from((-1.0, 1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, true);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, std::f32::consts::PI * (3./4.));
 
 		//   p1
@@ -440,7 +436,16 @@ mod tests {
 		let p1 = Vector2::from((1.0, 1.0));
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
-		let angle = angle_between(&p1, &p2, &center, true);
+		let angle = angle_between(&p1, &p2, &center, clockwise);
 		assert_eq!(angle, std::f32::consts::FRAC_PI_4);
+	}
+
+	#[test]
+	fn correct_polygons() {
+		let (verts, edges) = test_case_simple();
+		let edges: Vec<Edge> = edges.keys().cloned().collect();
+		let expected_polygons: Vec<Vec<i32>> = vec![vec![2, 1, 0, 3], vec![0, 4, 5, 6]];
+		let actual_polygons = build_polygons(&edges, &verts);
+		assert_eq!(expected_polygons, actual_polygons);
 	}
 }
