@@ -95,23 +95,27 @@ mod tests {
 		assert_eq!(xy_to_bufpos(128, 7, 128, 128, 1), None);
 		assert_eq!(xy_to_bufpos(4, 128, 128, 128, 1), None);
 		assert_eq!(xy_to_bufpos(127, 127, 128, 128, 1), Some(16383));
+		assert_eq!(xy_to_bufpos(128, 127, 128, 128, 1), None);
 
 		// 2 channels
 		assert_eq!(xy_to_bufpos(4, 7, 128, 128, 2), Some(1800));
 		assert_eq!(xy_to_bufpos(128, 7, 128, 128, 2), None);
 		assert_eq!(xy_to_bufpos(4, 128, 128, 128, 2), None);
 		assert_eq!(xy_to_bufpos(127, 127, 128, 128, 2), Some(32766));
+		assert_eq!(xy_to_bufpos(128, 127, 128, 128, 2), None);
 
 		// 3 channels
 		assert_eq!(xy_to_bufpos(4, 7, 128, 128, 3), Some(2700));
 		assert_eq!(xy_to_bufpos(128, 7, 128, 128, 3), None);
 		assert_eq!(xy_to_bufpos(4, 128, 128, 128, 3), None);
 		assert_eq!(xy_to_bufpos(127, 127, 128, 128, 3), Some(49149));
+		assert_eq!(xy_to_bufpos(128, 127, 128, 128, 3), None);
 
 		// 4 channels
 		assert_eq!(xy_to_bufpos(4, 7, 128, 128, 4), Some(3600));
 		assert_eq!(xy_to_bufpos(128, 7, 128, 128, 4), None);
 		assert_eq!(xy_to_bufpos(4, 128, 128, 128, 4), None);
 		assert_eq!(xy_to_bufpos(127, 127, 128, 128, 4), Some(65532));
+		assert_eq!(xy_to_bufpos(128, 127, 128, 128, 4), None);
 	}
 }

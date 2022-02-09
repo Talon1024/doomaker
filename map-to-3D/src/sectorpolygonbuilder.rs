@@ -7,12 +7,6 @@ use ahash::RandomState;
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
-#[inline]
-fn rget<T: Copy>(vec: &Vec<T>, index: usize) -> Option<&T> {
-	let index = vec.len() - index;
-	vec.get(index)
-}
-
 fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 	// Based on https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
 	let mut inside = false;
@@ -56,16 +50,7 @@ fn angle_between(
 	let cb = p2 - center;
 	let dot = ab.dot(&cb);
 	let cross = ab.cross(&cb);
-	f32::atan2(if clockwise {cross} else {-cross}, -dot)
-}
-
-#[test]
-fn test_angle_between() {
-	let p1 = Vector2::from([0.0, 5.0].as_slice());		// p1
-	let p2 = Vector2::from([5.0, 0.0].as_slice());		// |
-	let center = Vector2::from([0.0, 0.0].as_slice());	// c -- p2
-	let angle = angle_between(&p1, &p2, &center, false);
-	assert_eq!(angle, std::f32::consts::PI / 2.)
+	f32::atan2(if clockwise {-cross} else {cross}, -dot)
 }
 
 pub fn build_polygons(
@@ -88,17 +73,16 @@ pub fn build_polygons(
 	let mut incomplete_polygons: Vec<Vec<i32>> = Vec::new();
 	let mut clockwise = false;
 	loop {
-		// polygons.last()[-2];
-		let previous_vertex = rget(polygons.last().unwrap(), 2)
-			.copied()
-			.expect("A polygon should have at least one edge (two vertices)");
+		let mut poly_iter = polygons.last().unwrap().iter().copied().rev();
 		// polygons.last()[-1];
-		let current_vertex = rget(polygons.last().unwrap(), 1)
-			.copied()
+		let current_vertex = poly_iter.next()
+			.expect("A polygon should have at least one edge (two vertices)");
+		// polygons.last()[-2];
+		let previous_vertex = poly_iter.next()
 			.expect("A polygon should have at least one edge (two vertices)");
 		let next_vertex = find_next_vertex(
 			&current_vertex, &previous_vertex,
-			&clockwise, &edges_used, vertices
+			clockwise, &edges_used, vertices
 		);
 		let mut new_polygon = false;
 		match next_vertex {
@@ -198,7 +182,7 @@ fn find_next_start_edge(
 fn find_next_vertex(
 	from: &i32,
 	previous: &i32,
-	clockwise: &bool,
+	clockwise: bool,
 	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
 ) -> Option<i32> {
@@ -254,4 +238,93 @@ fn is_polygon_complete(polygon: &Vec<i32>, last: i32) -> bool {
 	}
 	let first = polygon[0];
 	return first == last;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	// see tests/data/simple.png
+	fn test_case_simple() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomState>) {
+		let verts: Vec<MapVertex> = vec![
+			MapVertex { p: Vector2::from((0., 0.)) },
+			MapVertex { p: Vector2::from((64., 0.)) },
+			MapVertex { p: Vector2::from((64., -64.)) },
+			MapVertex { p: Vector2::from((0., -64.)) },
+			MapVertex { p: Vector2::from((0., 64.)) },
+			MapVertex { p: Vector2::from((-64., 64.)) },
+			MapVertex { p: Vector2::from((-64., 0.)) },
+		];
+		let lines: Vec<Edge> = vec![
+			Edge::new(0, 1),
+			Edge::new(1, 2),
+			Edge::new(2, 3),
+			Edge::new(3, 0),
+			Edge::new(0, 4),
+			Edge::new(4, 5),
+			Edge::new(5, 6),
+			Edge::new(6, 0),
+		];
+		let edges: HashMap<Edge, bool, RandomState> = lines.iter().map(
+			|&line| (line, false)).collect();
+		(verts, edges)
+	}
+
+	// ccw: counterclockwise, cw: clockwise
+
+	#[test]
+	fn correct_first_edge_ccw() {
+		let (verts, edges) = test_case_simple();
+		let first_edge = find_next_start_edge(false, &edges, &verts);
+		assert_eq!(first_edge, Some(vec![2, 1]));
+	}
+
+	#[test]
+	fn correct_first_edge_cw() {
+		let (verts, edges) = test_case_simple();
+		let first_edge = find_next_start_edge(true, &edges, &verts);
+		assert_eq!(first_edge, Some(vec![2, 3]));
+	}
+
+	#[test]
+	fn correct_next_vertex_ccw() {
+		let (verts, edges) = test_case_simple();
+		let first_edge: Vec<i32> = vec![3, 0];
+		let mut poly_iter = first_edge.iter().copied().rev();
+		let cur = poly_iter.next().unwrap();
+		let prev = poly_iter.next().unwrap();
+		let actual_vertex = find_next_vertex(&cur, &prev, false, &edges, &verts).unwrap();
+		let expected_vertex = 1;
+		assert_eq!(expected_vertex, actual_vertex);
+	}
+
+	#[test]
+	fn correct_next_vertex_cw() {
+		let (verts, edges) = test_case_simple();
+		let first_edge: Vec<i32> = vec![2, 1];
+		let mut poly_iter = first_edge.iter().copied().rev();
+		let cur = poly_iter.next().unwrap();
+		let prev = poly_iter.next().unwrap();
+		let actual_vertex = find_next_vertex(&cur, &prev, true, &edges, &verts).unwrap();
+		let expected_vertex = 0;
+		assert_eq!(expected_vertex, actual_vertex);
+	}
+
+	#[test]
+	fn test_angle_between_ccw() {
+		let p1 = Vector2::from([0.0, 5.0].as_slice());		// p1
+		let p2 = Vector2::from([5.0, 0.0].as_slice());		// |
+		let center = Vector2::from([0.0, 0.0].as_slice());	// c -- p2
+		let angle = angle_between(&p1, &p2, &center, false);
+		assert_eq!(angle, -std::f32::consts::PI / 2.) // 270 degrees
+	}
+
+	#[test]
+	fn test_angle_between_cw() {
+		let p1 = Vector2::from([0.0, 5.0].as_slice());		// p1
+		let p2 = Vector2::from([5.0, 0.0].as_slice());		// |
+		let center = Vector2::from([0.0, 0.0].as_slice());	// c -- p2
+		let angle = angle_between(&p1, &p2, &center, true);
+		assert_eq!(angle, std::f32::consts::PI / 2.) // 90 degrees
+	}
 }

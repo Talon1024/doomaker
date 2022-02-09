@@ -226,4 +226,11 @@ impl From<&[f32]> for Vector2 {
 		)
 	}
 }
+
+impl From<(f32, f32)> for Vector2 {
+	fn from(v: (f32, f32)) -> Vector2 {
+		Vector2(v.0, v.1)
+	}
+}
+
 impl Eq for Vector2 {}
