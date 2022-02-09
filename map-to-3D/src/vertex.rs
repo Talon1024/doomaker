@@ -64,7 +64,7 @@ pub fn edge_length(vertices: &(Vector2, Vector2)) -> f32 {
 mod tests {
 	use super::*;
 
-	// see tests/data/simple.png
+	// see tests/data/simple.png for an annotated drawing of this data
 	fn test_case_simple() -> Vec<MapVertex> {
 		let verts: Vec<MapVertex> = vec![
 			MapVertex { p: Vector2::from((0., 0.)) },

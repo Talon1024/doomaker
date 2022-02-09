@@ -236,7 +236,7 @@ fn is_polygon_complete(polygon: &Vec<i32>, last: i32) -> bool {
 mod tests {
 	use super::*;
 
-	// see tests/data/simple.png
+	// see tests/data/simple.png for an annotated drawing of this data
 	fn test_case_simple() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomState>) {
 		let verts: Vec<MapVertex> = vec![
 			MapVertex { p: Vector2::from((0., 0.)) },
