@@ -50,7 +50,9 @@ fn angle_between(
 	let cb = p2 - center;
 	let dot = ab.dot(&cb);
 	let cross = ab.cross(&cb);
-	f32::atan2(if clockwise {-cross} else {cross}, -dot)
+	#[cfg(test)]
+	println!("ab: {} {}, cb: {} {}, dot: {}, cross: {}", ab.x(), ab.y(), cb.x(), cb.y(), dot, cross);
+	f32::atan2(if clockwise {-cross} else {cross}, dot)
 }
 
 pub fn build_polygons(
@@ -348,19 +350,43 @@ mod tests {
 
 	#[test]
 	fn test_angle_between_ccw() {
-		let p1 = Vector2::from([0.0, 5.0].as_slice());		// p1
-		let p2 = Vector2::from([5.0, 0.0].as_slice());		// |
-		let center = Vector2::from([0.0, 0.0].as_slice());	// c -- p2
+		// p1
+		// |  270 degrees
+		// c -- p2
+		let p1 = Vector2::from((0.0, 1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
 		let angle = angle_between(&p1, &p2, &center, false);
-		assert_eq!(angle, -std::f32::consts::PI / 2.) // 270 degrees
+		assert_eq!(angle, -std::f32::consts::FRAC_PI_2);
+
+		// c----p2
+		//  \ 45 degrees
+		//   p1
+		let p1 = Vector2::from((1.0, -1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, false);
+		assert_eq!(angle, std::f32::consts::FRAC_PI_4); 
 	}
 
 	#[test]
 	fn test_angle_between_cw() {
-		let p1 = Vector2::from([0.0, 5.0].as_slice());		// p1
-		let p2 = Vector2::from([5.0, 0.0].as_slice());		// |
-		let center = Vector2::from([0.0, 0.0].as_slice());	// c -- p2
+		// p1
+		// |  90 degrees
+		// c -- p2
+		let p1 = Vector2::from((0.0, 1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
 		let angle = angle_between(&p1, &p2, &center, true);
-		assert_eq!(angle, std::f32::consts::PI / 2.) // 90 degrees
+		assert_eq!(angle, std::f32::consts::FRAC_PI_2);
+
+		// c----p2
+		//  \ 315 degrees
+		//   p1
+		let p1 = Vector2::from((1.0, -1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, true);
+		assert_eq!(angle, -std::f32::consts::FRAC_PI_4);
 	}
 }
