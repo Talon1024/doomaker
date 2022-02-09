@@ -1,7 +1,7 @@
 use std::cmp::Ordering::{self, Equal, Greater, Less};
 use crate::vector::Vector2;
-// X, Y
-#[derive(PartialEq, PartialOrd, Clone, Debug, Copy, Default)]
+
+#[derive(PartialEq, Clone, Debug, Copy, Default)]
 pub struct MapVertex {
 	pub p: Vector2
 }
@@ -21,6 +21,12 @@ impl From<&[f32]> for MapVertex {
 impl Eq for MapVertex{}
 impl Ord for MapVertex {
 	fn cmp(&self, other: &Self) -> Ordering {
+		/*
+		For reference:
+		assert_eq!(5.cmp(&10), Ordering::Less);
+		assert_eq!(10.cmp(&5), Ordering::Greater);
+		assert_eq!(5.cmp(&5), Ordering::Equal);
+		*/
 		if other.p.x() == self.p.x() {
 			if other.p.y() < self.p.y() {
 				Less
@@ -29,11 +35,18 @@ impl Ord for MapVertex {
 			} else {
 				Greater
 			}
-		} else if other.p.x() > self.p.x() {
-			Less
-		} else {
+		} else if self.p.x() > other.p.x() {
 			Greater
+		} else {
+			Less
 		}
+	}
+}
+
+impl PartialOrd for MapVertex {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		// Should not panic because it never returns None
+		Some(self.cmp(other))
 	}
 }
 
@@ -84,14 +97,18 @@ mod tests {
 	#[test]
 	fn correct_lt_comparison() {
 		let verts = test_case_simple();
-		assert!(verts[1] < verts[2]);
-		assert!(verts[3] < verts[2]);
+		assert_eq!(verts[3].cmp(&verts[2]), Less);
+		assert_eq!(verts[1].cmp(&verts[2]), Less);
+		assert_eq!(verts[3] < verts[2], true);
+		assert_eq!(verts[1] < verts[2], true);
 	}
 
 	#[test]
 	fn correct_gt_comparison() {
 		let verts = test_case_simple();
-		assert!(verts[0] > verts[4]);
-		assert!(verts[0] > verts[5]);
+		assert_eq!(verts[0].cmp(&verts[6]), Greater);
+		assert_eq!(verts[0].cmp(&verts[4]), Greater);
+		assert_eq!(verts[0] > verts[6], true);
+		assert_eq!(verts[0] > verts[4], true);
 	}
 }
