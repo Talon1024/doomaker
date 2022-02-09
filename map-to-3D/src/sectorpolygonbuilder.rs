@@ -366,7 +366,34 @@ mod tests {
 		let p2 = Vector2::from((1.0, 0.0));
 		let center = Vector2::from((0.0, 0.0));
 		let angle = angle_between(&p1, &p2, &center, false);
-		assert_eq!(angle, std::f32::consts::FRAC_PI_4); 
+		assert_eq!(angle, std::f32::consts::FRAC_PI_4);
+
+		//   c----p2
+		//  / 135 degrees
+		// p1
+		let p1 = Vector2::from((-1.0, -1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, false);
+		assert_eq!(angle, std::f32::consts::PI * (3./4.));
+
+		// p1
+		//  \ 225 degrees
+		//   c----p2
+		let p1 = Vector2::from((-1.0, 1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, false);
+		assert_eq!(angle, -std::f32::consts::PI * (3./4.));
+
+		//   p1
+		//  / 315 degrees
+		// c----p2
+		let p1 = Vector2::from((1.0, 1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, false);
+		assert_eq!(angle, -std::f32::consts::FRAC_PI_4);
 	}
 
 	#[test]
@@ -388,5 +415,32 @@ mod tests {
 		let center = Vector2::from((0.0, 0.0));
 		let angle = angle_between(&p1, &p2, &center, true);
 		assert_eq!(angle, -std::f32::consts::FRAC_PI_4);
+
+		//   c----p2
+		//  / 225 degrees
+		// p1
+		let p1 = Vector2::from((-1.0, -1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, true);
+		assert_eq!(angle, -std::f32::consts::PI * (3./4.));
+
+		// p1
+		//  \ 135 degrees
+		//   c----p2
+		let p1 = Vector2::from((-1.0, 1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, true);
+		assert_eq!(angle, std::f32::consts::PI * (3./4.));
+
+		//   p1
+		//  / 45 degrees
+		// c----p2
+		let p1 = Vector2::from((1.0, 1.0));
+		let p2 = Vector2::from((1.0, 0.0));
+		let center = Vector2::from((0.0, 0.0));
+		let angle = angle_between(&p1, &p2, &center, true);
+		assert_eq!(angle, std::f32::consts::FRAC_PI_4);
 	}
 }
