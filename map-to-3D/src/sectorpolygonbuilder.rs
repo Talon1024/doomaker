@@ -315,6 +315,8 @@ mod tests {
 	fn correct_next_vertex_with_multiple_connected_edges_ccw() {
 		let clockwise = false;
 		let (verts, edges) = test_case_simple();
+
+		// Inside lower right polygon
 		let previous = 3;
 		let from = 0;
 
@@ -322,11 +324,20 @@ mod tests {
 		let expected_vertex = Some(1);
 		assert_eq!(expected_vertex, actual_vertex);
 
+		// Inside upper left polygon
 		let previous = 4;
 		let from = 0;
 
 		let actual_vertex = find_next_vertex(&from, &previous, clockwise, &edges, &verts);
 		let expected_vertex = Some(6);
+		assert_eq!(expected_vertex, actual_vertex);
+
+		// Outside on lower left
+		let from = 0;
+		let previous = 6;
+
+		let actual_vertex = find_next_vertex(&from, &previous, clockwise, &edges, &verts);
+		let expected_vertex = Some(3);
 		assert_eq!(expected_vertex, actual_vertex);
 	}
 
@@ -334,6 +345,8 @@ mod tests {
 	fn correct_next_vertex_with_multiple_connected_edges_cw() {
 		let clockwise = true;
 		let (verts, edges) = test_case_simple();
+
+		// Inside lower right polygon
 		let from = 0;
 		let previous = 1;
 
@@ -341,11 +354,20 @@ mod tests {
 		let expected_vertex = Some(3);
 		assert_eq!(expected_vertex, actual_vertex);
 
+		// Inside upper left polygon
 		let from = 0;
 		let previous = 6;
 
 		let actual_vertex = find_next_vertex(&from, &previous, clockwise, &edges, &verts);
 		let expected_vertex = Some(4);
+		assert_eq!(expected_vertex, actual_vertex);
+
+		// Outside on lower left
+		let from = 0;
+		let previous = 3;
+
+		let actual_vertex = find_next_vertex(&from, &previous, clockwise, &edges, &verts);
+		let expected_vertex = Some(6);
 		assert_eq!(expected_vertex, actual_vertex);
 	}
 
