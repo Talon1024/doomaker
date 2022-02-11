@@ -12,7 +12,9 @@ impl Vector2 {
 		self.0 * other.1 - self.1 * other.0
 	}
 	pub fn angle(&self) -> f32 {
-		f32::atan2(self.1, self.0)
+		#[allow(unused_imports)]
+		use micromath::F32Ext;
+		self.1.atan2(self.0)
 	}
 	pub fn x(&self) -> f32 {
 		self.0
@@ -289,5 +291,11 @@ mod tests {
 		assert_eq!(b.angle(), std::f32::consts::FRAC_PI_2);
 		assert_eq!(c.angle(), std::f32::consts::PI);
 		assert_eq!(d.angle(), -std::f32::consts::FRAC_PI_2);
+	}
+
+	#[test]
+	fn length() {
+		let a = Vector2::from((0.5, 0.5));
+		assert_eq!(a.length(), 0.707106781);
 	}
 }
