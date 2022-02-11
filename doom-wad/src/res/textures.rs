@@ -43,7 +43,7 @@ fn read_pnames(pnames: &wad::DoomWadLump) ->
 	Ok(names)
 }
 
-pub fn read_texturex<'a>(wad: &'a wad::DoomWad, list: &'a wad::DoomWadLump, pnames: &wad::DoomWadLump) ->
+pub fn read_texturex<'a>(list: &'a wad::DoomWadLump, pnames: &wad::DoomWadLump) ->
 	Result<TextureDefinitions<'a>, Box<dyn Error>>
 {
 	let patches = read_pnames(pnames)?;
@@ -55,12 +55,11 @@ pub fn read_texturex<'a>(wad: &'a wad::DoomWad, list: &'a wad::DoomWadLump, pnam
 		pos.read_exact(&mut num_buffer)?;
 		i32::from_le_bytes(num_buffer) as usize
 	};
-	let mut tex_def_pos: Vec<u64> = vec![0; count];
-	(0..count).map(|index| -> Result<(), Box<dyn Error>> {
+	let tex_def_pos: Vec<u64> = (0..count)
+	.map(|_| -> Result<u64, Box<dyn Error>> {
 		pos.read_exact(&mut num_buffer)?;
-		tex_def_pos[index] = u32::from_le_bytes(num_buffer) as u64;
-		Ok(())
-	}).collect::<Result<(), Box<dyn Error>>>()?;
+		Ok(u32::from_le_bytes(num_buffer) as u64)
+	}).collect::<Result<Vec<u64>, Box<dyn Error>>>()?;
 	let mut defs = TextureDefinitions {
 		textures: Vec::with_capacity(count),
 		lump: list,
@@ -81,32 +80,28 @@ pub fn read_texturex<'a>(wad: &'a wad::DoomWad, list: &'a wad::DoomWadLump, pnam
 		pos.seek(SeekFrom::Current(4))?; // skip columndirectory
 		pos.read_exact(&mut short_buffer)?;
 		let patch_count = u16::from_le_bytes(short_buffer);
-		let mut texture = Texture {
+		defs.textures.push(Texture {
 			name: name.clone(),
 			flags: flags,
 			width: width,
 			height: height,
-			patches: Vec::new(),
-		};
-		(0..patch_count ).map(|_| -> Result<(), Box<dyn Error>> {
-			pos.read_exact(&mut short_buffer)?;
-			let x = i16::from_le_bytes(short_buffer);
-			pos.read_exact(&mut short_buffer)?;
-			let y = i16::from_le_bytes(short_buffer);
-			pos.read_exact(&mut short_buffer)?;
-			let patch_name = patches[u16::from_le_bytes(short_buffer) as usize].clone();
-			pos.read_exact(&mut num_buffer)?;
-			let flags = i32::from_le_bytes(num_buffer);
-			let patch = TexturePatch {
-				patch: patch_name,
-				x: x,
-				y: y, 
-				flags: flags
-			};
-			texture.patches.push(patch);
-			Ok(())
-		}).collect::<Result<(), Box<dyn Error>>>()?;
-		defs.textures.push(texture);
+			patches: (0..patch_count).map(|_| -> Result<TexturePatch, Box<dyn Error>> {
+				pos.read_exact(&mut short_buffer)?;
+				let x = i16::from_le_bytes(short_buffer);
+				pos.read_exact(&mut short_buffer)?;
+				let y = i16::from_le_bytes(short_buffer);
+				pos.read_exact(&mut short_buffer)?;
+				let patch_name = patches[u16::from_le_bytes(short_buffer) as usize].clone();
+				pos.read_exact(&mut num_buffer)?;
+				let flags = i32::from_le_bytes(num_buffer);
+				Ok(TexturePatch {
+					patch: patch_name,
+					x: x,
+					y: y, 
+					flags: flags
+				})
+			}).collect::<Result<Vec<TexturePatch>, Box<dyn Error>>>()?
+		});
 		Ok(())
 	})?;
 	Ok(defs)
