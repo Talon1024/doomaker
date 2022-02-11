@@ -69,6 +69,91 @@ fn angle_between(
 	}
 }
 
+/// Build polygons from a set of lines and vertices.
+/// 
+/// Returns the polygons as vectors of vertex indices. These can be
+/// used by a triangulator such as `earcut`
+/// 
+/// # Examples
+/// 
+/// A square:
+/// 
+/// ```
+/// use map_to_3D::vector::Vector2;
+/// use map_to_3D::edge::Edge;
+/// use map_to_3D::vertex::MapVertex;
+/// use map_to_3D::sectorpolygonbuilder::build_polygons;
+/// 
+/// // 3--0
+/// // |  |
+/// // 2--1
+///
+/// let vertices = vec![
+/// 	MapVertex { p: Vector2::from((1.0, 1.0)) },
+/// 	MapVertex { p: Vector2::from((1.0, 0.0)) },
+/// 	MapVertex { p: Vector2::from((0.0, 0.0)) },
+/// 	MapVertex { p: Vector2::from((0.0, 1.0)) },
+/// ];
+/// let lines = vec![
+/// 	Edge::new(0, 1),
+/// 	Edge::new(1, 2),
+/// 	Edge::new(2, 3),
+/// 	Edge::new(3, 0),
+/// ];
+/// assert_eq!(
+/// 	build_polygons(&lines, &vertices),
+/// 	vec![vec![0, 1, 2, 3]]
+/// )
+/// ```
+/// 
+/// A simple example:
+/// ```
+/// use map_to_3D::vector::Vector2;
+/// use map_to_3D::edge::Edge;
+/// use map_to_3D::vertex::MapVertex;
+/// use map_to_3D::sectorpolygonbuilder::build_polygons;
+/// 
+/// // 5--4
+/// // |  |
+/// // 6--0--1
+/// //    |  |
+/// //    3--2
+/// 
+/// let verts: Vec<MapVertex> = vec![
+/// 	MapVertex { p: Vector2::from((0., 0.)) },
+/// 	MapVertex { p: Vector2::from((64., 0.)) },
+/// 	MapVertex { p: Vector2::from((64., -64.)) },
+/// 	MapVertex { p: Vector2::from((0., -64.)) },
+/// 	MapVertex { p: Vector2::from((0., 64.)) },
+/// 	MapVertex { p: Vector2::from((-64., 64.)) },
+/// 	MapVertex { p: Vector2::from((-64., 0.)) },
+/// ];
+/// let lines: Vec<Edge> = vec![
+/// 	Edge::new(0, 1),
+/// 	Edge::new(1, 2),
+/// 	Edge::new(2, 3),
+/// 	Edge::new(3, 0),
+/// 	Edge::new(0, 4),
+/// 	Edge::new(4, 5),
+/// 	Edge::new(5, 6),
+/// 	Edge::new(6, 0),
+/// ];
+/// 
+/// assert_eq!(
+/// 	vec![vec![1, 2, 3, 0], vec![4, 0, 6, 5]],
+/// 	build_polygons(&lines, &verts)
+/// );
+/// 
+/// ```
+/// 
+/// Obviously, you won't hard-code the data into your program like this, but
+/// it serves as an example of the kind of data you'll be passing into
+/// `build_polygons`
+/// 
+/// # Panics
+/// 
+/// If there are two lines overlapping each other, they could cause
+/// angle_between to panic because the angle between them is -0
 pub fn build_polygons(
 	lines: &Vec<Edge>,
 	vertices: &Vec<MapVertex>
@@ -140,7 +225,7 @@ pub fn build_polygons(
 }
 
 fn find_next_start_edge(
-	clockwise: bool,
+	clockwise: bool,  // Polygon's interior angles should be clockwise or not?
 	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
 ) -> Option<(i32, i32)> {

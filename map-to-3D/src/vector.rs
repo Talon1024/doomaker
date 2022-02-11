@@ -23,6 +23,9 @@ impl Vector2 {
 	pub fn length(&self) -> f32 {
 		self.dot(self).sqrt()
 	}
+	pub fn new(x: f32, y: f32) -> Vector2 {
+		Vector2(x, y)
+	}
 }
 
 impl Add<Vector2> for Vector2 {
