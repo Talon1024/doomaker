@@ -1,5 +1,4 @@
 use super::*;
-
 use data::test_case_simple;
 
 #[test]

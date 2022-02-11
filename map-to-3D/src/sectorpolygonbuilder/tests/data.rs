@@ -34,7 +34,7 @@ pub(super) fn test_case_harder() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomS
         MapVertex { p: Vector2::from((48., -48.)) },
         MapVertex { p: Vector2::from((-48., 48.)) },
         MapVertex { p: Vector2::from((-64., 0.)) },     // 4
-        MapVertex { p: Vector2::from((-48., 48.)) },
+        MapVertex { p: Vector2::from((-48., -48.)) },
         MapVertex { p: Vector2::from((0., 64.)) },
         MapVertex { p: Vector2::from((0., -64.)) },
         MapVertex { p: Vector2::from((0., 48.)) },      // 8
