@@ -1,7 +1,7 @@
 use super::*;
 
 // see tests/data/simple.png for an annotated drawing of this data
-pub(super) fn test_case_simple() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomState>) {
+pub(super) fn test_case_simple() -> (Vec<MapVertex>, Vec<Edge>) {
     let verts: Vec<MapVertex> = vec![
         MapVertex { p: Vector2::from((0., 0.)) },
         MapVertex { p: Vector2::from((64., 0.)) },
@@ -11,7 +11,7 @@ pub(super) fn test_case_simple() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomS
         MapVertex { p: Vector2::from((-64., 64.)) },
         MapVertex { p: Vector2::from((-64., 0.)) },
     ];
-    let lines: Vec<Edge> = vec![
+    let edges: Vec<Edge> = vec![
         Edge::new(0, 1),
         Edge::new(1, 2),
         Edge::new(2, 3),
@@ -21,13 +21,11 @@ pub(super) fn test_case_simple() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomS
         Edge::new(5, 6),
         Edge::new(6, 0),
     ];
-    let edges: HashMap<Edge, bool, RandomState> = lines.iter().map(
-        |&line| (line, false)).collect();
     (verts, edges)
 }
 
 // see tests/data/harder.png for an annotated drawing of this data
-pub(super) fn test_case_harder() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomState>) {
+pub(super) fn test_case_harder() -> (Vec<MapVertex>, Vec<Edge>) {
     let verts: Vec<MapVertex> = vec![
         MapVertex { p: Vector2::from((64., 0.)) },      // 0
         MapVertex { p: Vector2::from((48., 48.)) },
@@ -42,7 +40,7 @@ pub(super) fn test_case_harder() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomS
         MapVertex { p: Vector2::from((0., -48.)) },
         MapVertex { p: Vector2::from((-48., 0.)) },     // 11
     ];
-    let lines: Vec<Edge> = vec![
+    let edges: Vec<Edge> = vec![
         Edge::new(0, 1),
         Edge::new(0, 2),
         Edge::new(1, 9),
@@ -64,7 +62,5 @@ pub(super) fn test_case_harder() -> (Vec<MapVertex>, HashMap<Edge, bool, RandomS
         Edge::new(10, 11),
         Edge::new(11, 8), // Center polygon end
     ];
-    let edges: HashMap<Edge, bool, RandomState> = lines.iter().map(
-        |&line| (line, false)).collect();
     (verts, edges)
 }

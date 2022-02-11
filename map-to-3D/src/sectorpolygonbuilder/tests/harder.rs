@@ -4,7 +4,6 @@ use data::test_case_harder;
 #[test]
 fn correct_polygons() {
     let (verts, edges) = test_case_harder();
-    let edges: Vec<Edge> = edges.keys().cloned().collect();
     let expected_polygons: Vec<Vec<i32>> = vec![
         vec![1, 0, 2, 9],
         vec![10, 2, 7, 5],

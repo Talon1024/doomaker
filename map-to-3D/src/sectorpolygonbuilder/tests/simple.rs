@@ -4,6 +4,8 @@ use data::test_case_simple;
 #[test]
 fn correct_first_edge_ccw() {
     let (verts, edges) = test_case_simple();
+    let edges: HashMap<Edge, bool, RandomState> = 
+        edges.into_iter().map(|e| (e, false)).collect();
     let first_edge = find_next_start_edge(false, &edges, &verts);
     assert_eq!(first_edge, Some((1, 2)));
 }
@@ -11,6 +13,8 @@ fn correct_first_edge_ccw() {
 #[test]
 fn correct_first_edge_cw() {
     let (verts, edges) = test_case_simple();
+    let edges: HashMap<Edge, bool, RandomState> = 
+        edges.into_iter().map(|e| (e, false)).collect();
     let first_edge = find_next_start_edge(true, &edges, &verts);
     assert_eq!(first_edge, Some((3, 2)));
 }
@@ -18,6 +22,8 @@ fn correct_first_edge_cw() {
 #[test]
 fn correct_next_vertex() {
     let (verts, edges) = test_case_simple();
+    let edges: HashMap<Edge, bool, RandomState> = 
+        edges.into_iter().map(|e| (e, false)).collect();
     let from = 2;
     let previous = 3;
 
@@ -30,6 +36,8 @@ fn correct_next_vertex() {
 fn correct_next_vertex_with_multiple_connected_edges_ccw() {
     let clockwise = false;
     let (verts, edges) = test_case_simple();
+    let edges: HashMap<Edge, bool, RandomState> = 
+        edges.into_iter().map(|e| (e, false)).collect();
 
     // Inside lower right polygon
     let previous = 3;
@@ -60,6 +68,8 @@ fn correct_next_vertex_with_multiple_connected_edges_ccw() {
 fn correct_next_vertex_with_multiple_connected_edges_cw() {
     let clockwise = true;
     let (verts, edges) = test_case_simple();
+    let edges: HashMap<Edge, bool, RandomState> = 
+        edges.into_iter().map(|e| (e, false)).collect();
 
     // Inside lower right polygon
     let from = 0;
@@ -89,7 +99,6 @@ fn correct_next_vertex_with_multiple_connected_edges_cw() {
 #[test]
 fn correct_polygons() {
     let (verts, edges) = test_case_simple();
-    let edges: Vec<Edge> = edges.keys().cloned().collect();
     let expected_polygons: Vec<Vec<i32>> = vec![vec![1, 2, 3, 0], vec![4, 0, 6, 5]];
     let actual_polygons = build_polygons(&edges, &verts);
     assert_eq!(expected_polygons, actual_polygons);
