@@ -1,3 +1,8 @@
+//! # 2D vectors
+//! 
+//! A two-dimensional vector used to represent vertex positions, lines, and
+//! possibly other things.
+
 use std::ops::{Add,Sub,AddAssign,SubAssign,Mul,MulAssign,Div,DivAssign};
 
 // #[derive(Hash, PartialEq, Eq, Clone, Debug)]
@@ -5,26 +10,95 @@ use std::ops::{Add,Sub,AddAssign,SubAssign,Mul,MulAssign,Div,DivAssign};
 pub struct Vector2(f32, f32);
 
 impl Vector2 {
+	/// The dot product of this vector and another
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 2.0);
+	/// let b = Vector2::new(1.5, 1.0);
+	/// assert_eq!(a.dot(&b), 5.)
+	/// ```
 	pub fn dot(&self, other: &Vector2) -> f32 {
 		self.0 * other.0 + self.1 * other.1
 	}
+	/// The "cross product" of this vector and another. The cross product
+	/// is not defined for 2D vectors, so it is based on this:
+	/// <http://allenchou.net/2013/07/cross-product-of-2d-vectors/>
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 2.0);
+	/// let b = Vector2::new(1.5, 1.0);
+	/// assert_eq!(a.cross(&b), -1.);
+	/// ```
 	pub fn cross(&self, other: &Vector2) -> f32 {
 		self.0 * other.1 - self.1 * other.0
 	}
+	/// Get the angle between this vector and the origin, assuming the origin
+	/// is (0, 0).
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 2.0);
+	/// assert_eq!(a.angle().to_degrees().round(), 45.0);
+	/// ```
 	pub fn angle(&self) -> f32 {
 		#[allow(unused_imports)]
 		use micromath::F32Ext;
 		self.1.atan2(self.0)
 	}
+	/// Get the X coordinate of this vector.
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 1.0);
+	/// assert_eq!(a.x(), 2.0);
+	/// ```
 	pub fn x(&self) -> f32 {
 		self.0
 	}
+	/// Get the Y coordinate of this vector.
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 1.0);
+	/// assert_eq!(a.y(), 1.0);
+	/// ```
 	pub fn y(&self) -> f32 {
 		self.1
 	}
+	/// Get the length of this vector, or the distance from the origin,
+	/// assuming the origin is (0.0, 0.0)
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(3.0, 4.0);
+	/// assert_eq!(a.length(), 5.0);
+	/// ```
 	pub fn length(&self) -> f32 {
 		self.dot(self).sqrt()
 	}
+	/// Make a new Vector2
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 1.0);
+	/// assert_eq!(a, Vector2::new(2.0, 1.0));
+	/// ```
 	pub fn new(x: f32, y: f32) -> Vector2 {
 		Vector2(x, y)
 	}

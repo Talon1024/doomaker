@@ -1,4 +1,7 @@
-#[forbid(unsafe_code)]
+//! # Sector polygon builder
+//! 
+//! Takes a set of edges and vertices, and sorts them into "polygons"
+//! consisting of vertex indices
 use crate::vector::Vector2;
 use crate::edge::Edge;
 use crate::vertex::{self, MapVertex};

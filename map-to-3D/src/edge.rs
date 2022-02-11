@@ -1,3 +1,8 @@
+//! # Edges
+//! 
+//! An edge connects two vertices. The `Edge` struct contains two vertex
+//! indices, and it can be used as a hash map key or hash set item.
+
 use std::fmt;
 use std::str::FromStr;
 use std::num::ParseIntError;
@@ -23,37 +28,150 @@ fn sort_edge(edge: Edge) -> Edge {
 }
 
 impl Edge {
-	// Ensures deterministic order for edges
+	/// Create a new `Edge`. This function also ensures that the vertex
+	/// indices are always sorted in ascending order.
+	/// 
+	/// # Panics
+	/// 
+	/// An edge with two vertex indices which are the same is invalid,
+	/// and such bad edges are expected to be filtered out by the program
+	/// before attempting to create new `Edge`s. It's also partly laziness
+	/// on my part, since changing 100+ calls to this function would quickly
+	/// get tedious.
+	/// 
+	/// # Example
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// // Note the numbers are the same, even though they are in a different
+	/// // order.
+	/// assert_eq!(edge, Edge::new(1, 4));
+	/// ```
 	pub fn new(a: EdgeVertexIndex, b: EdgeVertexIndex) -> Edge {
 		if a == b {
 			panic!("The edge should use two different vertices");
 		}
+		// Ensures deterministic order for edges
 		sort_edge(Edge(a, b))
 	}
+	/// Does this edge use the given vertex index?
+	/// 
+	/// # Examples
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert!(edge.contains(4));
+	/// assert!(edge.contains(1));
+	/// ```
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert!(!edge.contains(2));
+	/// ```
 	pub fn contains(&self, val: EdgeVertexIndex) -> bool {
 		self.0 == val || self.1 == val
 	}
+	/// Create an iterator for this edge
 	pub fn iter(&self) -> Iter {
 		Iter {edge: &self, iter_index: 0}
 	}
-	pub fn other(&self, val: EdgeVertexIndex) -> Option<EdgeVertexIndex> {
-		if self.0 == val {
+	/// Get the other vertex index for this edge, if the given vertex index
+	/// matches one of the vertex indices in this edge.
+	/// 
+	/// # Examples
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert_eq!(edge.other(4), Some(1));
+	/// ```
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert_eq!(edge.other(2), None);
+	/// ```
+	pub fn other(&self, index: EdgeVertexIndex) -> Option<EdgeVertexIndex> {
+		if self.0 == index {
 			Some(self.1)
-		} else if self.1 == val {
+		} else if self.1 == index {
 			Some(self.0)
 		} else {
 			None
 		}
 	}
-	pub fn other_unchecked(&self, val: EdgeVertexIndex) -> EdgeVertexIndex {
-		if self.0 == val {
+	/// Get the other vertex index for this edge, if the given vertex index
+	/// matches one of the vertex indices in this edge.
+	/// 
+	/// Unlike `other()`, this does not ensure the given vertex index is
+	/// actually one of the vertex indices this edge uses. If the given vertex
+	/// index does not match the first/low vertex index, the low vertex index
+	/// is returned.
+	/// 
+	/// # Examples
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert_eq!(edge.other_unchecked(4), 1);
+	/// ```
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert_eq!(edge.other_unchecked(2), 1);
+	/// ```
+	pub fn other_unchecked(&self, index: EdgeVertexIndex) -> EdgeVertexIndex {
+		if self.0 == index {
 			self.1
 		} else {
 			self.0
 		}
 	}
+	/// Get the low vertex index for this edge
+	/// 
+	/// # Example
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert_eq!(edge.lo(), 1);
+	/// ```
 	pub fn lo(&self) -> EdgeVertexIndex { self.0 }
+	/// Get the high vertex index for this edge
+	/// 
+	/// # Example
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// let edge = Edge::new(4, 1);
+	/// assert_eq!(edge.hi(), 4);
+	/// ```
 	pub fn hi(&self) -> EdgeVertexIndex { self.1 }
+	/// Get the positions of the vertices this edge uses.
+	/// 
+	/// # Example
+	/// 
+	/// ```
+	/// use map_to_3D::edge::Edge;
+	/// use map_to_3D::vertex::MapVertex;
+	/// use map_to_3D::vector::Vector2;
+	///
+	/// let vertices = vec![
+	/// 	MapVertex { p: Vector2::from((1.0, 1.0)) },
+	/// 	MapVertex { p: Vector2::from((1.0, 0.0)) },
+	/// 	MapVertex { p: Vector2::from((0.0, 0.0)) },
+	/// 	MapVertex { p: Vector2::from((0.0, 1.0)) },
+	/// ];
+	/// let vectors: Vec<Vector2> = vertices.iter()
+	/// 	.map(|&vert| vert.p).collect();
+	/// let edge = Edge::new(3, 2);
+	/// assert_eq!(edge.vectors(&vectors),
+	/// 	(Vector2::new(0., 0.), Vector2::new(0., 1.)));
+	/// ```
 	pub fn vectors(&self, vecs: &[Vector2]) -> (Vector2, Vector2) {
 		(vecs[self.lo() as usize], vecs[self.hi() as usize])
 	}
@@ -120,7 +238,7 @@ impl FromStr for Edge {
 	}
 }
 
-
+/// Iterator for edges. Yields the vertex indices in ascending order.
 pub struct Iter<'a> {
 	edge: &'a Edge,
 	iter_index: usize
