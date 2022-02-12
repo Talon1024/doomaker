@@ -35,6 +35,8 @@ impl Edge {
 	/// 
 	/// # Panics
 	/// 
+	/// Panics if `a == b`
+	/// 
 	/// An edge with two vertex indices which are the same is invalid,
 	/// and such bad edges are expected to be filtered out by the program
 	/// before attempting to create new `Edge`s. It's also partly laziness
@@ -47,7 +49,7 @@ impl Edge {
 	/// use map_to_3D::edge::Edge;
 	/// let edge = Edge::new(4, 1);
 	/// // Note the numbers are the same, even though they are in a different
-	/// // order.
+	/// // order. They are sorted in ascending order to prevent duplication.
 	/// assert_eq!(edge, Edge::new(1, 4));
 	/// ```
 	pub fn new(a: EdgeVertexIndex, b: EdgeVertexIndex) -> Edge {
@@ -111,7 +113,7 @@ impl Edge {
 	/// Unlike `other()`, this does not ensure the given vertex index is
 	/// actually one of the vertex indices this edge uses. If the given vertex
 	/// index does not match the first/low vertex index, the low vertex index
-	/// is returned.
+	/// is returned. Otherwise, the high vertex index is returned.
 	/// 
 	/// # Examples
 	/// 
