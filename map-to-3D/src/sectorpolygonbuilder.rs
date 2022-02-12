@@ -3,8 +3,8 @@
 //! Takes a set of edges and vertices, and sorts them into "polygons"
 //! consisting of vertex indices
 use crate::vector::Vector2;
-use crate::edge::Edge;
-use crate::vertex::{self, MapVertex};
+use crate::edge::{Edge, EdgeVertexIndex};
+use crate::vertex::MapVertex;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
 
@@ -32,7 +32,7 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 
 fn edge_in_polygon(
 	edge: &Edge,
-	polygon: &Vec<i32>,
+	polygon: &Vec<EdgeVertexIndex>,
 	map_vertices: &Vec<MapVertex>
 ) -> bool {
 	let a = map_vertices[edge.lo() as usize].p;
@@ -158,7 +158,7 @@ fn angle_between(
 pub fn build_polygons(
 	lines: &Vec<Edge>,
 	vertices: &Vec<MapVertex>
-) -> Vec<Vec<i32>> {
+) -> Vec<Vec<EdgeVertexIndex>> {
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
 	// edges should be taken care of when the level is being pre-processed.
@@ -172,8 +172,8 @@ pub fn build_polygons(
 	};
 	// let edge_count = edges_used.len();
 	edges_used.insert(Edge::from(first_edge), true);
-	let mut polygons: Vec<Vec<i32>> = vec![vec![first_edge.0, first_edge.1]];
-	let mut incomplete_polygons: Vec<Vec<i32>> = Vec::new();
+	let mut polygons: Vec<Vec<EdgeVertexIndex>> = vec![vec![first_edge.0, first_edge.1]];
+	let mut incomplete_polygons: Vec<Vec<EdgeVertexIndex>> = Vec::new();
 	let mut clockwise = false;
 	loop {
 		let mut poly_iter = polygons.last().unwrap().iter().copied().rev();
@@ -229,14 +229,14 @@ fn find_next_start_edge(
 	clockwise: bool,  // Polygon's interior angles should be clockwise or not?
 	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
-) -> Option<(i32, i32)> {
+) -> Option<(EdgeVertexIndex, EdgeVertexIndex)> {
 	// Filter out used edges
 	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
 		.filter(|(&_key, &val)| val == false)
 		.collect();
 	let rightmost_vertex = usable_edges.keys()
 		// Find usable vertices by destructuring the edges
-		.fold(HashSet::<i32, RandomState>::default(), |mut set, &edge| {
+		.fold(HashSet::<EdgeVertexIndex, RandomState>::default(), |mut set, &edge| {
 			edge.iter().for_each(|vertex_index| {
 				set.insert(vertex_index);
 			});
@@ -278,19 +278,19 @@ fn find_next_start_edge(
 }
 
 fn find_next_vertex(
-	from: &i32,
-	previous: &i32,
+	from: &EdgeVertexIndex,
+	previous: &EdgeVertexIndex,
 	clockwise: bool,
 	edges: &HashMap<Edge, bool, RandomState>,
 	vertices: &Vec<MapVertex>
-) -> Option<i32> {
+) -> Option<EdgeVertexIndex> {
 	let from = from.clone();
 	let previous = previous.clone();
 	// Find all edges that:
 	// - Have not been added to a polygon
 	// - Are attached to the "from" vertex
 	// - Are not the "previous" vertex
-	let usable_vertices: Vec<i32> = edges.iter()
+	let usable_vertices: Vec<EdgeVertexIndex> = edges.iter()
 		.filter_map(|(&key, &val)|
 			if val == false && key.contains(from) && !key.contains(previous) {
 				Some(key.other_unchecked(from))
@@ -335,7 +335,7 @@ fn find_next_vertex(
 	Some(next_vertex)
 }
 
-fn is_polygon_complete(polygon: &Vec<i32>, last: i32) -> bool {
+fn is_polygon_complete(polygon: &Vec<EdgeVertexIndex>, last: EdgeVertexIndex) -> bool {
 	if polygon.len() < 3 {
 		return false;
 	}

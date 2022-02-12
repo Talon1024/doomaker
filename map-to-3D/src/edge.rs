@@ -2,6 +2,8 @@
 //! 
 //! An edge connects two vertices. The `Edge` struct contains two vertex
 //! indices, and it can be used as a hash map key or hash set item.
+//! 
+//! The `Edge` struct underpins this entire crate.
 
 use std::fmt;
 use std::str::FromStr;
