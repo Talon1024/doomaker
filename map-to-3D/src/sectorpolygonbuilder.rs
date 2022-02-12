@@ -212,18 +212,14 @@ pub fn build_polygons(
 				polygons.push(vec![edge.0, edge.1]);
 				let edge = Edge::from(edge);
 				edges_used.insert(edge, true);
-				let mut inside_polygon_index = 0;
+				let mut inside_polygon_index: Option<usize> = None;
 				polygons.iter().enumerate().for_each(|(index, polygon)| {
 					if edge_in_polygon(&edge, polygon, &vertices) {
 						clockwise = !clockwise;
-						inside_polygon_index = index;
+						inside_polygon_index = Some(index);
 					}
 				});
-				poly_holes.push(if clockwise {
-					Some(inside_polygon_index)
-				} else {
-					None
-				});
+				poly_holes.push(inside_polygon_index);
 			} else {
 				break
 			}
