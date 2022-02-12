@@ -187,8 +187,6 @@ pub fn build_polygons(
 			&current_vertex, &previous_vertex,
 			clockwise, &edges_used, vertices
 		);
-		#[cfg(test)]
-		println!("pv {:<12} ls {:<12} nx {:<12}", previous_vertex, current_vertex, next_vertex.unwrap_or(-1));
 		let mut new_polygon = false;
 		match next_vertex {
 			Some(vertex) => {
@@ -304,14 +302,10 @@ fn find_next_vertex(
 	// The "previous" and "from" vertices will remain constant
 	let previous_vertex = vertices[previous as usize];
 	let from_vertex = vertices[from as usize];
-	#[cfg(test)]
-	println!("prev: {}, from: {}", previous, from);
 	let next_vertex = usable_vertices.into_iter()
 		.reduce(|current_index, other_index| {
 			let current_vertex = vertices[current_index as usize];
 			let other_vertex = vertices[other_index as usize];
-			#[cfg(test)]
-			println!("current: {}, other: {}", current_index, other_index);
 			let current_angle = angle_between(
 				&previous_vertex.p,
 				&current_vertex.p,
@@ -324,8 +318,6 @@ fn find_next_vertex(
 				&from_vertex.p,
 				clockwise
 			);
-			#[cfg(test)]
-			println!("c angle: {}, o angle: {}", current_angle, other_angle);
 			if other_angle < current_angle {
 				other_index
 			} else {
