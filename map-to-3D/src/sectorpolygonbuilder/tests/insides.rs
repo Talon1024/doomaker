@@ -9,6 +9,7 @@ fn correct_polygons() {
         vec![1, 2, 3, 4, 5, 6, 7, 0],
         vec![7, 1, 3, 5],
     ];
-    let actual_polygons = build_polygons(&edges, &verts);
+    let expected_holes: Vec<Option<usize>> = vec![None, Some(0), None];
+    let (actual_polygons, holes) = build_polygons(&edges, &verts);
     assert_eq!(expected_polygons, actual_polygons);
 }

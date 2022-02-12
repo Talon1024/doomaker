@@ -70,10 +70,12 @@ fn angle_between(
 	}
 }
 
-/// Build polygons from a set of lines and vertices.
+/// Build polygon contours from a set of lines and vertices.
 /// 
-/// Returns the polygons as vectors of vertex indices. These can be
-/// used by a triangulator such as `earcut`
+/// Returns the polygon contours as a vector of vectors of contour vertex
+/// indices, and which other polygons the polygons are holes of, as a vector of
+/// optional indices of the first vector.
+/// These can be used by a triangulator such as `earcut`.
 /// 
 /// # Examples
 /// 
@@ -103,7 +105,10 @@ fn angle_between(
 /// ];
 /// assert_eq!(
 /// 	build_polygons(&lines, &vertices),
-/// 	vec![vec![0, 1, 2, 3]]
+/// 	// The polygon contour vertex index vector is nested because there can
+/// 	// be multiple polygons, but this square is just one polygon. Also, the
+/// 	// square is not a hole of another polygon.
+/// 	(vec![vec![0, 1, 2, 3]], vec![None])
 /// )
 /// ```
 /// 
@@ -140,8 +145,11 @@ fn angle_between(
 /// 	Edge::new(6, 0),
 /// ];
 /// 
+/// let expected_polygons = vec![vec![1, 2, 3, 0], vec![4, 0, 6, 5]];
+/// let expected_holes: Vec<Option<usize>> = vec![None, None];
+/// 
 /// assert_eq!(
-/// 	vec![vec![1, 2, 3, 0], vec![4, 0, 6, 5]],
+/// 	(expected_polygons, expected_holes),
 /// 	build_polygons(&lines, &verts)
 /// );
 /// 
@@ -153,12 +161,12 @@ fn angle_between(
 /// 
 /// # Panics
 /// 
-/// If there are two lines overlapping each other, they could cause
+/// If there are two lines/edges overlapping each other, they could cause
 /// angle_between to panic because the angle between them is -0
 pub fn build_polygons(
 	lines: &Vec<Edge>,
 	vertices: &Vec<MapVertex>
-) -> Vec<Vec<EdgeVertexIndex>> {
+) -> (Vec<Vec<EdgeVertexIndex>>, Vec<Option<usize>>) {
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
 	// edges should be taken care of when the level is being pre-processed.
@@ -168,7 +176,7 @@ pub fn build_polygons(
 	});
 	let first_edge = match find_next_start_edge(false, &edges_used, vertices) {
 		Some(edge) => edge,
-		None => return vec![]
+		None => return (vec![], vec![])
 	};
 	// let edge_count = edges_used.len();
 	edges_used.insert(Edge::from(first_edge), true);
@@ -213,10 +221,15 @@ pub fn build_polygons(
 				let edge = Edge::from(edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
+				clockwise = false;
 				polygons.iter().enumerate().for_each(|(index, polygon)| {
 					if edge_in_polygon(&edge, polygon, &vertices) {
 						clockwise = !clockwise;
-						inside_polygon_index = Some(index);
+						if clockwise {
+							inside_polygon_index = Some(index);
+						} else {
+							inside_polygon_index = None;
+						}
 					}
 				});
 				poly_holes.push(inside_polygon_index);
@@ -225,7 +238,7 @@ pub fn build_polygons(
 			}
 		}
 	}
-	polygons
+	(polygons, poly_holes)
 }
 
 fn find_next_start_edge(
