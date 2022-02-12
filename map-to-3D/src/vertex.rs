@@ -1,3 +1,7 @@
+//! # Map vertex
+//! 
+//! This is mostly a thin wrapper around Vector2, so that it can be sorted
+//! differently.
 use std::cmp::Ordering::{self, Equal, Greater, Less};
 use crate::vector::Vector2;
 
@@ -48,16 +52,6 @@ impl PartialOrd for MapVertex {
 		// Should not panic because it never returns None
 		Some(self.cmp(other))
 	}
-}
-
-pub fn midpoint(vertices: &(Vector2, Vector2)) -> Vector2 {
-	let (a, b) = vertices;
-	(a + b) / 2.0
-}
-pub fn edge_length(vertices: &(Vector2, Vector2)) -> f32 {
-	let (a, b) = vertices;
-	let relative_position = b - a;
-	relative_position.dot(&relative_position).sqrt()
 }
 
 #[cfg(test)]

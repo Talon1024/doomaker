@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 //! # Map 3D-ifier
 //! 
 //! `map_to_3D` has utilities to help turn "maps" into 3D models, which is

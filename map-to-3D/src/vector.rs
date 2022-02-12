@@ -102,6 +102,19 @@ impl Vector2 {
 	pub fn new(x: f32, y: f32) -> Vector2 {
 		Vector2(x, y)
 	}
+	/// Find the midpoint between this vector and another
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(2.0, 1.0);
+	/// let b = Vector2::new(6.0, 0.0);
+	/// assert_eq!(a.midpoint(&b), Vector2::new(4.0, 0.5));
+	/// ```
+	pub fn midpoint(&self, other: &Vector2) -> Vector2 {
+		(self + other) / 2.0
+	}
 }
 
 impl Add<Vector2> for Vector2 {

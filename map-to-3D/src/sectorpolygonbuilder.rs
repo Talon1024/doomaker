@@ -35,11 +35,9 @@ fn edge_in_polygon(
 	polygon: &Vec<i32>,
 	map_vertices: &Vec<MapVertex>
 ) -> bool {
-	let vertices = (
-		map_vertices[edge.lo() as usize].p,
-		map_vertices[edge.hi() as usize].p
-	);
-	let midpoint = vertex::midpoint(&vertices);
+	let a = map_vertices[edge.lo() as usize].p;
+	let b = map_vertices[edge.hi() as usize].p;
+	let midpoint = a.midpoint(&b);
 	let polygon: Vec<Vector2> = polygon.iter()
 		.map(|&index| map_vertices[index as usize].p)
 		.collect();
