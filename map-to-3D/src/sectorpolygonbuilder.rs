@@ -173,6 +173,8 @@ pub fn build_polygons(
 	// let edge_count = edges_used.len();
 	edges_used.insert(Edge::from(first_edge), true);
 	let mut polygons: Vec<Vec<EdgeVertexIndex>> = vec![vec![first_edge.0, first_edge.1]];
+	// Which polygons are holes, and which polygons are they holes of?
+	let mut poly_holes: Vec<Option<usize>> = vec![None];
 	let mut incomplete_polygons: Vec<Vec<EdgeVertexIndex>> = Vec::new();
 	let mut clockwise = false;
 	loop {
@@ -210,10 +212,17 @@ pub fn build_polygons(
 				polygons.push(vec![edge.0, edge.1]);
 				let edge = Edge::from(edge);
 				edges_used.insert(edge, true);
-				polygons.iter().for_each(|polygon| {
+				let mut inside_polygon_index = 0;
+				polygons.iter().enumerate().for_each(|(index, polygon)| {
 					if edge_in_polygon(&edge, polygon, &vertices) {
-						clockwise = !clockwise
+						clockwise = !clockwise;
+						inside_polygon_index = index;
 					}
+				});
+				poly_holes.push(if clockwise {
+					Some(inside_polygon_index)
+				} else {
+					None
 				});
 			} else {
 				break
