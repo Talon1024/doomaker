@@ -155,6 +155,49 @@ fn angle_between(
 /// 
 /// ```
 /// 
+/// Example with a hole:
+/// ```
+/// use map_to_3D::vector::Vector2;
+/// use map_to_3D::edge::Edge;
+/// use map_to_3D::vertex::MapVertex;
+/// use map_to_3D::sectorpolygonbuilder::build_polygons;
+/// 
+/// // 0------1
+/// // | 7--4 |
+/// // | |  | |
+/// // | 6--5 |
+/// // 3------2
+/// 
+/// let verts: Vec<MapVertex> = vec![
+/// 	MapVertex { p: Vector2::from((-7., 7.)) }, // Outside
+/// 	MapVertex { p: Vector2::from((7., 7.)) },
+/// 	MapVertex { p: Vector2::from((7., -7.)) },
+/// 	MapVertex { p: Vector2::from((-7., -7.)) },
+/// 	MapVertex { p: Vector2::from((5., 5.)) }, // Hole
+/// 	MapVertex { p: Vector2::from((5., -5.)) },
+/// 	MapVertex { p: Vector2::from((-5., -5.)) },
+/// 	MapVertex { p: Vector2::from((-5., 5.)) },
+/// ];
+/// let lines: Vec<Edge> = vec![
+/// 	Edge::new(0, 1),
+/// 	Edge::new(1, 2),
+/// 	Edge::new(2, 3),
+/// 	Edge::new(3, 0),
+/// 	Edge::new(4, 5),
+/// 	Edge::new(5, 6),
+/// 	Edge::new(6, 7),
+/// 	Edge::new(7, 4),
+/// ];
+/// 
+/// let expected_polygons = vec![vec![1, 2, 3, 0], vec![4, 5, 6, 7]];
+/// let expected_holes: Vec<Option<usize>> = vec![None, Some(0)];
+/// 
+/// assert_eq!(
+/// 	(expected_polygons, expected_holes),
+/// 	build_polygons(&lines, &verts)
+/// );
+/// ```
+/// 
 /// Obviously, you won't hard-code the data into your program like this, but
 /// it serves as an example of the kind of data you'll be passing into
 /// `build_polygons`
