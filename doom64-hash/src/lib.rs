@@ -9,6 +9,18 @@ for (int i = 0; i < 8 && str[i]; ++i) {
 hash_ &= 0xffff;
 */
 
+/// Compute hash value for a texture name. This hash value is used by Doom 64
+/// to look up the texture name for a certain side of a line.
+/// 
+/// # Example
+/// 
+/// ```
+/// use doom64_hash::hash;
+/// 
+/// let name = String::from("SPACEB");
+/// let hash = hash(&name);
+/// assert_eq!(hash, 44097);
+/// ```
 pub fn hash(name: &str) -> u16 {
     let mut hash: u32 = 1315423911;
     name.bytes().take(8).for_each(|c| {
