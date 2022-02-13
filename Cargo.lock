@@ -49,6 +49,7 @@ name = "map-to-3D"
 version = "0.1.0"
 dependencies = [
  "ahash",
+ "cfg-if",
  "micromath",
 ]
 

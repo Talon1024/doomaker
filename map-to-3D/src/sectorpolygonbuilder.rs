@@ -50,14 +50,33 @@ fn angle_between(
 	center: &Vector2,
 	clockwise: bool
 ) -> f32 {
+	#[cfg(micromath)]
+	use micromath::F32;
 	let ac = p1 - center;
 	let bc = p2 - center;
 
-	// Based on http://www.euclideanspace.com/maths/algebra/vectors/angleBetween/index.htm
 	let ang = {
-		(ac.angle() - bc.angle()) * (
-			if clockwise {1.} else {-1.}
-		)
+		cfg_if::cfg_if! {
+			if #[cfg(atan_angle_calc)] {
+				// Based on http://www.euclideanspace.com/maths/algebra/vectors/angleBetween/index.htm
+				(ac.angle() - bc.angle()) * (
+					if clockwise {1.} else {-1.}
+				)
+			} else {
+				// Based on jsdoom: https://github.com/pineapplemachine/jsdoom/blob/04593d2c30311212ccb9af9aa503cf5c83465655/src/convert/3DMapBuilder.ts#L172
+				// which was in itself based on what I learned after playing
+				// around with 2D vector dot/cross products
+				let d = ac.dot(&bc);
+				let c = ac.cross(&bc);
+				cfg_if::cfg_if! {
+					if #[cfg(micromath)] {
+						F32(c).atan2(F32(d)).0 * if clockwise {-1.} else {1.}
+					} else {
+						c.atan2(d) * if clockwise {-1.} else {1.}
+					}
+				}
+			}
+		}
 	};
 
 	if ang < 0.0 {
