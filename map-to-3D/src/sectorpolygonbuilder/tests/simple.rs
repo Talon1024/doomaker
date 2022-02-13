@@ -103,4 +103,5 @@ fn correct_polygons() {
     let expected_holes: Vec<Option<usize>> = vec![None, None];
     let (actual_polygons, holes) = build_polygons(&edges, &verts);
     assert_eq!(expected_polygons, actual_polygons);
+    assert_eq!(expected_holes, holes);
 }
