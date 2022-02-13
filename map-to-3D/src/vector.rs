@@ -49,9 +49,9 @@ impl Vector2 {
 	/// assert_eq!(a.angle().to_degrees().round(), 45.0);
 	/// ```
 	pub fn angle(&self) -> f32 {
-		#[allow(unused_imports)]
-		use micromath::F32Ext;
-		self.1.atan2(self.0)
+		use micromath::F32;
+		let (x, y) = (F32(self.0), F32(self.1));
+		(y.atan2(x)).0
 	}
 	/// Get the X coordinate of this vector.
 	/// 
