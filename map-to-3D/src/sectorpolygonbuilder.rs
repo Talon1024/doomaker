@@ -254,6 +254,7 @@ pub fn build_polygons(
 			None => {
 				// The current polygon is probably incomplete
 				let bad_polygon = polygons.pop().unwrap();
+				poly_holes.pop();
 				incomplete_polygons.push(bad_polygon);
 				new_polygon = true;
 			}
