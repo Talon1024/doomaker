@@ -103,3 +103,25 @@ pub(super) fn test_case_insides() -> (Vec<MapVertex>, Vec<Edge>) {
     ];
     (verts, edges)
 }
+
+// see tests/data/incomplete.png for an annotated drawing of this data
+pub(super) fn test_case_incomplete() -> (Vec<MapVertex>, Vec<Edge>) {
+    let verts: Vec<MapVertex> = vec![
+        MapVertex { p: Vector2::new(3., 5.) },
+        MapVertex { p: Vector2::new(3., -5.) },
+        MapVertex { p: Vector2::new(-7., -5.) }, // Incomplete polygon end
+        MapVertex { p: Vector2::new(-7., 5.) },
+        MapVertex { p: Vector2::new(-3., 5.) },
+        MapVertex { p: Vector2::new(-3., 2.) },
+        MapVertex { p: Vector2::new(-7., 2.) }, // Square end
+    ];
+    let edges: Vec<Edge> = vec![
+        Edge::new(0, 1),
+        Edge::new(1, 2),
+        Edge::new(3, 4),
+        Edge::new(4, 5),
+        Edge::new(5, 6),
+        Edge::new(6, 3),
+    ];
+    (verts, edges)
+}
