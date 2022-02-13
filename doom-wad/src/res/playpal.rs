@@ -5,7 +5,7 @@
 use crate::wad::DoomWadLump;
 use std::error::Error;
 use std::fmt;
-use crate::res::{Image, ToImage, ImageFormat};
+use crate::res::{Image, ToImage, ImageFormat, ImageDimension};
 
 const BYTES_PER_PALETTE: usize = 768; // 256 colors * RGB channels
 
@@ -55,7 +55,7 @@ impl PaletteCollection<'_> {
 
 impl<'a> ToImage for PaletteCollection<'a> {
 	fn to_image(&self) -> Image {
-		let rows = self.count();
+		let rows = self.count() as ImageDimension;
 		let rgb: Vec<u8> = self.lump.data.clone();
 		Image {
 			width: 256,

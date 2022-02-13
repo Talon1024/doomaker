@@ -1,5 +1,5 @@
 use crate::wad::DoomWadLump;
-use crate::res::{self, ToImage, Image, ImageFormat};
+use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension};
 use std::io::{Read, Cursor, Seek, SeekFrom};
 use std::error::Error;
 
@@ -11,7 +11,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 	fn to_image(&self) -> Image {
 
 		struct DoomPicturePost {
-			column: usize,
+			column: ImageDimension,
 			top_delta: u8,
 			pixels: Vec<u8>
 		}
@@ -31,13 +31,13 @@ impl<'a> ToImage for DoomPicture<'a> {
 				return bad_image;
 			}
 			u16::from_le_bytes(short_buffer)
-		} as usize;
+		} as ImageDimension;
 		let height = {
 			if pos.read_exact(&mut short_buffer).is_err() {
 				return bad_image;
 			}
 			u16::from_le_bytes(short_buffer)
-		} as usize;
+		} as ImageDimension;
 		let x = {
 			if pos.read_exact(&mut short_buffer).is_err() {
 				return bad_image;
@@ -52,7 +52,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 		};
 
 		// Column offsets are relative to the start of the lump
-		let column_offsets: Result<Vec<usize>, Box<dyn Error>> = (0usize..width).map(|_| {
+		let column_offsets: Result<Vec<usize>, Box<dyn Error>> = (0..width).map(|_| {
 			pos.read_exact(&mut long_buffer)?;
 			Ok(u32::from_le_bytes(long_buffer) as usize)
 		}).collect();
@@ -61,7 +61,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 		}
 		let column_offsets = column_offsets.unwrap();
 
-		let image_pixels = width * height;
+		let image_pixels = (width * height) as usize;
 		let mut data = vec![0u8; image_pixels];
 		let mut alpha = vec![0u8; image_pixels];
 		let mut opaque_pixels: usize = 0;
@@ -104,14 +104,14 @@ impl<'a> ToImage for DoomPicture<'a> {
 					return posts;
 				}
 				posts.push(DoomPicturePost {
-					column, top_delta, pixels
+					column: column as ImageDimension, top_delta, pixels
 				});
 			}
 			posts
 		}).for_each(|col_posts| {
-			let mut coly = 0usize;
+			let mut coly = 0 as ImageDimension;
 			col_posts.iter().for_each(|post| {
-				let top_delta = post.top_delta as usize;
+				let top_delta = post.top_delta as ImageDimension;
 				let y = if top_delta <= coly {
 					coly + top_delta
 				} else {
@@ -120,6 +120,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 				coly = y;
 				post.pixels.iter().enumerate()
 				.for_each(|(pixpos, &pixel)| {
+					let pixpos = pixpos as ImageDimension;
 					if let Some(bp) = res::xy_to_bufpos(
 							post.column, y + pixpos, width, height, 1) {
 						// pixel_count[pixel as usize] += 1;
@@ -140,7 +141,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 		// Partially or fully transparent
 		if format == ImageFormat::IndexedAlpha {
 			// 2 channels - index and alpha
-			let channels = format.channels();
+			let channels = format.channels() as usize;
 			let mut pixels = vec![0u8; image_pixels * channels];
 			pixels.chunks_exact_mut(channels).zip(data).zip(alpha)
 			.for_each(|((chunk, index), alpha)| {

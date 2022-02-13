@@ -1,6 +1,6 @@
 // Flats are 64x64 graphics stored as indexed samples in row-major order.
 use crate::wad::DoomWadLump;
-use crate::res::{ToImage, Image, ImageFormat};
+use crate::res::{ToImage, Image, ImageFormat, ImageDimension};
 
 const MINIMUM_SIZE: usize = 64;
 // const MINIMUM_BYTES: usize = 4096; // 64 * 64
@@ -10,16 +10,16 @@ pub struct FlatImage<'a> {
 }
 
 impl<'a> FlatImage<'a> {
-	pub fn height(&self) -> usize {
+	pub fn height(&self) -> ImageDimension {
 		let l = self.lump.data.len();
 		let mut h = l / MINIMUM_SIZE;
 		if l % MINIMUM_SIZE > 0 {
 			h += 1;
 		}
-		h
+		h as ImageDimension
 	}
-	pub fn width(&self) -> usize {
-		MINIMUM_SIZE.min(self.lump.data.len())
+	pub fn width(&self) -> ImageDimension {
+		MINIMUM_SIZE.min(self.lump.data.len()) as ImageDimension
 	}
 }
 
@@ -28,12 +28,9 @@ impl<'a> ToImage for FlatImage<'a> {
 		let height = self.height();
 		let width = self.width();
 		let len = self.lump.data.len();
+		let buflen = (width * height) as usize;
 
-		/*
-		let mut data: Vec<u8> = [0u8]
-			.iter().cycle().take(width * height).copied().collect();
-		*/
-		let mut data = vec![0; width * height];
+		let mut data = vec![0; buflen];
 		let _ = &data[..len].copy_from_slice(&self.lump.data);
 		Image {
 			width, height, data, x: 0, y: 0,

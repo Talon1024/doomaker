@@ -1,6 +1,7 @@
 // TEXTURE1, TEXTURE2, and PNAMES
 use crate::wad;
 use crate::wad::util::*;
+use crate::res::{Image, ImageFormat, ToImage};
 use std::error::Error;
 use std::io::{Cursor, Read, Seek, SeekFrom};
 
@@ -105,4 +106,10 @@ pub fn read_texturex<'a>(list: &'a wad::DoomWadLump, pnames: &wad::DoomWadLump) 
 		Ok(())
 	})?;
 	Ok(defs)
+}
+
+impl ToImage for Texture {
+	fn to_image(&self) -> Image {
+		unimplemented!();
+	}
 }
