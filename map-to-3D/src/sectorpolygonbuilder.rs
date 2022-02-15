@@ -87,6 +87,16 @@ fn angle_between(
 	}
 }
 
+/// A Sector Polygon
+/// 
+/// Consists of a list of vertices that make up the contour of the polygon, and
+/// the index of the other polygon that this polygon is a hole of.
+#[derive(PartialEq, Debug, Clone)]
+pub struct SectorPolygon {
+	pub vertices: Vec<EdgeVertexIndex>,
+	pub hole_of: Option<usize>
+}
+
 /// Build polygon contours from a set of lines and vertices.
 /// 
 /// Returns the polygon contours as a vector of vectors of contour vertex
@@ -102,7 +112,7 @@ fn angle_between(
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::vertex::MapVertex;
-/// use map_to_3D::sectorpolygonbuilder::build_polygons;
+/// use map_to_3D::sectorpolygonbuilder::{SectorPolygon, build_polygons};
 /// 
 /// // 3--0
 /// // |  |
@@ -125,7 +135,7 @@ fn angle_between(
 /// 	// The polygon contour vertex index vector is nested because there can
 /// 	// be multiple polygons, but this square is just one polygon. Also, the
 /// 	// square is not a hole of another polygon.
-/// 	(vec![vec![0, 1, 2, 3]], vec![None])
+/// 	vec![SectorPolygon { vertices: vec![0, 1, 2, 3], hole_of: None }]
 /// )
 /// ```
 /// 
@@ -134,7 +144,7 @@ fn angle_between(
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::vertex::MapVertex;
-/// use map_to_3D::sectorpolygonbuilder::build_polygons;
+/// use map_to_3D::sectorpolygonbuilder::{SectorPolygon, build_polygons};
 /// 
 /// // 5--4
 /// // |  |
@@ -162,11 +172,13 @@ fn angle_between(
 /// 	Edge::new(6, 0),
 /// ];
 /// 
-/// let expected_polygons = vec![vec![1, 2, 3, 0], vec![4, 0, 6, 5]];
-/// let expected_holes: Vec<Option<usize>> = vec![None, None];
+/// let expected_polygons = vec![
+/// 	SectorPolygon { vertices: vec![1, 2, 3, 0], hole_of: None },
+/// 	SectorPolygon { vertices: vec![4, 0, 6, 5], hole_of: None }
+/// ];
 /// 
 /// assert_eq!(
-/// 	(expected_polygons, expected_holes),
+/// 	expected_polygons,
 /// 	build_polygons(&lines, &verts)
 /// );
 /// 
@@ -177,7 +189,7 @@ fn angle_between(
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::vertex::MapVertex;
-/// use map_to_3D::sectorpolygonbuilder::build_polygons;
+/// use map_to_3D::sectorpolygonbuilder::{SectorPolygon, build_polygons};
 /// 
 /// // 0------1
 /// // | 7--4 |
@@ -206,11 +218,13 @@ fn angle_between(
 /// 	Edge::new(7, 4),
 /// ];
 /// 
-/// let expected_polygons = vec![vec![1, 2, 3, 0], vec![4, 5, 6, 7]];
-/// let expected_holes: Vec<Option<usize>> = vec![None, Some(0)];
+/// let expected_polygons = vec![
+/// 	SectorPolygon { vertices: vec![1, 2, 3, 0], hole_of: None },
+/// 	SectorPolygon { vertices: vec![4, 5, 6, 7], hole_of: Some(0) },
+/// ];
 /// 
 /// assert_eq!(
-/// 	(expected_polygons, expected_holes),
+/// 	expected_polygons,
 /// 	build_polygons(&lines, &verts)
 /// );
 /// ```
@@ -226,7 +240,7 @@ fn angle_between(
 pub fn build_polygons(
 	lines: &Vec<Edge>,
 	vertices: &Vec<MapVertex>
-) -> (Vec<Vec<EdgeVertexIndex>>, Vec<Option<usize>>) {
+) -> Vec<SectorPolygon> {
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
 	// edges should be taken care of when the level is being pre-processed.
@@ -236,17 +250,19 @@ pub fn build_polygons(
 	});
 	let first_edge = match find_next_start_edge(false, &edges_used, vertices) {
 		Some(edge) => edge,
-		None => return (vec![], vec![])
+		None => return vec![]
 	};
 	// let edge_count = edges_used.len();
 	edges_used.insert(Edge::from(first_edge), true);
-	let mut polygons: Vec<Vec<EdgeVertexIndex>> = vec![vec![first_edge.0, first_edge.1]];
+	let mut polygons: Vec<SectorPolygon> = vec![SectorPolygon {
+		vertices: vec![first_edge.0, first_edge.1],
+		hole_of: None
+	}];
 	// Which polygons are holes, and which polygons are they holes of?
-	let mut poly_holes: Vec<Option<usize>> = vec![None];
-	let mut incomplete_polygons: Vec<Vec<EdgeVertexIndex>> = Vec::new();
+	let mut incomplete_polygons: Vec<SectorPolygon> = Vec::new();
 	let mut clockwise = false;
 	loop {
-		let mut poly_iter = polygons.last().unwrap().iter().copied().rev();
+		let mut poly_iter = polygons.last().unwrap().vertices.iter().copied().rev();
 		// polygons.last()[-1];
 		let current_vertex = poly_iter.next()
 			.expect("A polygon should have at least one edge (two vertices)");
@@ -262,29 +278,31 @@ pub fn build_polygons(
 			Some(vertex) => {
 				let edge = Edge::new(current_vertex, vertex);
 				edges_used.insert(edge, true);
-				if is_polygon_complete(&polygons.last().unwrap(), vertex) {
+				if is_polygon_complete(&polygons.last().unwrap().vertices, vertex) {
 					new_polygon = true;
 				} else {
-					polygons.last_mut().unwrap().push(vertex);
+					polygons.last_mut().unwrap().vertices.push(vertex);
 				}
 			},
 			None => {
 				// The current polygon is probably incomplete
 				let bad_polygon = polygons.pop().unwrap();
-				poly_holes.pop();
 				incomplete_polygons.push(bad_polygon);
 				new_polygon = true;
 			}
 		};
 		if new_polygon {
 			if let Some(edge) = find_next_start_edge(false, &edges_used, vertices) {
-				polygons.push(vec![edge.0, edge.1]);
+				polygons.push(SectorPolygon{
+					vertices: vec![edge.0, edge.1],
+					hole_of: None
+				});
 				let edge = Edge::from(edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
 				clockwise = false;
 				polygons.iter().enumerate().for_each(|(index, polygon)| {
-					if edge_in_polygon(&edge, polygon, &vertices) {
+					if edge_in_polygon(&edge, &polygon.vertices, &vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);
@@ -293,13 +311,13 @@ pub fn build_polygons(
 						}
 					}
 				});
-				poly_holes.push(inside_polygon_index);
+				polygons.last_mut().unwrap().hole_of = inside_polygon_index;
 			} else {
 				break
 			}
 		}
 	}
-	(polygons, poly_holes)
+	polygons
 }
 
 fn find_next_start_edge(

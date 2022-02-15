@@ -99,9 +99,10 @@ fn correct_next_vertex_with_multiple_connected_edges_cw() {
 #[test]
 fn correct_polygons() {
 	let (verts, edges) = test_case_simple();
-	let expected_polygons: Vec<Vec<i32>> = vec![vec![1, 2, 3, 0], vec![4, 0, 6, 5]];
-	let expected_holes: Vec<Option<usize>> = vec![None, None];
-	let (actual_polygons, holes) = build_polygons(&edges, &verts);
+	let expected_polygons: Vec<SectorPolygon> = vec![
+		SectorPolygon { vertices: vec![1, 2, 3, 0], hole_of: None },
+		SectorPolygon { vertices: vec![4, 0, 6, 5], hole_of: None },
+	];
+	let actual_polygons = build_polygons(&edges, &verts);
 	assert_eq!(expected_polygons, actual_polygons);
-	assert_eq!(expected_holes, holes);
 }
