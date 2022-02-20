@@ -76,8 +76,8 @@ mod tests {
 
 	#[test]
 	fn can_write_wad() -> Result<(), Box<dyn Error>> {
-		let wad = DoomWad::load("tests/data/3difytest.wad")?;
-		wad.write("tests/data/another.wad")?;
+		let wad = DoomWad::load_sync("tests/data/3difytest.wad")?;
+		wad.write_sync("tests/data/another.wad")?;
 
 		let wad_file = File::open("tests/data/3difytest.wad")?;
 		let out_wad_file = File::open("tests/data/another.wad")?;

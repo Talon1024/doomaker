@@ -1,7 +1,7 @@
 pub mod util;
 
 use std::io::*;
-use std::fs::File;
+use std::fs::{File, read};
 use std::result::Result;
 use std::str::from_utf8;
 use util::lump_name;
@@ -42,17 +42,23 @@ impl Display for InvalidWadError {
 impl Error for InvalidWadError{}
 
 impl DoomWad {
-	pub fn load(filename: &str) -> Result<DoomWad, Box<dyn Error>> {
-		let file = File::open(filename)?;
+	pub fn load_sync(filename: &str) -> Result<DoomWad, Box<dyn Error>> {
+		let file = read(filename)?;
 		DoomWad::read_from(&file)
 	}
 
-	pub fn read_from(file: &File) -> Result<DoomWad, Box<dyn Error>> {
+	pub fn load(filename: &str) -> Result<DoomWad, Box<dyn Error>> {
+		// TODO: Make asynchronous
+		let file = read(filename)?;
+		DoomWad::read_from(&file)
+	}
+
+	pub fn read_from(file: &[u8]) -> Result<DoomWad, Box<dyn Error>> {
 		let mut wad: DoomWad = DoomWad {
 			wtype: DoomWadType::Invalid,
 			lumps: Vec::new()
 		};
-		let mut reader = BufReader::new(file);
+		let mut reader = BufReader::new(Cursor::new(file));
 		let mut num_buffer: [u8; 4] = [0; 4];
 		// Get WAD type
 		reader.read_exact(&mut num_buffer)?;
@@ -89,7 +95,7 @@ impl DoomWad {
 		Ok(wad)
 	}
 
-	fn read_directory_entry(reader: &mut BufReader<&File>) -> Result<DoomWadDirEntry, Box<dyn Error>> {
+	fn read_directory_entry(reader: &mut BufReader<Cursor<&[u8]>>) -> Result<DoomWadDirEntry, Box<dyn Error>> {
 		let mut num_buffer: [u8; 4] = [0; 4];
 		let mut name_buffer: [u8; 8] = [0; 8];
 		reader.read_exact(&mut num_buffer)?;
@@ -102,11 +108,23 @@ impl DoomWad {
 	}
 
 	pub fn write(&self, filename: &str) -> Result<(), Box<dyn Error>> {
-		let file = File::create(filename)?;
-		self.write_to(&file)
+		// TODO: Make asynchronous
+		let mut data: Vec<u8> = Vec::<u8>::new();
+		self.write_to(&mut data)?;
+		let mut file = File::create(filename)?;
+		file.write_all(&data[..])?;
+		Ok(())
 	}
 
-	pub fn write_to(&self, file: &File) -> Result<(), Box<dyn Error>> {
+	pub fn write_sync(&self, filename: &str) -> Result<(), Box<dyn Error>> {
+		let mut data: Vec<u8> = Vec::<u8>::new();
+		self.write_to(&mut data)?;
+		let mut file = File::create(filename)?;
+		file.write_all(&data[..])?;
+		Ok(())
+	}
+
+	pub fn write_to(&self, file: &mut dyn Write) -> Result<(), Box<dyn Error>> {
 		let header_size: u32 = 12;
 		let mut num_buffer: [u8; 4] = [0; 4];
 		let mut writer = BufWriter::new(file);
