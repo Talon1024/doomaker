@@ -8,10 +8,10 @@
 use std::fmt;
 use std::str::FromStr;
 use std::num::ParseIntError;
-use crate::vector::Vector2;
 
 pub type EdgeVertexIndex = i32;
 
+/// An "Edge" - a connection between two points
 #[derive(Hash, PartialEq, Eq, Ord, PartialOrd, Clone, Debug, Copy)]
 pub struct Edge(EdgeVertexIndex, EdgeVertexIndex);
 
@@ -155,30 +155,6 @@ impl Edge {
 	/// assert_eq!(edge.hi(), 4);
 	/// ```
 	pub fn hi(&self) -> EdgeVertexIndex { self.1 }
-	/// Get the positions of the vertices this edge uses.
-	/// 
-	/// # Example
-	/// 
-	/// ```
-	/// use map_to_3D::edge::Edge;
-	/// use map_to_3D::vertex::MapVertex;
-	/// use map_to_3D::vector::Vector2;
-	///
-	/// let vertices = vec![
-	/// 	MapVertex { p: Vector2::from((1.0, 1.0)) },
-	/// 	MapVertex { p: Vector2::from((1.0, 0.0)) },
-	/// 	MapVertex { p: Vector2::from((0.0, 0.0)) },
-	/// 	MapVertex { p: Vector2::from((0.0, 1.0)) },
-	/// ];
-	/// let vectors: Vec<Vector2> = vertices.iter()
-	/// 	.map(|&vert| vert.p).collect();
-	/// let edge = Edge::new(3, 2);
-	/// assert_eq!(edge.vectors(&vectors),
-	/// 	(Vector2::new(0., 0.), Vector2::new(0., 1.)));
-	/// ```
-	pub fn vectors(&self, vecs: &[Vector2]) -> (Vector2, Vector2) {
-		(vecs[self.lo() as usize], vecs[self.hi() as usize])
-	}
 }
 
 impl From<Edge> for Vec<EdgeVertexIndex> {
