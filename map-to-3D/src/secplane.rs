@@ -4,7 +4,15 @@ enum SectorPlane {
 	Flat(f32),
 	// First number is the height, the other four make up the normal vector
 	// and distance from the "origin".
-	// Sloped(f32, f32, f32, f32, f32)
+	/*
+	Sloped {
+		h: f32,
+		a: f32,
+		b: f32,
+		c: f32,
+		d: f32
+	}
+	*/
 }
 
 impl SectorPlane {

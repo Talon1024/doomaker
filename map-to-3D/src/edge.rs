@@ -78,10 +78,6 @@ impl Edge {
 	pub fn contains(&self, val: EdgeVertexIndex) -> bool {
 		self.0 == val || self.1 == val
 	}
-	/// Create an iterator for this edge
-	pub fn iter(&self) -> Iter {
-		Iter {edge: &self, iter_index: 0}
-	}
 	/// Get the other vertex index for this edge, if the given vertex index
 	/// matches one of the vertex indices in this edge.
 	/// 
@@ -155,6 +151,15 @@ impl Edge {
 	/// assert_eq!(edge.hi(), 4);
 	/// ```
 	pub fn hi(&self) -> EdgeVertexIndex { self.1 }
+}
+
+// Rust-only Edge methods - for when WASM support is implmented for this
+// crate.
+impl Edge {
+	/// Create an iterator for this edge
+	pub fn iter(&self) -> Iter {
+		Iter {edge: &self, iter_index: 0}
+	}
 }
 
 impl From<Edge> for Vec<EdgeVertexIndex> {

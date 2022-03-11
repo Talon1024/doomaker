@@ -95,7 +95,8 @@ fn angle_between(
 pub struct SectorPolygon {
 	/// The indices of the vertices of this polygon's contour
 	pub vertices: Vec<EdgeVertexIndex>,
-	/// The index of the other polygon that this polygon is a hole of, if it is a hole in another polygon.
+	/// The index of the other polygon that this polygon is a hole of, if it is
+	/// a hole in another polygon.
 	pub hole_of: Option<usize>
 }
 

@@ -1,4 +1,5 @@
 #![warn(clippy::all)]
+//! Doom 64 texture name hashing
 // Doom 64 texture hash algorithm - C++
 /*
 hash_(1315423911)
