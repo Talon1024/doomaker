@@ -41,7 +41,7 @@ impl SectorPlane {
 				let x = pos.x();
 				let y = pos.y();
 				let dividend = a * x + b * y + d;
-				dividend / c
+				dividend / -c
 			}
 		}
 	}
@@ -79,11 +79,13 @@ mod tests {
 
 		let slope = {
 			// Based on y = 0.5x where x = 1
+			// Here's an interactive graph on Desmos:
+			// https://www.desmos.com/calculator/ippcw92fwc
 			let x: f32 = 1.0;
 			let y: f32 = 0.5 * x;
 			let l = (x * x + y * y).sqrt();
-			// Normal vectors are perpendicular to lines/planes
-			(y / l, x / l)
+			// Normal vectors are perpendicular to lines/planes.
+			(-y / l, x / l)
 		};
 		let sloped_heights = vec![8., -8., -8., 8.];
 		let sloped_plane = SectorPlane::Sloped {
