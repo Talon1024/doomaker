@@ -104,7 +104,7 @@ mod tests {
 
 	#[test]
 	fn z_at_advanced_slope() -> Result<(), ()> {
-		// Sloped plane with 
+		// Sloped plane with a more "advanced" slope
 		let positions: Vec<Vector2> = vec![
 			Vector2::new(16., 16.),
 			Vector2::new(-16., 16.),
