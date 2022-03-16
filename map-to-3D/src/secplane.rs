@@ -123,10 +123,12 @@ mod tests {
 			let c = z / l;
 			SectorPlane::Sloped {a, b, c, d: 0.}
 		};
-		let sloped_heights = vec![16., -0., -16., -0.];
+		let sloped_heights = vec![16., 0., -16., 0.];
 
 		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, pos)| {
 			let actual = sloped_plane.z_at(pos);
+			let actual = if actual == -0. {0.} else {actual};
+			let expected = if expected == -0. {0.} else {expected};
 			// Compare strings because of the inaccuracies caused by how
 			// computers represent decimal numbers internally
 			let expected = format!("{:.3}", expected);
