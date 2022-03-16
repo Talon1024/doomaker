@@ -95,8 +95,42 @@ mod tests {
 			let actual = sloped_plane.z_at(pos);
 			// Compare strings because of the inaccuracies caused by how
 			// computers represent decimal numbers internally
-			let expected = format!("{:.4}", expected);
-			let actual = format!("{:.4}", actual);
+			let expected = format!("{:.3}", expected);
+			let actual = format!("{:.3}", actual);
+			assert_eq!(expected, actual);
+		});
+		Ok(())
+	}
+
+	#[test]
+	fn z_at_advanced_slope() -> Result<(), ()> {
+		// Sloped plane with 
+		let positions: Vec<Vector2> = vec![
+			Vector2::new(16., 16.),
+			Vector2::new(-16., 16.),
+			Vector2::new(-16., -16.),
+			Vector2::new(16., -16.),
+		];
+
+		let sloped_plane = {
+			// Based on z = .5x + .5y
+			let z: f32 = 1.;
+			let y = 0.5 * z;
+			let x = 0.5 * z;
+			let l = (x * x + y * y + z * z).sqrt();
+			let a = -x / l;
+			let b = -y / l;
+			let c = z / l;
+			SectorPlane::Sloped {a, b, c, d: 0.}
+		};
+		let sloped_heights = vec![16., -0., -16., -0.];
+
+		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, pos)| {
+			let actual = sloped_plane.z_at(pos);
+			// Compare strings because of the inaccuracies caused by how
+			// computers represent decimal numbers internally
+			let expected = format!("{:.3}", expected);
+			let actual = format!("{:.3}", actual);
 			assert_eq!(expected, actual);
 		});
 		Ok(())
