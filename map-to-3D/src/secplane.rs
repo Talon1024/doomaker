@@ -113,7 +113,7 @@ mod tests {
 		];
 
 		let sloped_plane = {
-			// Based on z = .5x + .5y
+			// Based on z = .5x + .5y + 5
 			let z: f32 = 1.;
 			let y = 0.5 * z;
 			let x = 0.5 * z;
@@ -121,14 +121,12 @@ mod tests {
 			let a = -x / l;
 			let b = -y / l;
 			let c = z / l;
-			SectorPlane::Sloped {a, b, c, d: 0.}
+			SectorPlane::Sloped {a, b, c, d: 5. * -c}
 		};
-		let sloped_heights = vec![16., 0., -16., 0.];
+		let sloped_heights = vec![21., 5., -11., 5.];
 
 		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, pos)| {
 			let actual = sloped_plane.z_at(pos);
-			let actual = if actual == -0. {0.} else {actual};
-			let expected = if expected == -0. {0.} else {expected};
 			// Compare strings because of the inaccuracies caused by how
 			// computers represent decimal numbers internally
 			let expected = format!("{:.3}", expected);
