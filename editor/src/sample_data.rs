@@ -2,9 +2,16 @@ use macroquad::prelude::*;
 
 pub fn tiny_texture() -> Texture2D {
 	Texture2D::from_rgba8(3, 3, &[
-		255, 0, 0, 255,     255, 255, 0, 255,   0, 255, 0, 255,
-		255, 0, 255, 255,   0, 0, 0, 0,         255, 255, 0, 255,
-		0, 0, 255, 255,     255, 0, 255, 255,   255, 255, 255, 255,
+		/*
+		// regx: #([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})
+		// repl: 0x$1, 0x$2, 0x$3, 0x$4
+		#FF0000FF #FFFF00FF #00FF00FF
+		#FF00FFFF #00000000 #00FFFFFF
+		#0000FFFF #00FFFFFF #FFFFFFFF
+		*/
+		0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
+		0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF,
+		0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	])
 }
 
@@ -31,14 +38,14 @@ pub fn cube_mesh() -> Mesh {
 		],
 		indices: vec![
 			/*
-			// regx: (^\s*)square!\((\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)(,?)
-			// repl: $1$2, $3, $4, $2, $4, $5$6
-			square!(0, 1, 2, 3),
-			square!(4, 5, 6, 7),
-			square!(0, 1, 5, 4),
-			square!(1, 2, 6, 5),
-			square!(2, 3, 7, 6),
-			square!(3, 0, 4, 7)
+			// regx: quad!\((\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)(,?)
+			// repl: $1, $2, $3, $1, $3, $4$5
+			quad!(0, 1, 2, 3),
+			quad!(4, 5, 6, 7),
+			quad!(0, 1, 5, 4),
+			quad!(1, 2, 6, 5),
+			quad!(2, 3, 7, 6),
+			quad!(3, 0, 4, 7)
 			*/
 			0, 1, 2, 0, 2, 3,
 			4, 5, 6, 4, 6, 7,
