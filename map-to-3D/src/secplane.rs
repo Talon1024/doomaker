@@ -77,7 +77,7 @@ mod tests {
 			Vector2::new(16., -16.),
 		];
 
-		let slope = {
+		let sloped_plane = {
 			// Based on y = 0.5x where x = 1
 			// Here's an interactive graph on Desmos:
 			// https://www.desmos.com/calculator/ippcw92fwc
@@ -85,11 +85,11 @@ mod tests {
 			let y: f32 = 0.5 * x;
 			let l = (x * x + y * y).sqrt();
 			// Normal vectors are perpendicular to lines/planes.
-			(-y / l, x / l)
+			let a = -y / l;
+			let c = x / l;
+			SectorPlane::Sloped { a, b: 0., c, d: 0. }
 		};
 		let sloped_heights = vec![8., -8., -8., 8.];
-		let sloped_plane = SectorPlane::Sloped {
-			a: slope.0, b: 0., c: slope.1, d: 0.};
 
 		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, pos)| {
 			let actual = sloped_plane.z_at(pos);
