@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum PointerMode {
+enum MousePointerMode {
     Free,
     Locked
 }
@@ -27,7 +27,7 @@ async fn main() {
         viewport: None
     };
     let cube_mesh = sample_data::cube_mesh();
-    let mut ptr_mode = PointerMode::Free;
+    let mut ptr_mode = MousePointerMode::Free;
     let mut last_mouse_pos = (0.0f32, 0.0f32);
     let mut movement = Vec3::ZERO;
     let ptr_lock_tex = load_texture("ptrlock.png").await.ok().or_else(||{
@@ -42,14 +42,14 @@ async fn main() {
 
         // Handle input
         match ptr_mode {
-            PointerMode::Free => {
+            MousePointerMode::Free => {
                 if is_mouse_button_pressed(MouseButton::Left) {
-                    ptr_mode = PointerMode::Locked;
+                    ptr_mode = MousePointerMode::Locked;
                     set_cursor_grab(true);
                     show_mouse(false);
                 }
             },
-            PointerMode::Locked => {
+            MousePointerMode::Locked => {
                 if let Some(tex) = ptr_lock_tex {
                     set_default_camera();
                     draw_texture(tex, 0.0, 0.0, WHITE);
@@ -57,7 +57,7 @@ async fn main() {
                 }
                 // Mouse looking
                 if is_key_pressed(KeyCode::Escape) {
-                    ptr_mode = PointerMode::Free;
+                    ptr_mode = MousePointerMode::Free;
                     set_cursor_grab(false);
                     show_mouse(true);
                 }
