@@ -56,14 +56,16 @@ pub enum ImageError {
 	/// an indexed image. This will not work.
 	IncompatibleFormat { my: ImageFormat, your: ImageFormat },
 	/// The user is trying to blit an image in a different format onto this one.
-	DifferentFormat
+	DifferentFormat,
+	OutOfBounds { x: ImageDimension, y: ImageDimension }
 }
 
 impl Display for ImageError {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
 		match self {
 			ImageError::IncompatibleFormat{my, your} => write!(f, "This image,which is in {} format, cannot be converted to {} format.", my, your),
-			ImageError::DifferentFormat => write!(f, "The image formats do not match!")
+			ImageError::DifferentFormat => write!(f, "The image formats do not match!"),
+			ImageError::OutOfBounds{x, y} => write!(f, "({} {}) is outside of this image's boundaries!", x, y)
 		}
 	}
 }
@@ -91,6 +93,9 @@ impl Image {
 		}
 	}
 	pub fn blit(&mut self, other: &Image, x: ImageDimension, y: ImageDimension) -> Result<(), Box<dyn Error>> {
+		if x > self.width || y > self.height {
+			return Err(Box::new(ImageError::OutOfBounds{x, y}))
+		}
 		if self.format.equivalent_alpha(other.format) {
 			return Err(Box::new(ImageError::DifferentFormat));
 		}
