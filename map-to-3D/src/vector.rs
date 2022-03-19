@@ -5,9 +5,11 @@
 
 use std::ops::{Add,Sub,AddAssign,SubAssign,Mul,MulAssign,Div,DivAssign};
 
+pub type Coordinate = f32;
+
 // #[derive(Hash, PartialEq, Eq, Clone, Debug)]
 #[derive(PartialEq, PartialOrd, Clone, Debug, Copy, Default)]
-pub struct Vector2(f32, f32);
+pub struct Vector2(Coordinate, Coordinate);
 
 impl Vector2 {
 	/// The dot product of this vector and another
@@ -68,7 +70,7 @@ impl Vector2 {
 	/// let a = Vector2::new(2.0, 1.0);
 	/// assert_eq!(a.x(), 2.0);
 	/// ```
-	pub fn x(&self) -> f32 {
+	pub fn x(&self) -> Coordinate {
 		self.0
 	}
 	/// Get the Y coordinate of this vector.
@@ -80,7 +82,7 @@ impl Vector2 {
 	/// let a = Vector2::new(2.0, 1.0);
 	/// assert_eq!(a.y(), 1.0);
 	/// ```
-	pub fn y(&self) -> f32 {
+	pub fn y(&self) -> Coordinate {
 		self.1
 	}
 	/// Get the length of this vector, or the distance from the origin,
@@ -93,8 +95,21 @@ impl Vector2 {
 	/// let a = Vector2::new(3.0, 4.0);
 	/// assert_eq!(a.length(), 5.0);
 	/// ```
-	pub fn length(&self) -> f32 {
-		self.dot(self).sqrt()
+	pub fn length(&self) -> Coordinate {
+		self.length_squared().sqrt()
+	}
+	/// Get the squared length of this vector, or the distance from the
+	/// origin, assuming the origin is (0.0, 0.0)
+	/// 
+	/// # Example:
+	/// 
+	/// ```
+	/// use map_to_3D::vector::Vector2;
+	/// let a = Vector2::new(3.0, 4.0);
+	/// assert_eq!(a.length_squared(), 25.0);
+	/// ```
+	pub fn length_squared(&self) -> Coordinate {
+		self.dot(self)
 	}
 	/// Make a new Vector2
 	/// 
@@ -105,7 +120,7 @@ impl Vector2 {
 	/// let a = Vector2::new(2.0, 1.0);
 	/// assert_eq!(a, Vector2::new(2.0, 1.0));
 	/// ```
-	pub fn new(x: f32, y: f32) -> Vector2 {
+	pub fn new(x: Coordinate, y: Coordinate) -> Vector2 {
 		Vector2(x, y)
 	}
 	/// Find the midpoint between this vector and another
@@ -144,9 +159,9 @@ impl Add<&Vector2> for &Vector2 {
 	}
 }
 
-impl Add<f32> for Vector2 {
+impl Add<Coordinate> for Vector2 {
 	type Output = Vector2;
-	fn add(self, other: f32) -> Vector2 {
+	fn add(self, other: Coordinate) -> Vector2 {
 		Vector2(self.0 + other, self.1 + other)
 	}
 }
@@ -172,9 +187,9 @@ impl Sub<&Vector2> for &Vector2 {
 	}
 }
 
-impl Sub<f32> for Vector2 {
+impl Sub<Coordinate> for Vector2 {
 	type Output = Vector2;
-	fn sub(self, other: f32) -> Vector2 {
+	fn sub(self, other: Coordinate) -> Vector2 {
 		Vector2(self.0 - other, self.1 - other)
 	}
 }
@@ -200,9 +215,9 @@ impl Mul<&Vector2> for &Vector2 {
 	}
 }
 
-impl Mul<f32> for Vector2 {
+impl Mul<Coordinate> for Vector2 {
 	type Output = Vector2;
-	fn mul(self, other: f32) -> Vector2 {
+	fn mul(self, other: Coordinate) -> Vector2 {
 		Vector2(self.0 * other, self.1 * other)
 	}
 }
@@ -228,9 +243,9 @@ impl Div<&Vector2> for &Vector2 {
 	}
 }
 
-impl Div<f32> for Vector2 {
+impl Div<Coordinate> for Vector2 {
 	type Output = Vector2;
-	fn div(self, other: f32) -> Vector2 {
+	fn div(self, other: Coordinate) -> Vector2 {
 		Vector2(self.0 / other, self.1 / other)
 	}
 }
@@ -249,8 +264,8 @@ impl AddAssign<&Vector2> for Vector2 {
 	}
 }
 
-impl AddAssign<f32> for Vector2 {
-	fn add_assign(&mut self, other: f32) {
+impl AddAssign<Coordinate> for Vector2 {
+	fn add_assign(&mut self, other: Coordinate) {
 		self.0 += other;
 		self.1 += other;
 	}
@@ -270,8 +285,8 @@ impl SubAssign<&Vector2> for Vector2 {
 	}
 }
 
-impl SubAssign<f32> for Vector2 {
-	fn sub_assign(&mut self, other: f32) {
+impl SubAssign<Coordinate> for Vector2 {
+	fn sub_assign(&mut self, other: Coordinate) {
 		self.0 -= other;
 		self.1 -= other;
 	}
@@ -291,8 +306,8 @@ impl MulAssign<&Vector2> for Vector2 {
 	}
 }
 
-impl MulAssign<f32> for Vector2 {
-	fn mul_assign(&mut self, other: f32) {
+impl MulAssign<Coordinate> for Vector2 {
+	fn mul_assign(&mut self, other: Coordinate) {
 		self.0 *= other;
 		self.1 *= other;
 	}
@@ -312,15 +327,15 @@ impl DivAssign<&Vector2> for Vector2 {
 	}
 }
 
-impl DivAssign<f32> for Vector2 {
-	fn div_assign(&mut self, other: f32) {
+impl DivAssign<Coordinate> for Vector2 {
+	fn div_assign(&mut self, other: Coordinate) {
 		self.0 /= other;
 		self.1 /= other;
 	}
 }
 
-impl From<&[f32]> for Vector2 {
-	fn from(v: &[f32]) -> Vector2 {
+impl From<&[Coordinate]> for Vector2 {
+	fn from(v: &[Coordinate]) -> Vector2 {
 		Vector2(
 			v.get(0).cloned().unwrap_or(0.),
 			v.get(1).cloned().unwrap_or(0.),
@@ -328,8 +343,8 @@ impl From<&[f32]> for Vector2 {
 	}
 }
 
-impl From<(f32, f32)> for Vector2 {
-	fn from(v: (f32, f32)) -> Vector2 {
+impl From<(Coordinate, Coordinate)> for Vector2 {
+	fn from(v: (Coordinate, Coordinate)) -> Vector2 {
 		Vector2(v.0, v.1)
 	}
 }

@@ -3,7 +3,7 @@
 //! This is mostly a thin wrapper around Vector2, so that it can be sorted
 //! differently.
 use std::cmp::Ordering::{self, Equal, Greater, Less};
-use crate::vector::Vector2;
+use crate::vector::{Vector2, Coordinate};
 
 #[derive(PartialEq, Clone, Debug, Copy, Default)]
 pub struct MapVertex {
@@ -16,8 +16,8 @@ impl From<Vector2> for MapVertex {
 	}
 }
 
-impl From<&[f32]> for MapVertex {
-	fn from(v: &[f32]) -> MapVertex {
+impl From<&[Coordinate]> for MapVertex {
+	fn from(v: &[Coordinate]) -> MapVertex {
 		MapVertex { p: Vector2::from(v) }
 	}
 }
