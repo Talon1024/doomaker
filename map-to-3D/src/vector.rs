@@ -389,10 +389,10 @@ mod tests {
 
 	#[test]
 	fn dot_product() {
-		let a = Vector2::from((1.0, 0.0));
-		let b = Vector2::from((0.0, 1.0));
-		let c = Vector2::from((-1.0, 0.0));
-		let d = Vector2::from((0.0, -1.0));
+		let a = Vector2::new(1.0, 0.0);
+		let b = Vector2::new(0.0, 1.0);
+		let c = Vector2::new(-1.0, 0.0);
+		let d = Vector2::new(0.0, -1.0);
 		assert_eq!(a.dot(&a), 1.0);
 		assert_eq!(a.dot(&b), 0.0);
 		assert_eq!(a.dot(&c), -1.0);
@@ -406,10 +406,10 @@ mod tests {
 
 	#[test]
 	fn cross_product() {
-		let a = Vector2::from((1.0, 0.0));
-		let b = Vector2::from((0.0, 1.0));
-		let c = Vector2::from((-1.0, 0.0));
-		let d = Vector2::from((0.0, -1.0));
+		let a = Vector2::new(1.0, 0.0);
+		let b = Vector2::new(0.0, 1.0);
+		let c = Vector2::new(-1.0, 0.0);
+		let d = Vector2::new(0.0, -1.0);
 		assert_eq!(a.cross(&a), 0.0);
 		assert_eq!(a.cross(&b), 1.0);
 		assert_eq!(a.cross(&c), 0.0);
@@ -423,10 +423,10 @@ mod tests {
 
 	#[test]
 	fn angle() {
-		let a = Vector2::from((1.0, 0.0));
-		let b = Vector2::from((0.0, 1.0));
-		let c = Vector2::from((-1.0, 0.0));
-		let d = Vector2::from((0.0, -1.0));
+		let a = Vector2::new(1.0, 0.0);
+		let b = Vector2::new(0.0, 1.0);
+		let c = Vector2::new(-1.0, 0.0);
+		let d = Vector2::new(0.0, -1.0);
 		assert_eq!(a.angle(), 0.0);
 		assert_eq!(b.angle(), std::f32::consts::FRAC_PI_2);
 		assert_eq!(c.angle(), std::f32::consts::PI);
@@ -435,7 +435,7 @@ mod tests {
 
 	#[test]
 	fn length() {
-		let a = Vector2::from((0.5, 0.5));
+		let a = Vector2::new(0.5, 0.5);
 		assert_eq!(a.length(), 0.707106781);
 	}
 }

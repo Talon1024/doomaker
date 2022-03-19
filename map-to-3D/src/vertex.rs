@@ -67,13 +67,13 @@ mod tests {
 	// see tests/data/simple.png for an annotated drawing of this data
 	fn test_case_simple() -> Vec<MapVertex> {
 		let verts: Vec<MapVertex> = vec![
-			MapVertex { p: Vector2::from((0., 0.)) },
-			MapVertex { p: Vector2::from((64., 0.)) },
-			MapVertex { p: Vector2::from((64., -64.)) },
-			MapVertex { p: Vector2::from((0., -64.)) },
-			MapVertex { p: Vector2::from((0., 64.)) },
-			MapVertex { p: Vector2::from((-64., 64.)) },
-			MapVertex { p: Vector2::from((-64., 0.)) },
+			MapVertex { p: Vector2::new(0., 0.) },
+			MapVertex { p: Vector2::new(64., 0.) },
+			MapVertex { p: Vector2::new(64., -64.) },
+			MapVertex { p: Vector2::new(0., -64.) },
+			MapVertex { p: Vector2::new(0., 64.) },
+			MapVertex { p: Vector2::new(-64., 64.) },
+			MapVertex { p: Vector2::new(-64., 0.) },
 		];
 		verts
 	}
@@ -82,7 +82,7 @@ mod tests {
 	fn correct_max_vertex() {
 		let verts = test_case_simple();
 		assert_eq!(
-			MapVertex { p: Vector2::from((64., -64.)) },
+			MapVertex { p: Vector2::new(64., -64.) },
 			verts.iter().max().cloned().unwrap());
 	}
 
@@ -90,7 +90,7 @@ mod tests {
 	fn correct_min_vertex() {
 		let verts = test_case_simple();
 		assert_eq!(
-			MapVertex { p: Vector2::from((-64., 64.)) },
+			MapVertex { p: Vector2::new(-64., 64.) },
 			verts.iter().min().cloned().unwrap());
 	}
 
