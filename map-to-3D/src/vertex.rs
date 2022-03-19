@@ -3,11 +3,17 @@
 //! This is mostly a thin wrapper around Vector2, so that it can be sorted
 //! differently.
 use std::cmp::Ordering::{self, Equal, Greater, Less};
-use crate::vector::{Vector2, Coordinate};
+use crate::vector::{Vector2, Coordinate, Iter as VIter};
 
 #[derive(PartialEq, Clone, Debug, Copy, Default)]
 pub struct MapVertex {
 	pub p: Vector2
+}
+
+impl MapVertex {
+	pub fn xy(&self) -> VIter {
+		self.p.xy()
+	}
 }
 
 impl From<Vector2> for MapVertex {

@@ -138,6 +138,38 @@ impl Vector2 {
 	}
 }
 
+enum Axis {
+	X,
+	Y,
+	None
+}
+
+pub struct Iter<'a> {
+	v: &'a Vector2,
+	axis: Axis
+}
+
+impl<'a> Iterator for Iter<'a> {
+	type Item = Coordinate;
+	fn next(&mut self) -> Option<Self::Item> {
+		match self.axis {
+			Axis::X => {self.axis = Axis::Y; Some(self.v.x())}
+			Axis::Y => {self.axis = Axis::None; Some(self.v.y())}
+			Axis::None => None
+		}
+	}
+}
+
+// Iterators for Vector2 coordinates
+impl Vector2 {
+	pub fn xy(&self) -> Iter {
+		Iter {
+			v: self,
+			axis: Axis::X
+		}
+	}
+}
+
 impl Add<Vector2> for Vector2 {
 	type Output = Vector2;
 	fn add(self, other: Vector2) -> Vector2 {
