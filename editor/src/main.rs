@@ -12,9 +12,9 @@ mod util;
 #[macroquad::main("Editor/viewer")]
 async fn main() {
     use std::f32::consts::{PI, FRAC_PI_2};
-    let mouse_fac = 0.001953125;
-    let move_fac = 0.015625;
-    let mut orientation = (FRAC_PI_2, mouse_fac);
+    let mouse_fac = 0.001953125; // 1 / 512 or 2^-9
+    let move_fac = 0.015625; // 1 / 64 or 2^-6
+    let mut orientation = (FRAC_PI_2, FRAC_PI_2);
     let mut camera = Camera3D {
         position: Vec3::from((0.,0.,0.)),
         target: util::vec3_from_orientation(orientation),
@@ -56,15 +56,20 @@ async fn main() {
                     (mouse_delta.0 - last_mouse_pos.0) * mouse_fac,
                     (mouse_delta.1 - last_mouse_pos.1) * mouse_fac,
                 );
-                // println!("{} {}", mouse_delta.0, mouse_delta.1);
+
+                // Horizontal orientation - wraps around the Z axis
                 orientation.0 = (orientation.0 - mouse_delta.0)
                     .rem_euclid(PI * 2.);
+                // Vertical orientation - clamped to the range 0-PI. Also, PI
+                // cannot be the upper bound since it would break the camera
+                // matrix
                 orientation.1 = (orientation.1 + mouse_delta.1)
                     .clamp(mouse_fac, PI - mouse_fac);
 
                 // Forward, left, right, backward movement
+                // TODO: Configurable key mapping
                 movement = Vec3::new(
-                    0.,
+                    if is_key_down(KeyCode::Z) {move_fac} else if is_key_down(KeyCode::Q) {-move_fac} else {0.},
                     if is_key_down(KeyCode::A) {move_fac} else if is_key_down(KeyCode::D) {-move_fac} else {0.},
                     if is_key_down(KeyCode::W) {move_fac} else if is_key_down(KeyCode::S) {-move_fac} else {0.},
                 );
@@ -73,7 +78,7 @@ async fn main() {
 
         // Apply changes caused by user inputs
         let dir_vec = util::vec3_from_orientation(orientation);
-        let dir_quat =
+        let dir_quat = // Rotation for movement vector
             Quat::from_rotation_z(orientation.0) *
             Quat::from_rotation_y(orientation.1);
         movement = dir_quat.mul_vec3(movement);
