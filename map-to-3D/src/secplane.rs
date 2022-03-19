@@ -36,8 +36,8 @@ impl SectorPlane {
 			SectorPlane::Sloped {
 				a, b, c, d
 			} => {
-				// https://github.com/Talon1024/jsdoom/blob/5c3ca7553b6579e26546781d1746d29819f5a784/src/convert/3DMapBuilder.ts#L650
-				// Also https://github.com/coelckers/gzdoom/blob/7ba5a74f2e7fb02f6ed6a9d6a545a4c4ce0a330c/src/gamedata/r_defs.h#L356
+				// https://github.com/Talon1024/jsdoom/blob/5c3ca7553b/src/convert/3DMapBuilder.ts#L650
+				// Also https://github.com/coelckers/gzdoom/blob/7ba5a74f2e/src/gamedata/r_defs.h#L356
 				let x = pos.x();
 				let y = pos.y();
 				let dividend = a * x + b * y + d;

@@ -64,9 +64,9 @@ async fn main() {
 
                 // Forward, left, right, backward movement
                 movement = Vec3::new(
-                    if is_key_down(KeyCode::A) {-move_fac} else if is_key_down(KeyCode::D) {move_fac} else {0.},
-                    if is_key_down(KeyCode::W) {move_fac} else if is_key_down(KeyCode::S) {-move_fac} else {0.},
                     0.,
+                    if is_key_down(KeyCode::A) {move_fac} else if is_key_down(KeyCode::D) {-move_fac} else {0.},
+                    if is_key_down(KeyCode::W) {move_fac} else if is_key_down(KeyCode::S) {-move_fac} else {0.},
                 );
             }
         }
@@ -74,7 +74,8 @@ async fn main() {
         // Apply changes caused by user inputs
         let dir_vec = util::vec3_from_orientation(orientation);
         let dir_quat =
-            Quat::from_rotation_arc(Vec3::Y, dir_vec);
+            Quat::from_rotation_z(orientation.0) *
+            Quat::from_rotation_y(orientation.1);
         movement = dir_quat.mul_vec3(movement);
         camera.position += Vec3::from(movement);
         camera.target = camera.position + dir_vec;
