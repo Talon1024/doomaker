@@ -2,9 +2,10 @@
 //! 
 //! Takes a set of edges and vertices, and sorts them into "polygons"
 //! consisting of vertex indices
-use crate::vector::Vector2;
+use crate::vector::{Vector2, Coordinate};
 use crate::edge::{Edge, EdgeVertexIndex};
 use crate::vertex::MapVertex;
+// use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
 
@@ -32,8 +33,8 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 
 fn edge_in_polygon(
 	edge: &Edge,
-	polygon: &Vec<EdgeVertexIndex>,
-	map_vertices: &Vec<MapVertex>
+	polygon: &[EdgeVertexIndex],
+	map_vertices: &[MapVertex]
 ) -> bool {
 	let a = map_vertices[edge.lo() as usize].p;
 	let b = map_vertices[edge.hi() as usize].p;
@@ -91,7 +92,7 @@ fn angle_between(
 /// 
 /// Consists of a list of vertices that make up the contour of the polygon, and
 /// the index of the other polygon that this polygon is a hole of.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct SectorPolygon {
 	/// The indices of the vertices of this polygon's contour
 	pub vertices: Vec<EdgeVertexIndex>,
@@ -99,6 +100,21 @@ pub struct SectorPolygon {
 	/// a hole in another polygon.
 	pub hole_of: Option<usize>
 }
+
+/*
+impl SectorPolygon {
+	/// Get the bounding box for this polygon
+	pub fn bounding_box(&self, vertices: &Vec<MapVertex>) -> BoundingBox {
+		let vertices: Vec<MapVertex> = self.vertices.iter()
+			.map(|&v| vertices[v as usize]).collect();
+		let top = vertices.iter().map(|v| v.p.y()).reduce(f32::max).unwrap();
+		let left = vertices.iter().map(|v| v.p.x()).reduce(f32::min).unwrap();
+		let width = vertices.iter().map(|v| v.p.x()).reduce(f32::max).unwrap() - left;
+		let height = top - vertices.iter().map(|v| v.p.y()).reduce(f32::min).unwrap();
+		BoundingBox{top, left, width, height}
+	}
+}
+*/
 
 /// Build polygon contours from a set of lines and vertices.
 /// 
@@ -122,10 +138,10 @@ pub struct SectorPolygon {
 /// // 2--1
 ///
 /// let vertices = vec![
-/// 	MapVertex { p: Vector2::from((1.0, 1.0)) },
-/// 	MapVertex { p: Vector2::from((1.0, 0.0)) },
-/// 	MapVertex { p: Vector2::from((0.0, 0.0)) },
-/// 	MapVertex { p: Vector2::from((0.0, 1.0)) },
+/// 	MapVertex { p: Vector2::new(1.0, 1.0) },
+/// 	MapVertex { p: Vector2::new(1.0, 0.0) },
+/// 	MapVertex { p: Vector2::new(0.0, 0.0) },
+/// 	MapVertex { p: Vector2::new(0.0, 1.0) },
 /// ];
 /// let lines = vec![
 /// 	Edge::new(0, 1),
@@ -156,13 +172,13 @@ pub struct SectorPolygon {
 /// //    3--2
 /// 
 /// let verts: Vec<MapVertex> = vec![
-/// 	MapVertex { p: Vector2::from((0., 0.)) },
-/// 	MapVertex { p: Vector2::from((64., 0.)) },
-/// 	MapVertex { p: Vector2::from((64., -64.)) },
-/// 	MapVertex { p: Vector2::from((0., -64.)) },
-/// 	MapVertex { p: Vector2::from((0., 64.)) },
-/// 	MapVertex { p: Vector2::from((-64., 64.)) },
-/// 	MapVertex { p: Vector2::from((-64., 0.)) },
+/// 	MapVertex { p: Vector2::new(0., 0.) },
+/// 	MapVertex { p: Vector2::new(64., 0.) },
+/// 	MapVertex { p: Vector2::new(64., -64.) },
+/// 	MapVertex { p: Vector2::new(0., -64.) },
+/// 	MapVertex { p: Vector2::new(0., 64.) },
+/// 	MapVertex { p: Vector2::new(-64., 64.) },
+/// 	MapVertex { p: Vector2::new(-64., 0.) },
 /// ];
 /// let lines: Vec<Edge> = vec![
 /// 	Edge::new(0, 1),
@@ -201,14 +217,14 @@ pub struct SectorPolygon {
 /// // 3------2
 /// 
 /// let verts: Vec<MapVertex> = vec![
-/// 	MapVertex { p: Vector2::from((-7., 7.)) }, // Outside
-/// 	MapVertex { p: Vector2::from((7., 7.)) },
-/// 	MapVertex { p: Vector2::from((7., -7.)) },
-/// 	MapVertex { p: Vector2::from((-7., -7.)) },
-/// 	MapVertex { p: Vector2::from((5., 5.)) }, // Hole
-/// 	MapVertex { p: Vector2::from((5., -5.)) },
-/// 	MapVertex { p: Vector2::from((-5., -5.)) },
-/// 	MapVertex { p: Vector2::from((-5., 5.)) },
+/// 	MapVertex { p: Vector2::new(-7., 7.) }, // Outside
+/// 	MapVertex { p: Vector2::new(7., 7.) },
+/// 	MapVertex { p: Vector2::new(7., -7.) },
+/// 	MapVertex { p: Vector2::new(-7., -7.) },
+/// 	MapVertex { p: Vector2::new(5., 5.) }, // Hole
+/// 	MapVertex { p: Vector2::new(5., -5.) },
+/// 	MapVertex { p: Vector2::new(-5., -5.) },
+/// 	MapVertex { p: Vector2::new(-5., 5.) },
 /// ];
 /// let lines: Vec<Edge> = vec![
 /// 	Edge::new(0, 1),
@@ -241,8 +257,8 @@ pub struct SectorPolygon {
 /// If there are two lines/edges overlapping each other, they could cause
 /// angle_between to panic because the angle between them is -0
 pub fn build_polygons(
-	lines: &Vec<Edge>,
-	vertices: &Vec<MapVertex>
+	lines: &[Edge],
+	vertices: &[MapVertex]
 ) -> Vec<SectorPolygon> {
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
@@ -326,7 +342,7 @@ pub fn build_polygons(
 fn find_next_start_edge(
 	clockwise: bool,  // Polygon's interior angles should be clockwise or not?
 	edges: &HashMap<Edge, bool, RandomState>,
-	vertices: &Vec<MapVertex>
+	vertices: &[MapVertex]
 ) -> Option<(EdgeVertexIndex, EdgeVertexIndex)> {
 	// Filter out used edges
 	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
@@ -380,7 +396,7 @@ fn find_next_vertex(
 	previous: &EdgeVertexIndex,
 	clockwise: bool,
 	edges: &HashMap<Edge, bool, RandomState>,
-	vertices: &Vec<MapVertex>
+	vertices: &[MapVertex]
 ) -> Option<EdgeVertexIndex> {
 	let from = from.clone();
 	let previous = previous.clone();
@@ -433,4 +449,26 @@ fn is_polygon_complete(polygon: &Vec<EdgeVertexIndex>, last: EdgeVertexIndex) ->
 	}
 	let first = polygon[0];
 	first == last
+}
+
+/// Convert the given polygon to a list of vertex indices for each triangle.
+pub fn triangulate(
+	polygon: &SectorPolygon,
+	holes: &[&SectorPolygon],
+	vertices: &[MapVertex]
+) -> Vec<usize> {
+	use std::iter;
+	let vpos: Vec<Coordinate> = polygon.vertices.iter()
+		.chain(holes.iter().flat_map(|h| h.vertices.iter()))
+		.flat_map(|&i| (&vertices[i as usize]).xy()).collect();
+	let mut cur_hole = polygon.vertices.len();
+	let hole_indices: Vec<usize> = iter::once(cur_hole)
+		.chain(holes.iter().map(|h| {
+			let rv = h.vertices.len() + cur_hole;
+			cur_hole += rv;
+			rv
+		})).take(holes.len()).collect();
+	dbg!("{} vertices", vpos.len() / 2);
+	dbg!("{}", &hole_indices);
+	earcutr::earcut(&vpos, &hole_indices, 2)
 }

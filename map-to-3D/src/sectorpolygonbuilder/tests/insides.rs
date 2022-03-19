@@ -11,4 +11,14 @@ fn correct_polygons() {
 	];
 	let actual_polygons = build_polygons(&edges, &verts);
 	assert_eq!(expected_polygons, actual_polygons);
+
+	let polygon_index = 0usize;
+	let the_polygon = &actual_polygons[polygon_index];
+	let holes: Vec<&SectorPolygon> = actual_polygons
+		.iter().filter(|p| p.hole_of == Some(polygon_index))
+		.collect();
+	let triangles = triangulate(the_polygon, &holes, &verts);
+
+	// 3 triangles for each side, 3 vertices for each triangle, 4 sides
+	assert_eq!(triangles.len(), 3 * 3 * 4);
 }

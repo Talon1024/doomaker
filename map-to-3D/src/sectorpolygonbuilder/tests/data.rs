@@ -3,13 +3,13 @@ use super::*;
 // see tests/data/simple.png for an annotated drawing of this data
 pub(super) fn test_case_simple() -> (Vec<MapVertex>, Vec<Edge>) {
 	let verts: Vec<MapVertex> = vec![
-		MapVertex { p: Vector2::from((0., 0.)) },
-		MapVertex { p: Vector2::from((64., 0.)) },
-		MapVertex { p: Vector2::from((64., -64.)) },
-		MapVertex { p: Vector2::from((0., -64.)) },
-		MapVertex { p: Vector2::from((0., 64.)) },
-		MapVertex { p: Vector2::from((-64., 64.)) },
-		MapVertex { p: Vector2::from((-64., 0.)) },
+		MapVertex { p: Vector2::new(0., 0.) },
+		MapVertex { p: Vector2::new(64., 0.) },
+		MapVertex { p: Vector2::new(64., -64.) },
+		MapVertex { p: Vector2::new(0., -64.) },
+		MapVertex { p: Vector2::new(0., 64.) },
+		MapVertex { p: Vector2::new(-64., 64.) },
+		MapVertex { p: Vector2::new(-64., 0.) },
 	];
 	let edges: Vec<Edge> = vec![
 		Edge::new(0, 1),
@@ -27,18 +27,18 @@ pub(super) fn test_case_simple() -> (Vec<MapVertex>, Vec<Edge>) {
 // see tests/data/harder.png for an annotated drawing of this data
 pub(super) fn test_case_harder() -> (Vec<MapVertex>, Vec<Edge>) {
 	let verts: Vec<MapVertex> = vec![
-		MapVertex { p: Vector2::from((64., 0.)) },      // 0
-		MapVertex { p: Vector2::from((48., 48.)) },
-		MapVertex { p: Vector2::from((48., -48.)) },
-		MapVertex { p: Vector2::from((-48., 48.)) },
-		MapVertex { p: Vector2::from((-64., 0.)) },     // 4
-		MapVertex { p: Vector2::from((-48., -48.)) },
-		MapVertex { p: Vector2::from((0., 64.)) },
-		MapVertex { p: Vector2::from((0., -64.)) },
-		MapVertex { p: Vector2::from((0., 48.)) },      // 8
-		MapVertex { p: Vector2::from((48., 0.)) },
-		MapVertex { p: Vector2::from((0., -48.)) },
-		MapVertex { p: Vector2::from((-48., 0.)) },     // 11
+		MapVertex { p: Vector2::new(64., 0.) },      // 0
+		MapVertex { p: Vector2::new(48., 48.) },
+		MapVertex { p: Vector2::new(48., -48.) },
+		MapVertex { p: Vector2::new(-48., 48.) },
+		MapVertex { p: Vector2::new(-64., 0.) },     // 4
+		MapVertex { p: Vector2::new(-48., -48.) },
+		MapVertex { p: Vector2::new(0., 64.) },
+		MapVertex { p: Vector2::new(0., -64.) },
+		MapVertex { p: Vector2::new(0., 48.) },      // 8
+		MapVertex { p: Vector2::new(48., 0.) },
+		MapVertex { p: Vector2::new(0., -48.) },
+		MapVertex { p: Vector2::new(-48., 0.) },     // 11
 	];
 	let edges: Vec<Edge> = vec![
 		Edge::new(0, 1),
@@ -69,18 +69,18 @@ pub(super) fn test_case_harder() -> (Vec<MapVertex>, Vec<Edge>) {
 // see tests/data/insides.png for an annotated drawing of this data
 pub(super) fn test_case_insides() -> (Vec<MapVertex>, Vec<Edge>) {
 	let verts: Vec<MapVertex> = vec![
-		MapVertex { p: Vector2::from((64., 64.)) },     // 0
-		MapVertex { p: Vector2::from((64., 0.)) },
-		MapVertex { p: Vector2::from((64., -64.)) },
-		MapVertex { p: Vector2::from((0., -64.)) },
-		MapVertex { p: Vector2::from((-64., -64.)) },       // 4
-		MapVertex { p: Vector2::from((-64., 0.)) },
-		MapVertex { p: Vector2::from((-64., 64.)) },
-		MapVertex { p: Vector2::from((0., 64.)) },
-		MapVertex { p: Vector2::from((99., 99.)) },       // 8
-		MapVertex { p: Vector2::from((99., -99.)) },
-		MapVertex { p: Vector2::from((-99., -99.)) },
-		MapVertex { p: Vector2::from((-99., 99.)) },       // 11
+		MapVertex { p: Vector2::new(64., 64.) },     // 0
+		MapVertex { p: Vector2::new(64., 0.) },
+		MapVertex { p: Vector2::new(64., -64.) },
+		MapVertex { p: Vector2::new(0., -64.) },
+		MapVertex { p: Vector2::new(-64., -64.) },       // 4
+		MapVertex { p: Vector2::new(-64., 0.) },
+		MapVertex { p: Vector2::new(-64., 64.) },
+		MapVertex { p: Vector2::new(0., 64.) },
+		MapVertex { p: Vector2::new(99., 99.) },       // 8
+		MapVertex { p: Vector2::new(99., -99.) },
+		MapVertex { p: Vector2::new(-99., -99.) },
+		MapVertex { p: Vector2::new(-99., 99.) },       // 11
 	];
 	let edges: Vec<Edge> = vec![
 		Edge::new(8, 9),

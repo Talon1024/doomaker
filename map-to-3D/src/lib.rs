@@ -7,6 +7,7 @@
 
 pub mod vector;
 pub mod secplane;
+pub mod boundingbox;
 pub mod sectorpolygonbuilder;
 pub mod edge;
 pub mod vertex;
