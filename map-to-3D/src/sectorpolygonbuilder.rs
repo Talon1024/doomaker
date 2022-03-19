@@ -458,10 +458,10 @@ pub fn triangulate(
 	vertices: &[MapVertex]
 ) -> Vec<usize> {
 	use std::iter;
-	let original_vertex_indices: Vec<usize> = polygon.vertices
+	let orig_index: Vec<usize> = polygon.vertices
 		.iter().chain(holes.iter().flat_map(|h| h.vertices.iter()))
 		.copied().map(|i| i as usize).collect();
-	let vpos: Vec<Coordinate> = polygon.vertices.iter()
+	let vertex_pos: Vec<Coordinate> = polygon.vertices.iter()
 		.chain(holes.iter().flat_map(|h| h.vertices.iter()))
 		.flat_map(|&i| (&vertices[i as usize]).xy()).collect();
 	let mut cur_hole = polygon.vertices.len();
@@ -471,7 +471,6 @@ pub fn triangulate(
 			cur_hole += rv;
 			rv
 		})).take(holes.len()).collect();
-	dbg!("{} vertices", vpos.len() / 2);
-	dbg!("{}", &hole_indices);
-	earcutr::earcut(&vpos, &hole_indices, 2).iter().map(|&ei| original_vertex_indices[ei]).collect()
+	earcutr::earcut(&vertex_pos, &hole_indices, 2).iter()
+		.map(|&ei| orig_index[ei]).collect()
 }
