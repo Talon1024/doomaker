@@ -12,10 +12,11 @@ mod util;
 #[macroquad::main("Editor/viewer")]
 async fn main() {
     use std::f32::consts::{PI, FRAC_PI_2};
+    set_pc_assets_folder("../assets");
     let mouse_fac = 0.001953125; // 1 / 512 or 2^-9
     let move_fac = 0.015625; // 1 / 64 or 2^-6
     let mut orientation = (FRAC_PI_2, FRAC_PI_2);
-    let mut camera = Camera3D {
+    let mut cam3d = Camera3D {
         position: Vec3::from((0.,0.,0.)),
         target: util::vec3_from_orientation(orientation),
         up: Vec3::Z,
@@ -29,10 +30,14 @@ async fn main() {
     let mut ptr_mode = PointerMode::Free;
     let mut last_mouse_pos = (0.0f32, 0.0f32);
     let mut movement = Vec3::ZERO;
+    let ptr_lock_tex = load_texture("ptrlock.png").await.ok().or_else(||{
+        println!("ptrlock.png not found");
+        None
+    });
     loop {
         // Draw stuff
         clear_background(BEIGE);
-        set_camera(&camera);
+        set_camera(&cam3d);
         draw_mesh(&cube_mesh);
 
         // Handle input
@@ -45,6 +50,11 @@ async fn main() {
                 }
             },
             PointerMode::Locked => {
+                if let Some(tex) = ptr_lock_tex {
+                    set_default_camera();
+                    draw_texture(tex, 0.0, 0.0, WHITE);
+                    set_camera(&cam3d);
+                }
                 // Mouse looking
                 if is_key_pressed(KeyCode::Escape) {
                     ptr_mode = PointerMode::Free;
@@ -82,9 +92,9 @@ async fn main() {
             Quat::from_rotation_z(orientation.0) *
             Quat::from_rotation_y(orientation.1);
         movement = dir_quat.mul_vec3(movement);
-        camera.position += Vec3::from(movement);
-        camera.target = camera.position + dir_vec;
-        camera.fovy = util::fov_x_to_y(100f32.to_radians());
+        cam3d.position += Vec3::from(movement);
+        cam3d.target = cam3d.position + dir_vec;
+        cam3d.fovy = util::fov_x_to_y(100f32.to_radians());
         last_mouse_pos = mouse_position();
 
         next_frame().await
