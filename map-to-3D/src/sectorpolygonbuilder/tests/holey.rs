@@ -33,8 +33,8 @@ fn test_case() -> (Vec<MapVertex>, Vec<Edge>) {
 fn holey() {
 	let (verts, edges) = test_case();
 	let polys = build_polygons(&edges, &verts);
-	assert_eq!(polys[1].hole_of, Some(0));
-	assert_eq!(polys[2].hole_of, Some(0));
+	let holes = [None, Some(0usize), Some(0)];
+	assert_eq!(polys.iter().map(|p| p.hole_of).collect::<Vec<Option<usize>>>(), holes);
 
 	let polygon_index = 0usize;
 	let the_polygon = &polys[polygon_index];

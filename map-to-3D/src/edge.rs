@@ -9,7 +9,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::num::ParseIntError;
 
-pub type EdgeVertexIndex = i32;
+pub type EdgeVertexIndex = usize;
 
 /// An "Edge" - a connection between two points
 #[derive(Hash, PartialEq, Eq, Ord, PartialOrd, Clone, Debug, Copy)]

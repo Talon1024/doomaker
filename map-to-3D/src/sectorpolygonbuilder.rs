@@ -36,11 +36,11 @@ fn edge_in_polygon(
 	polygon: &[EdgeVertexIndex],
 	map_vertices: &[MapVertex]
 ) -> bool {
-	let a = map_vertices[edge.lo() as usize].p;
-	let b = map_vertices[edge.hi() as usize].p;
+	let a = map_vertices[edge.lo()].p;
+	let b = map_vertices[edge.hi()].p;
 	let midpoint = a.midpoint(&b);
 	let polygon: Vec<Vector2> = polygon.iter()
-		.map(|&index| map_vertices[index as usize].p)
+		.map(|&index| map_vertices[index].p)
 		.collect();
 	point_in_polygon(midpoint, &polygon)
 }
@@ -106,7 +106,7 @@ impl SectorPolygon {
 	/// Get the bounding box for this polygon
 	pub fn bounding_box(&self, vertices: &Vec<MapVertex>) -> BoundingBox {
 		let vertices: Vec<MapVertex> = self.vertices.iter()
-			.map(|&v| vertices[v as usize]).collect();
+			.map(|&v| vertices[v]).collect();
 		let top = vertices.iter().map(|v| v.p.y()).reduce(f32::max).unwrap();
 		let left = vertices.iter().map(|v| v.p.x()).reduce(f32::min).unwrap();
 		let width = vertices.iter().map(|v| v.p.x()).reduce(f32::max).unwrap() - left;
@@ -357,8 +357,8 @@ fn find_next_start_edge(
 			set
 		// Convert indices to vertices
 		}).into_iter().reduce(|current_index, other_index| {
-			let current_vertex = vertices[current_index as usize];
-			let other_vertex = vertices[other_index as usize];
+			let current_vertex = vertices[current_index];
+			let other_vertex = vertices[other_index];
 			if other_vertex > current_vertex {
 				other_index
 			} else {
@@ -372,9 +372,9 @@ fn find_next_start_edge(
 			// To ensure the interior angle is counterclockwise, pick the
 			// connected vertex with the lowest angle. Necessary for proper
 			// 3d-ification
-			let rightmost_vertex = vertices[rightmost_vertex as usize].p;
-			let current_vertex = vertices[current_index as usize].p;
-			let other_vertex = vertices[other_index as usize].p;
+			let rightmost_vertex = vertices[rightmost_vertex].p;
+			let current_vertex = vertices[current_index].p;
+			let other_vertex = vertices[other_index].p;
 			let current_angle = (rightmost_vertex - current_vertex).angle();
 			let other_angle = (rightmost_vertex - other_vertex).angle();
 			if clockwise {
@@ -416,12 +416,12 @@ fn find_next_vertex(
 	if usable_vertices.len() == 1 { return Some(usable_vertices[0]); }
 	// Find the vertex with the lowest angle in comparison to "from"
 	// The "previous" and "from" vertices will remain constant
-	let previous_vertex = vertices[previous as usize];
-	let from_vertex = vertices[from as usize];
+	let previous_vertex = vertices[previous];
+	let from_vertex = vertices[from];
 	let next_vertex = usable_vertices.into_iter()
 		.reduce(|current_index, other_index| {
-			let current_vertex = vertices[current_index as usize];
-			let other_vertex = vertices[other_index as usize];
+			let current_vertex = vertices[current_index];
+			let other_vertex = vertices[other_index];
 			let current_angle = angle_between(
 				&previous_vertex.p,
 				&current_vertex.p,
@@ -460,10 +460,10 @@ pub fn triangulate(
 	use std::iter;
 	let orig_index: Vec<usize> = polygon.vertices
 		.iter().chain(holes.iter().flat_map(|h| h.vertices.iter()))
-		.copied().map(|i| i as usize).collect();
+		.copied().collect();
 	let vertex_pos: Vec<Coordinate> = polygon.vertices.iter()
 		.chain(holes.iter().flat_map(|h| h.vertices.iter()))
-		.flat_map(|&i| (&vertices[i as usize]).xy()).collect();
+		.flat_map(|&i| (&vertices[i]).xy()).collect();
 	let mut cur_hole = polygon.vertices.len();
 	let hole_indices: Vec<usize> = iter::once(cur_hole)
 		.chain(holes.iter().map(|h| {
