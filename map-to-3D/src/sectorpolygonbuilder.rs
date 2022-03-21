@@ -5,7 +5,8 @@
 use crate::vector::{Vector2, Coordinate};
 use crate::edge::{Edge, EdgeVertexIndex};
 use crate::vertex::MapVertex;
-// use crate::boundingbox::BoundingBox;
+// use crate::boundingbox as bbx;
+// use bbx::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
 
@@ -131,7 +132,8 @@ impl SectorPolygon {
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::vertex::MapVertex;
-/// use map_to_3D::sectorpolygonbuilder::{SectorPolygon, build_polygons};
+/// use map_to_3D::sectorpolygonbuilder as spb;
+/// use spb::SectorPolygon;
 /// 
 /// // 3--0
 /// // |  |
@@ -150,7 +152,7 @@ impl SectorPolygon {
 /// 	Edge::new(3, 0),
 /// ];
 /// assert_eq!(
-/// 	build_polygons(&lines, &vertices),
+/// 	spb::build_polygons(&lines, &vertices),
 /// 	// The polygon contour vertex index vector is nested because there can
 /// 	// be multiple polygons, but this square is just one polygon. Also, the
 /// 	// square is not a hole of another polygon.
@@ -163,7 +165,8 @@ impl SectorPolygon {
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::vertex::MapVertex;
-/// use map_to_3D::sectorpolygonbuilder::{SectorPolygon, build_polygons};
+/// use map_to_3D::sectorpolygonbuilder as spb;
+/// use spb::SectorPolygon;
 /// 
 /// // 5--4
 /// // |  |
@@ -198,7 +201,7 @@ impl SectorPolygon {
 /// 
 /// assert_eq!(
 /// 	expected_polygons,
-/// 	build_polygons(&lines, &verts)
+/// 	spb::build_polygons(&lines, &verts)
 /// );
 /// 
 /// ```
@@ -208,7 +211,8 @@ impl SectorPolygon {
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::vertex::MapVertex;
-/// use map_to_3D::sectorpolygonbuilder::{SectorPolygon, build_polygons};
+/// use map_to_3D::sectorpolygonbuilder as spb;
+/// use spb::SectorPolygon;
 /// 
 /// // 0------1
 /// // | 7--4 |
@@ -244,7 +248,7 @@ impl SectorPolygon {
 /// 
 /// assert_eq!(
 /// 	expected_polygons,
-/// 	build_polygons(&lines, &verts)
+/// 	spb::build_polygons(&lines, &verts)
 /// );
 /// ```
 /// 
@@ -456,7 +460,7 @@ pub fn triangulate(
 	polygon: &SectorPolygon,
 	holes: &[&SectorPolygon],
 	vertices: &[MapVertex]
-) -> Vec<usize> {
+) -> Vec<EdgeVertexIndex> {
 	use std::iter;
 	let orig_index: Vec<usize> = polygon.vertices
 		.iter().chain(holes.iter().flat_map(|h| h.vertices.iter()))
@@ -473,4 +477,20 @@ pub fn triangulate(
 		})).take(holes.len()).collect();
 	earcutr::earcut(&vertex_pos, &hole_indices, 2).iter()
 		.map(|&ei| orig_index[ei]).collect()
+}
+
+/// Triangulate all of the polygons in the list
+/// 
+/// Returns a vector containing vectors of triangle vertex indices for each polygon
+pub fn auto_triangulate(
+	polygons: &[SectorPolygon],
+	vertices: &[MapVertex]
+) -> Vec<Vec<EdgeVertexIndex>> {
+	polygons.iter().filter(|pl| pl.hole_of.is_none()).enumerate()
+	.map(|(i, pl)| {
+		let holes: Vec<&SectorPolygon> = polygons.iter().filter(|pl| {
+			pl.hole_of == Some(i)
+		}).collect();
+		triangulate(pl, &holes, vertices)
+	}).collect()
 }
