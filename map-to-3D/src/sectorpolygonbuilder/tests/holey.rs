@@ -43,16 +43,20 @@ fn holey() {
 	assert_eq!(polys.iter().map(|p| p.hole_of).collect::<Vec<Option<usize>>>(), holes);
 
 	// The triangulated polygons should have this many vertex indices
-	let poly_lengths = [1 * 3, 12 * 3];
+	let poly_lengths = [1 * 3, 12 * 3, 0, 0]; // The last two are holes
 	// The vertex indices of the triangles should be within these ranges
-	let poly_ranges = [0..=2, 3..=12];
+	let poly_ranges = [0..=2, 3..=12, 0..=0, 0..=0]; // Last two are holes
 	let triangulated = auto_triangulate(&polys, &verts);
 
 	assert_eq!(triangulated.len(), poly_lengths.len());
 	triangulated.iter().zip(poly_lengths).for_each(|(tp, l)| {
-		assert_eq!(tp.len(), l);
+		if let Some(tp) = tp {
+			assert_eq!(tp.len(), l);
+		}
 	});
 	triangulated.iter().zip(poly_ranges).for_each(|(tp, r)| {
-		assert!(tp.iter().all(|i| {r.contains(i)}))
+		if let Some(tp) = tp {
+			assert!(tp.iter().all(|i| {r.contains(i)}))
+		}
 	}); 
 }

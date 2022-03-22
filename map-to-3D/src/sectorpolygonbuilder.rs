@@ -481,16 +481,21 @@ pub fn triangulate(
 
 /// Triangulate all of the polygons in the list
 /// 
-/// Returns a vector containing vectors of triangle vertex indices for each polygon
+/// Returns a vector containing either a vector of triangle vertex indices for
+/// each polygon, or nothing (None) if the polygon is a hole
 pub fn auto_triangulate(
 	polygons: &[SectorPolygon],
 	vertices: &[MapVertex]
-) -> Vec<Vec<EdgeVertexIndex>> {
-	polygons.iter().filter(|pl| pl.hole_of.is_none()).enumerate()
+) -> Vec<Option<Vec<EdgeVertexIndex>>> {
+	polygons.iter().enumerate()
 	.map(|(i, pl)| {
-		let holes: Vec<&SectorPolygon> = polygons.iter().filter(|pl| {
-			pl.hole_of == Some(i)
-		}).collect();
-		triangulate(pl, &holes, vertices)
+		if pl.hole_of.is_none() {
+			let holes: Vec<&SectorPolygon> = polygons.iter().filter(|pl| {
+				pl.hole_of == Some(i)
+			}).collect();
+			Some(triangulate(pl, &holes, vertices))
+		} else {
+			None
+		}
 	}).collect()
 }
