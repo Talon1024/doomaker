@@ -3,28 +3,34 @@ use super::*;
 // See tests/data/holey.png for an illustration
 fn test_case() -> (Vec<MapVertex>, Vec<Edge>) {
 	let verts: Vec<MapVertex> = vec![
-		MapVertex { p: Vector2::new(64., 64.) },	// 0
+		MapVertex { p: Vector2::new(70., 30.) },	// 0
+		MapVertex { p: Vector2::new(68., 30.) },
+		MapVertex { p: Vector2::new(69., 32.) },
+		MapVertex { p: Vector2::new(64., 64.) },	// 3
 		MapVertex { p: Vector2::new(64., -64.) },
 		MapVertex { p: Vector2::new(-64., -64.) },
 		MapVertex { p: Vector2::new(-64., 64.) },
-		MapVertex { p: Vector2::new(44., 52.) },	// 4
+		MapVertex { p: Vector2::new(44., 52.) },	// 7
 		MapVertex { p: Vector2::new(-52., 52.) },
 		MapVertex { p: Vector2::new(-52., -44.) },
-		MapVertex { p: Vector2::new(52., 44.) },
-		MapVertex { p: Vector2::new(52., -52.) },	// 8
-		MapVertex { p: Vector2::new(-44., -52.) },
+		MapVertex { p: Vector2::new(52., 44.) },	// 10
+		MapVertex { p: Vector2::new(52., -52.) },
+		MapVertex { p: Vector2::new(-44., -52.) },	// 12
 	];
 	let edges = vec![
-		Edge::new(0, 1),
-		Edge::new(1, 2),
-		Edge::new(2, 3),
-		Edge::new(3, 0),
+		Edge::new(3, 4),	// 0
 		Edge::new(4, 5),
 		Edge::new(5, 6),
-		Edge::new(6, 4),
-		Edge::new(7, 8),
+		Edge::new(6, 3),
+		Edge::new(7, 8),	// 4
 		Edge::new(8, 9),
 		Edge::new(9, 7),
+		Edge::new(10, 11),
+		Edge::new(11, 12),	// 8
+		Edge::new(12, 10),
+		Edge::new(0, 1),
+		Edge::new(1, 2),
+		Edge::new(2, 0),	// 12
 	];
 	(verts, edges)
 }
@@ -33,14 +39,20 @@ fn test_case() -> (Vec<MapVertex>, Vec<Edge>) {
 fn holey() {
 	let (verts, edges) = test_case();
 	let polys = build_polygons(&edges, &verts);
-	let holes = [None, Some(0usize), Some(0)];
+	let holes = [None, None, Some(1usize), Some(1)];
 	assert_eq!(polys.iter().map(|p| p.hole_of).collect::<Vec<Option<usize>>>(), holes);
 
-	let polygon_index = 0usize;
-	let the_polygon = &polys[polygon_index];
-	let holes: Vec<&SectorPolygon> = polys
-		.iter().filter(|p| p.hole_of == Some(polygon_index)).collect();
-	let triangles = triangulate(the_polygon, &holes, &verts);
+	// The triangulated polygons should have this many vertex indices
+	let poly_lengths = [1 * 3, 12 * 3];
+	// The vertex indices of the triangles should be within these ranges
+	let poly_ranges = [0..=2, 3..=12];
+	let triangulated = auto_triangulate(&polys, &verts);
 
-	assert_eq!(triangles.len(), 12 * 3);
+	assert_eq!(triangulated.len(), poly_lengths.len());
+	triangulated.iter().zip(poly_lengths).for_each(|(tp, l)| {
+		assert_eq!(tp.len(), l);
+	});
+	triangulated.iter().zip(poly_ranges).for_each(|(tp, r)| {
+		assert!(tp.iter().all(|i| {r.contains(i)}))
+	}); 
 }
