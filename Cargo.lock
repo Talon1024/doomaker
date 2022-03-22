@@ -147,6 +147,7 @@ name = "editor"
 version = "0.1.0"
 dependencies = [
  "macroquad",
+ "map-to-3D",
 ]
 
 [[package]]

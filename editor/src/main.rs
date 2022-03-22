@@ -12,9 +12,9 @@ mod util;
 #[macroquad::main("Editor/viewer")]
 async fn main() {
     use std::f32::consts::{PI, FRAC_PI_2};
-    set_pc_assets_folder("../assets");
+    set_pc_assets_folder("assets");
     let mouse_fac = 0.001953125; // 1 / 512 or 2^-9
-    let move_fac = 0.015625; // 1 / 64 or 2^-6
+    let move_fac = 0.25; // 1 / 64 or 2^-6
     let mut orientation = (FRAC_PI_2, FRAC_PI_2);
     let mut cam3d = Camera3D {
         position: Vec3::from((0.,0.,0.)),
@@ -26,7 +26,8 @@ async fn main() {
         render_target: None,
         viewport: None
     };
-    let cube_mesh = sample_data::cube_mesh();
+    let mut cube_mesh = sample_data::holey_mesh();
+    cube_mesh.texture = load_texture("sky.png").await.ok();
     let mut ptr_mode = MousePointerMode::Free;
     let mut last_mouse_pos = (0.0f32, 0.0f32);
     let mut movement = Vec3::ZERO;
