@@ -2,8 +2,10 @@ use macroquad::prelude::*;
 use map_to_3D::edge::Edge;
 use map_to_3D::vertex::MapVertex;
 use map_to_3D::vector::Vector2;
+use map_to_3D::secplane::SectorPlane;
 use map_to_3D::sectorpolygonbuilder as spb;
 
+/*
 pub fn tiny_texture() -> Texture2D {
 	Texture2D::from_rgba8(3, 3, &[
 		/*
@@ -61,7 +63,9 @@ pub fn cube_mesh() -> Box<Mesh> {
 		texture: Some(tiny_texture())
 	})
 }
+*/
 
+/*
 fn rainbow(h: f32) -> Color {
 	use std::f32::consts::PI;
 	let positions: [f32; 3] = [0., 0.333333333333, 0.666666666666];
@@ -76,9 +80,9 @@ fn rainbowi(h: usize) -> Color {
 	let h = (h as f32) / (180. / PI);
 	rainbow(h)
 }
+*/
 
 pub fn holey_mesh() -> Box<Mesh> {
-	use macroquad::models::Vertex;
 	let verts: Vec<MapVertex> = vec![
 		MapVertex { p: Vector2::new(70., 30.) },	// 0
 		MapVertex { p: Vector2::new(68., 30.) },
@@ -109,19 +113,12 @@ pub fn holey_mesh() -> Box<Mesh> {
 		Edge::new(1, 2),
 		Edge::new(2, 0),	// 12
 	];
+	let sp = SectorPlane::Flat(-7.);
 	let polys = spb::build_polygons(&edges, &verts);
 	let ptris = spb::auto_triangulate(&polys, &verts);
-	let mut hue = 0;
+	// let mut hue = 0;
 	Box::new(Mesh {
-		vertices: verts.iter().map(|v| {
-			let rv = Vertex {
-				position: Vec3::new(v.p.x(), v.p.y(), -5.),
-				uv: Vec2::new(v.p.x() / 64., v.p.y() / 64.),
-				color: rainbowi(hue)
-			};
-			hue += 10;
-			rv
-		}).collect(),
+		vertices: crate::glue::sector_vertices(&verts, &sp, None),
 		indices: ptris.iter().filter_map(|p| {
 			if let Some(p) = p {
 				Some(p)
