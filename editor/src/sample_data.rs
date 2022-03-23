@@ -19,9 +19,9 @@ pub fn tiny_texture() -> Texture2D {
 	])
 }
 
-pub fn cube_mesh() -> Mesh {
+pub fn cube_mesh() -> Box<Mesh> {
 	use macroquad::models::Vertex;
-	Mesh {
+	Box::new(Mesh {
 		/*
 		1------0
 		|      |
@@ -59,7 +59,7 @@ pub fn cube_mesh() -> Mesh {
 			3, 0, 4, 3, 4, 7
 		],
 		texture: Some(tiny_texture())
-	}
+	})
 }
 
 fn rainbow(h: f32) -> Color {
@@ -77,7 +77,7 @@ fn rainbowi(h: usize) -> Color {
 	rainbow(h)
 }
 
-pub fn holey_mesh() -> Mesh {
+pub fn holey_mesh() -> Box<Mesh> {
 	use macroquad::models::Vertex;
 	let verts: Vec<MapVertex> = vec![
 		MapVertex { p: Vector2::new(70., 30.) },	// 0
@@ -112,7 +112,7 @@ pub fn holey_mesh() -> Mesh {
 	let polys = spb::build_polygons(&edges, &verts);
 	let ptris = spb::auto_triangulate(&polys, &verts);
 	let mut hue = 0;
-	Mesh {
+	Box::new(Mesh {
 		vertices: verts.iter().map(|v| {
 			let rv = Vertex {
 				position: Vec3::new(v.p.x(), v.p.y(), -5.),
@@ -130,5 +130,5 @@ pub fn holey_mesh() -> Mesh {
 			}
 		}).flat_map(|p| p.iter().map(|&i| i as u16)).collect(),
 		texture: None
-	}
+	})
 }
