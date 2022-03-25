@@ -1,15 +1,25 @@
+//! Sector floor/ceiling planes
 use crate::vector::Vector2;
-
 /// The geometric plane of a sector floor/ceiling
 #[derive(Debug, Clone)]
 pub enum SectorPlane {
 	/// A flat sector plane, represented by a single floating point value,
 	/// which is the height of the plane
-	Flat(f32),
+	Flat( /// Height
+		f32
+	),
 	/// A sloped sector plane, represented internally by the ABCD terms of a
 	/// plane equation (`Ax + By + Cz + D = 0`). A, B, and C are the XYZ
 	/// components of the plane's normal vector.
-	Sloped(f32, f32, f32, f32)
+	Sloped(
+		/// A
+		f32,
+		/// B
+		f32,
+		/// C
+		f32,
+		/// D
+		f32)
 }
 
 impl SectorPlane {
