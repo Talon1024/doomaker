@@ -1,7 +1,7 @@
 //! Sector floor/ceiling planes
 use crate::vector::Vector2;
 /// The geometric plane of a sector floor/ceiling
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SectorPlane {
 	/// A flat sector plane, represented by a single floating point value,
 	/// which is the height of the plane
@@ -48,6 +48,61 @@ impl SectorPlane {
 				let dividend = a * x + b * y + d;
 				dividend / -c
 			}
+		}
+	}
+
+	pub fn from_height(height: f32) -> SectorPlane {
+		SectorPlane::Flat(height)
+	}
+
+	pub fn from_triangle(
+		x1: f32,
+		y1: f32,
+		z1: f32,
+		x2: f32,
+		y2: f32,
+		z2: f32,
+		x3: f32,
+		y3: f32,
+		z3: f32,
+	) -> SectorPlane {
+		if z1 == z2 && z1 == z3 {
+			SectorPlane::Flat(z1)
+		} else {
+			// Diff point 1 and 2
+			let d1x = x2 - x1;
+			let d1y = y2 - y1;
+			let d1z = z2 - z1;
+			/*
+			let l1 = (d1x * d1x + d1y * d1y + d1z * d1z).sqrt();
+			let d1x = d1x / l1;
+			let d1y = d1y / l1;
+			let d1z = d1z / l1;
+			*/
+			// Diff point 1 and 3
+			let d2x = x3 - x1;
+			let d2y = y3 - y1;
+			let d2z = z3 - z1;
+			/*
+			let l2 = (d2x * d2x + d2y * d2y + d2z * d2z).sqrt();
+			let d2x = d2x / l2;
+			let d2y = d2y / l2;
+			let d2z = d2z / l2;
+			*/
+			// Calculate ABC
+			let a = d1y * d2z - d1z * d2y; // a2b3 - a3b2
+			let b = d1z * d2x - d1x * d2z; // a3b1 - a1b3
+			let c = d1x * d2y - d1y * d2x; // a1b2 - a2b1
+			let l = (a * a + b * b + c * c).sqrt();
+			let a = a / l;
+			let b = b / l;
+			let c = c / l;
+			// Calculate D
+			// Ax + By + Cz + D = 0
+			// Ax + By + Cz = -D
+			// D = -(Ax + By + Cz)
+			let d = -(a * x1 + b * y1 + c * z1);
+			SectorPlane::Sloped(a, b, c, d)
 		}
 	}
 }
@@ -139,6 +194,50 @@ mod tests {
 			assert_eq!(expected, actual);
 		});
 		Ok(())
+	}
+
+	#[test]
+	fn plane_from_height() {
+		let height: f32 = 5.;
+		let expected = SectorPlane::Flat(5.);
+		assert_eq!(SectorPlane::from_height(height), expected);
+	}
+
+	#[test]
+	fn plane_from_triangle() -> Result<(), String> {
+		// Coordinates copied from above example
+		let x1: f32 = 16.;
+		let y1: f32 = 16.;
+		let z1: f32 = 21.;
+		let x2: f32 = -16.;
+		let y2: f32 = 16.;
+		let z2: f32 = 5.;
+		let x3: f32 = -16.;
+		let y3: f32 = -16.;
+		let z3: f32 = -11.;
+		let expected = {
+			let z: f32 = 1.;
+			let y = 0.5 * z;
+			let x = 0.5 * z;
+			let l = (x * x + y * y + z * z).sqrt();
+			let a = -x / l;
+			let b = -y / l;
+			let c = z / l;
+			let d = 5. * -c;
+			format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d)
+		};
+		let plane = SectorPlane::from_triangle(
+			x1, y1, z1,
+			x2, y2, z2,
+			x3, y3, z3
+		);
+		if let SectorPlane::Sloped(a, b, c, d) = plane {
+			let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
+			assert_eq!(expected, actual);
+			Ok(())
+		} else {
+			Err(String::from("Plane is not sloped!"))
+		}
 	}
 }
 
