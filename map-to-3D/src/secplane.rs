@@ -51,10 +51,50 @@ impl SectorPlane {
 		}
 	}
 
-	pub fn from_height(height: f32) -> SectorPlane {
-		SectorPlane::Flat(height)
-	}
-
+	/// Create a `SectorPlane` from three points (a triangle)
+	/// 
+	/// # Examples
+	/// 
+	/// With a flat plane:
+	/// ```
+	/// use map_to_3D::secplane::SectorPlane;
+	/// 
+	/// let expected = SectorPlane::Flat(5.);
+	/// let actual = SectorPlane::from_triangle(16., 16., 5., -16., 16., 5., -16., -16., 5.);
+	/// assert_eq!(expected, actual);
+	/// ```
+	/// 
+	/// With a slope defined by the equation `z = .5x + .5y`:
+	/// ```
+	/// use map_to_3D::secplane::SectorPlane;
+	/// 
+	/// let plane = {
+	/// 	// Based on z = .5x + .5y + 5
+	/// 	let z: f32 = 1.;
+	/// 	let y = 0.5 * z;
+	/// 	let x = 0.5 * z;
+	/// 	let l = (x * x + y * y + z * z).sqrt();
+	/// 	let a = -x / l;
+	/// 	let b = -y / l;
+	/// 	let c = z / l;
+	/// 	let d = 5. * -c;
+	/// 	(a, b, c, d)
+	/// };
+	/// // Use strings because of the inaccuracies caused by how real numbers
+	/// // are represented
+	/// let expected = format!(
+	/// 	"{:.3} {:.3} {:.3} {:.3}",
+	/// 	plane.0, plane.1, plane.2, plane.3);
+	/// let actual = SectorPlane::from_triangle(
+	/// 	16., 16., 21.,
+	/// 	-16., 16., 5.,
+	/// 	-16., -16., -11.
+	/// );
+	/// if let SectorPlane::Sloped(a, b, c, d) = actual {
+	/// 	let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
+	/// 	assert_eq!(expected, actual);
+	/// }
+	/// ```
 	pub fn from_triangle(
 		x1: f32,
 		y1: f32,
@@ -73,22 +113,10 @@ impl SectorPlane {
 			let d1x = x2 - x1;
 			let d1y = y2 - y1;
 			let d1z = z2 - z1;
-			/*
-			let l1 = (d1x * d1x + d1y * d1y + d1z * d1z).sqrt();
-			let d1x = d1x / l1;
-			let d1y = d1y / l1;
-			let d1z = d1z / l1;
-			*/
 			// Diff point 1 and 3
 			let d2x = x3 - x1;
 			let d2y = y3 - y1;
 			let d2z = z3 - z1;
-			/*
-			let l2 = (d2x * d2x + d2y * d2y + d2z * d2z).sqrt();
-			let d2x = d2x / l2;
-			let d2y = d2y / l2;
-			let d2z = d2z / l2;
-			*/
 			// Calculate ABC
 			let a = d1y * d2z - d1z * d2y; // a2b3 - a3b2
 			let b = d1z * d2x - d1x * d2z; // a3b1 - a1b3
@@ -194,13 +222,6 @@ mod tests {
 			assert_eq!(expected, actual);
 		});
 		Ok(())
-	}
-
-	#[test]
-	fn plane_from_height() {
-		let height: f32 = 5.;
-		let expected = SectorPlane::Flat(5.);
-		assert_eq!(SectorPlane::from_height(height), expected);
 	}
 
 	#[test]
