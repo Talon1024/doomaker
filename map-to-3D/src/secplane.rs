@@ -6,15 +6,10 @@ pub enum SectorPlane {
 	/// A flat sector plane, represented by a single floating point value,
 	/// which is the height of the plane
 	Flat(f32),
-	/// A sloped sector plane, represented internally by the terms of a plane
-	/// equation (`Ax + By + Cz + D = 0`). A, B, and C are the XYZ components
-	/// of a normal vector.
-	Sloped {
-		a: f32,
-		b: f32,
-		c: f32,
-		d: f32
-	}
+	/// A sloped sector plane, represented internally by the ABCD terms of a
+	/// plane equation (`Ax + By + Cz + D = 0`). A, B, and C are the XYZ
+	/// components of the plane's normal vector.
+	Sloped(f32, f32, f32, f32)
 }
 
 impl SectorPlane {
@@ -33,9 +28,9 @@ impl SectorPlane {
 	pub fn z_at(&self, pos: &Vector2) -> f32 {
 		match self {
 			SectorPlane::Flat(height) => *height,
-			SectorPlane::Sloped {
+			SectorPlane::Sloped(
 				a, b, c, d
-			} => {
+			) => {
 				// https://github.com/Talon1024/jsdoom/blob/5c3ca7553b/src/convert/3DMapBuilder.ts#L650
 				// Also https://github.com/coelckers/gzdoom/blob/7ba5a74f2e/src/gamedata/r_defs.h#L356
 				let x = pos.x();
@@ -87,7 +82,7 @@ mod tests {
 			// Normal vectors are perpendicular to lines/planes.
 			let a = -y / l;
 			let c = x / l;
-			SectorPlane::Sloped { a, b: 0., c, d: 0. }
+			SectorPlane::Sloped(a, 0., c, 0.)
 		};
 		let sloped_heights = vec![8., -8., -8., 8.];
 
@@ -121,7 +116,7 @@ mod tests {
 			let a = -x / l;
 			let b = -y / l;
 			let c = z / l;
-			SectorPlane::Sloped {a, b, c, d: 5. * -c}
+			SectorPlane::Sloped(a, b, c, 5. * -c)
 		};
 		let sloped_heights = vec![21., 5., -11., 5.];
 
