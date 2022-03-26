@@ -5,8 +5,7 @@
 use crate::vector::{Vector2, Coordinate};
 use crate::edge::{Edge, EdgeVertexIndex};
 use crate::vertex::MapVertex;
-// use crate::boundingbox as bbx;
-// use bbx::BoundingBox;
+use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
 
@@ -281,6 +280,7 @@ pub fn build_polygons(
 		vertices: vec![first_edge.0, first_edge.1],
 		hole_of: None
 	}];
+	let mut bounding_boxes: Vec<BoundingBox> = vec![];
 	// Which polygons are holes, and which polygons are they holes of?
 	let mut incomplete_polygons: Vec<SectorPolygon> = Vec::new();
 	let mut clockwise = false;
@@ -310,12 +310,30 @@ pub fn build_polygons(
 			None => {
 				// The current polygon is probably incomplete
 				let bad_polygon = polygons.pop().unwrap();
+				bounding_boxes.pop(); // I don't know if these will be used
 				incomplete_polygons.push(bad_polygon);
 				new_polygon = true;
 			}
 		};
 		if new_polygon {
 			if let Some(edge) = find_next_start_edge(false, &edges_used, vertices) {
+				bounding_boxes.push({
+					let viter = polygons.last().unwrap().vertices.iter();
+					let top = viter.clone().map(|&i| vertices[i].p.y())
+						.reduce(f32::max).unwrap();
+					let left = viter.clone().map(|&i| vertices[i].p.x())
+						.reduce(f32::min).unwrap();
+					let width = viter.clone().map(|&i| vertices[i].p.x())
+						.reduce(f32::max).unwrap() - left;
+					let height = viter.clone().map(|&i| vertices[i].p.y())
+						.reduce(f32::min).unwrap() - top;
+					BoundingBox {
+						top,
+						left,
+						width,
+						height,
+					}
+				});
 				polygons.push(SectorPolygon{
 					vertices: vec![edge.0, edge.1],
 					hole_of: None
@@ -324,8 +342,11 @@ pub fn build_polygons(
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
 				clockwise = false;
-				polygons.iter().enumerate().for_each(|(index, polygon)| {
-					if edge_in_polygon(&edge, &polygon.vertices, &vertices) {
+				polygons.iter().zip(bounding_boxes.iter()).enumerate().for_each(|(index, (polygon, boundingbox))| {
+					let va = vertices[edge.lo()].p;
+					let vb = vertices[edge.hi()].p;
+					let mid = va.midpoint(&vb);
+					if boundingbox.is_inside(&mid) && edge_in_polygon(&edge, &polygon.vertices, &vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);

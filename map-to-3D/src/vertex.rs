@@ -7,7 +7,10 @@ use crate::vector::{Vector2, Coordinate, Iter as VIter};
 
 #[derive(PartialEq, Clone, Debug, Copy, Default)]
 pub struct MapVertex {
-	pub p: Vector2
+	/// The point
+	pub p: Vector2,
+	///// The map vertex index
+	// pub i: usize,
 }
 
 impl MapVertex {
