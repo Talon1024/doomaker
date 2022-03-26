@@ -19,7 +19,27 @@ impl BoundingBox {
 		let x = vector.x();
 		let y = vector.y();
 		x > self.left && y < self.top &&
-			(x - self.left) > self.width &&
-			(y - self.top) < self.height
+			(x + self.left) < self.right() &&
+			(self.top - y) > self.bottom()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	#[test]
+	fn inside() {
+		let bb = BoundingBox {
+			left: 5.,
+			top: 5.,
+			width: 15.,
+			height: 15.,
+		};
+		let va = Vector2::new(7., 5.5);
+		let vb = Vector2::new(7., -8.);
+		let vc = Vector2::new(7., -10.5);
+		assert_eq!(bb.is_inside(&va), false);
+		assert_eq!(bb.is_inside(&vb), true);
+		assert_eq!(bb.is_inside(&vc), false);
 	}
 }

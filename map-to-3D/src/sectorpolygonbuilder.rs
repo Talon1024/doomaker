@@ -317,6 +317,10 @@ pub fn build_polygons(
 		};
 		if new_polygon {
 			if let Some(edge) = find_next_start_edge(false, &edges_used, vertices) {
+				polygons.push(SectorPolygon{
+					vertices: vec![edge.0, edge.1],
+					hole_of: None
+				});
 				bounding_boxes.push({
 					let viter = polygons.last().unwrap().vertices.iter();
 					let top = viter.clone().map(|&i| vertices[i].p.y())
@@ -334,10 +338,6 @@ pub fn build_polygons(
 						height,
 					}
 				});
-				polygons.push(SectorPolygon{
-					vertices: vec![edge.0, edge.1],
-					hole_of: None
-				});
 				let edge = Edge::from(edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
@@ -346,7 +346,7 @@ pub fn build_polygons(
 					let va = vertices[edge.lo()].p;
 					let vb = vertices[edge.hi()].p;
 					let mid = va.midpoint(&vb);
-					if boundingbox.is_inside(&mid) && edge_in_polygon(&edge, &polygon.vertices, &vertices) {
+					if edge_in_polygon(&edge, &polygon.vertices, &vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);
