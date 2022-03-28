@@ -303,6 +303,23 @@ pub fn build_polygons(
 				edges_used.insert(edge, true);
 				if is_polygon_complete(&polygons.last().unwrap().vertices, vertex) {
 					new_polygon = true;
+					bounding_boxes.push({
+						let viter = polygons.last().unwrap().vertices.iter();
+						let top = viter.clone().map(|&i| vertices[i].p.y())
+							.reduce(f32::max).unwrap();
+						let left = viter.clone().map(|&i| vertices[i].p.x())
+							.reduce(f32::min).unwrap();
+						let right = viter.clone().map(|&i| vertices[i].p.x())
+							.reduce(f32::max).unwrap();
+						let bottom = viter.clone().map(|&i| vertices[i].p.y())
+							.reduce(f32::min).unwrap();
+						BoundingBox::from_edges(
+							top,
+							left,
+							right,
+							bottom,
+						)
+					});
 				} else {
 					polygons.last_mut().unwrap().vertices.push(vertex);
 				}
@@ -310,35 +327,13 @@ pub fn build_polygons(
 			None => {
 				// The current polygon is probably incomplete
 				let bad_polygon = polygons.pop().unwrap();
-				bounding_boxes.pop(); // I don't know if these will be used
 				incomplete_polygons.push(bad_polygon);
 				new_polygon = true;
 			}
 		};
 		if new_polygon {
-			if let Some(edge) = find_next_start_edge(false, &edges_used, vertices) {
-				polygons.push(SectorPolygon{
-					vertices: vec![edge.0, edge.1],
-					hole_of: None
-				});
-				bounding_boxes.push({
-					let viter = polygons.last().unwrap().vertices.iter();
-					let top = viter.clone().map(|&i| vertices[i].p.y())
-						.reduce(f32::max).unwrap();
-					let left = viter.clone().map(|&i| vertices[i].p.x())
-						.reduce(f32::min).unwrap();
-					let width = viter.clone().map(|&i| vertices[i].p.x())
-						.reduce(f32::max).unwrap() - left;
-					let height = viter.clone().map(|&i| vertices[i].p.y())
-						.reduce(f32::min).unwrap() - top;
-					BoundingBox {
-						top,
-						left,
-						width,
-						height,
-					}
-				});
-				let edge = Edge::from(edge);
+			if let Some(first_edge) = find_next_start_edge(false, &edges_used, vertices) {
+				let edge = Edge::from(first_edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
 				clockwise = false;
@@ -346,7 +341,7 @@ pub fn build_polygons(
 					let va = vertices[edge.lo()].p;
 					let vb = vertices[edge.hi()].p;
 					let mid = va.midpoint(&vb);
-					if edge_in_polygon(&edge, &polygon.vertices, &vertices) {
+					if boundingbox.is_inside(&mid) && edge_in_polygon(&edge, &polygon.vertices, &vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);
@@ -355,7 +350,10 @@ pub fn build_polygons(
 						}
 					}
 				});
-				polygons.last_mut().unwrap().hole_of = inside_polygon_index;
+				polygons.push(SectorPolygon{
+					vertices: vec![first_edge.0, first_edge.1],
+					hole_of: inside_polygon_index
+				});
 			} else {
 				break
 			}

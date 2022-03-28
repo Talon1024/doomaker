@@ -23,6 +23,14 @@ impl BoundingBox {
 		x <= self.right() &&
 		y >= self.bottom()
 	}
+	pub fn from_edges(top: Coordinate, left: Coordinate, right: Coordinate, bottom: Coordinate) -> BoundingBox {
+		BoundingBox {
+			top,
+			left,
+			width: right - left,
+			height: top - bottom,
+		}
+	}
 }
 
 #[cfg(test)]
