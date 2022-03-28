@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: sudo apt -y install libxi-dev libasound2-dev libgl1-mesa-dev
     - name: Build
       run: cargo build --verbose
     - name: Run tests
