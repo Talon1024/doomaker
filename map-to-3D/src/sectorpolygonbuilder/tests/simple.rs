@@ -29,8 +29,6 @@ fn correct_first_edge_ccw() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
-	let verts: Vec<MapVertex> = verts.iter().enumerate()
-		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let first_edge = find_next_start_edge(false, &edges, &verts);
 	assert_eq!(first_edge, Some((1, 2)));
 }
@@ -40,8 +38,6 @@ fn correct_first_edge_cw() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
-	let verts: Vec<MapVertex> = verts.iter().enumerate()
-		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let first_edge = find_next_start_edge(true, &edges, &verts);
 	assert_eq!(first_edge, Some((3, 2)));
 }
@@ -51,8 +47,6 @@ fn correct_next_vertex() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
-	let verts: Vec<MapVertex> = verts.iter().enumerate()
-		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let from = 2;
 	let previous = 3;
 
@@ -65,8 +59,6 @@ fn correct_next_vertex() {
 fn correct_next_vertex_with_multiple_connected_edges_ccw() {
 	let clockwise = false;
 	let (verts, edges) = test_case_simple();
-	let verts: Vec<MapVertex> = verts.iter().enumerate()
-		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
 
@@ -101,8 +93,6 @@ fn correct_next_vertex_with_multiple_connected_edges_cw() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
-	let verts: Vec<MapVertex> = verts.iter().enumerate()
-		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 
 	// Inside lower right polygon
 	let from = 0;

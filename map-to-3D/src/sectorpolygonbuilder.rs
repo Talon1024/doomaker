@@ -10,9 +10,9 @@ use ahash::RandomState;
 
 #[cfg(test)]
 mod tests;
-
 mod vertex;
 use vertex::MapVertex;
+
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
@@ -36,13 +36,13 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 fn edge_in_polygon(
 	edge: &Edge,
 	polygon: &[EdgeVertexIndex],
-	map_vertices: &[MapVertex]
+	map_vertices: &[Vector2]
 ) -> bool {
-	let a = map_vertices[edge.lo()].p;
-	let b = map_vertices[edge.hi()].p;
+	let a = &map_vertices[edge.lo()];
+	let b = &map_vertices[edge.hi()];
 	let midpoint = a.midpoint(&b);
 	let polygon: Vec<Vector2> = polygon.iter()
-		.map(|&index| map_vertices[index].p)
+		.map(|&index| map_vertices[index])
 		.collect();
 	point_in_polygon(midpoint, &polygon)
 }
@@ -247,8 +247,6 @@ pub fn build_polygons(
 	lines: &[Edge],
 	vertices: &[Vector2]
 ) -> Vec<SectorPolygon> {
-	let vertices: Box<[MapVertex]> = vertices.iter()
-		.enumerate().map(|(i, v)| MapVertex {p: v.clone(), i}).collect();
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
 	// edges should be taken care of when the level is being pre-processed.
@@ -256,7 +254,7 @@ pub fn build_polygons(
 	lines.iter().for_each(|&line| {
 		edges_used.insert(line, false);
 	});
-	let first_edge = match find_next_start_edge(false, &edges_used, &vertices) {
+	let first_edge = match find_next_start_edge(false, &edges_used, vertices) {
 		Some(edge) => edge,
 		None => return vec![]
 	};
@@ -280,7 +278,7 @@ pub fn build_polygons(
 			.expect("A polygon should have at least one edge (two vertices)");
 		let next_vertex = find_next_vertex(
 			&current_vertex, &previous_vertex,
-			clockwise, &edges_used, &vertices
+			clockwise, &edges_used, vertices
 		);
 		let mut new_polygon = false;
 		match next_vertex {
@@ -291,13 +289,13 @@ pub fn build_polygons(
 					new_polygon = true;
 					bounding_boxes.push({
 						let viter = polygons.last().unwrap().vertices.iter();
-						let top = viter.clone().map(|&i| vertices[i].p.y())
+						let top = viter.clone().map(|&i| vertices[i].y())
 							.reduce(f32::max).unwrap();
-						let left = viter.clone().map(|&i| vertices[i].p.x())
+						let left = viter.clone().map(|&i| vertices[i].x())
 							.reduce(f32::min).unwrap();
-						let right = viter.clone().map(|&i| vertices[i].p.x())
+						let right = viter.clone().map(|&i| vertices[i].x())
 							.reduce(f32::max).unwrap();
-						let bottom = viter.clone().map(|&i| vertices[i].p.y())
+						let bottom = viter.clone().map(|&i| vertices[i].y())
 							.reduce(f32::min).unwrap();
 						BoundingBox{
 							top,
@@ -318,16 +316,17 @@ pub fn build_polygons(
 			}
 		};
 		if new_polygon {
-			if let Some(first_edge) = find_next_start_edge(false, &edges_used, &vertices) {
+			if let Some(first_edge) = find_next_start_edge(false, &edges_used, vertices) {
 				let edge = Edge::from(first_edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
 				clockwise = false;
-				polygons.iter().zip(bounding_boxes.iter()).enumerate().for_each(|(index, (polygon, boundingbox))| {
-					let va = vertices[edge.lo()].p;
-					let vb = vertices[edge.hi()].p;
-					let mid = va.midpoint(&vb);
-					if boundingbox.is_inside(&mid) && edge_in_polygon(&edge, &polygon.vertices, &vertices) {
+				polygons.iter().zip(bounding_boxes.iter()).enumerate()
+					.for_each(|(index, (polygon, boundingbox))| {
+					let va = &vertices[edge.lo()];
+					let vb = &vertices[edge.hi()];
+					let mid = va.midpoint(vb);
+					if boundingbox.is_inside(&mid) && edge_in_polygon(&edge, &polygon.vertices, vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);
@@ -351,7 +350,7 @@ pub fn build_polygons(
 fn find_next_start_edge(
 	clockwise: bool,  // Polygon's interior angles should be clockwise or not?
 	edges: &HashMap<Edge, bool, RandomState>,
-	vertices: &[MapVertex]
+	vertices: &[Vector2]
 ) -> Option<(EdgeVertexIndex, EdgeVertexIndex)> {
 	// Filter out used edges
 	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
@@ -365,15 +364,7 @@ fn find_next_start_edge(
 			});
 			set
 		// Convert indices to vertices
-		}).into_iter().reduce(|current_index, other_index| {
-			let current_vertex = vertices[current_index];
-			let other_vertex = vertices[other_index];
-			if other_vertex > current_vertex {
-				other_index
-			} else {
-				current_index
-			}
-		})?;
+		}).into_iter().map(|i| MapVertex {p: vertices[i], i}).max()?.i;
 	let other_vertex = usable_edges.keys()
 		.filter(|&key| key.contains(rightmost_vertex))
 		.map(|&edge| edge.other_unchecked(rightmost_vertex))
@@ -381,9 +372,9 @@ fn find_next_start_edge(
 			// To ensure the interior angle is counterclockwise, pick the
 			// connected vertex with the lowest angle. Necessary for proper
 			// 3d-ification
-			let rightmost_vertex = vertices[rightmost_vertex].p;
-			let current_vertex = vertices[current_index].p;
-			let other_vertex = vertices[other_index].p;
+			let rightmost_vertex = &vertices[rightmost_vertex];
+			let current_vertex = &vertices[current_index];
+			let other_vertex = &vertices[other_index];
 			let current_angle = (rightmost_vertex - current_vertex).angle();
 			let other_angle = (rightmost_vertex - other_vertex).angle();
 			if clockwise {
@@ -405,7 +396,7 @@ fn find_next_vertex(
 	previous: &EdgeVertexIndex,
 	clockwise: bool,
 	edges: &HashMap<Edge, bool, RandomState>,
-	vertices: &[MapVertex]
+	vertices: &[Vector2]
 ) -> Option<EdgeVertexIndex> {
 	let from = from.clone();
 	let previous = previous.clone();
@@ -425,22 +416,22 @@ fn find_next_vertex(
 	if usable_vertices.len() == 1 { return Some(usable_vertices[0]); }
 	// Find the vertex with the lowest angle in comparison to "from"
 	// The "previous" and "from" vertices will remain constant
-	let previous_vertex = vertices[previous];
-	let from_vertex = vertices[from];
+	let previous_vertex = &vertices[previous];
+	let from_vertex = &vertices[from];
 	let next_vertex = usable_vertices.into_iter()
 		.reduce(|current_index, other_index| {
-			let current_vertex = vertices[current_index];
-			let other_vertex = vertices[other_index];
+			let current_vertex = &vertices[current_index];
+			let other_vertex = &vertices[other_index];
 			let current_angle = angle_between(
-				&previous_vertex.p,
-				&current_vertex.p,
-				&from_vertex.p,
+				&previous_vertex,
+				&current_vertex,
+				&from_vertex,
 				clockwise
 			);
 			let other_angle = angle_between(
-				&previous_vertex.p,
-				&other_vertex.p,
-				&from_vertex.p,
+				&previous_vertex,
+				&other_vertex,
+				&from_vertex,
 				clockwise
 			);
 			if other_angle < current_angle {
