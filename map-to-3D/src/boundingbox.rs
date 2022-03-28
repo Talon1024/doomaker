@@ -4,31 +4,40 @@ use crate::vector::{Vector2, Coordinate};
 pub struct BoundingBox {
 	pub top: Coordinate,
 	pub left: Coordinate,
-	pub width: Coordinate,
-	pub height: Coordinate
+	pub right: Coordinate,
+	pub bottom: Coordinate
 }
 
 impl BoundingBox {
-	pub fn bottom(&self) -> Coordinate {
-		self.top - self.height
+	pub fn height(&self) -> Coordinate {
+		// bottom < top
+		self.top - self.bottom
 	}
-	pub fn right(&self) -> Coordinate {
-		self.left + self.width
+	pub fn width(&self) -> Coordinate {
+		// right > left
+		self.right - self.left
 	}
 	pub fn is_inside(&self, vector: &Vector2) -> bool {
 		let x = vector.x();
 		let y = vector.y();
 		x >= self.left &&
 		y <= self.top &&
-		x <= self.right() &&
-		y >= self.bottom()
+		x <= self.right &&
+		y >= self.bottom
 	}
-	pub fn from_edges(top: Coordinate, left: Coordinate, right: Coordinate, bottom: Coordinate) -> BoundingBox {
+	pub fn from_xy_wh(
+		x: Coordinate,
+		y: Coordinate,
+		w: Coordinate,
+		h: Coordinate
+	) -> BoundingBox {
+		let right = x + w;
+		let bottom = y - h;
 		BoundingBox {
-			top,
-			left,
-			width: right - left,
-			height: top - bottom,
+			top: y,
+			left: x,
+			right,
+			bottom
 		}
 	}
 }
@@ -41,8 +50,8 @@ mod tests {
 		let bb = BoundingBox {
 			left: 5.,
 			top: 5.,
-			width: 15.,
-			height: 15.,
+			right: 20.,
+			bottom: -10.,
 		};
 		let va = Vector2::new(7., 5.5);
 		let vb = Vector2::new(7., -8.);

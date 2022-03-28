@@ -313,12 +313,12 @@ pub fn build_polygons(
 							.reduce(f32::max).unwrap();
 						let bottom = viter.clone().map(|&i| vertices[i].p.y())
 							.reduce(f32::min).unwrap();
-						BoundingBox::from_edges(
+						BoundingBox{
 							top,
 							left,
 							right,
 							bottom,
-						)
+						}
 					});
 				} else {
 					polygons.last_mut().unwrap().vertices.push(vertex);
