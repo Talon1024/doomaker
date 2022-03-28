@@ -364,7 +364,7 @@ fn find_next_start_edge(
 			});
 			set
 		// Convert indices to vertices
-		}).into_iter().map(|i| MapVertex {p: vertices[i], i}).max()?.i;
+		}).into_iter().map(|i| MapVertex {p: &vertices[i], i}).max()?.i;
 	let other_vertex = usable_edges.keys()
 		.filter(|&key| key.contains(rightmost_vertex))
 		.map(|&edge| edge.other_unchecked(rightmost_vertex))
