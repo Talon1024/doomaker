@@ -1,11 +1,36 @@
 use super::*;
-use data::test_case_simple;
+
+// see tests/data/simple.png for an annotated drawing of this data
+fn test_case_simple() -> (Vec<Vector2>, Vec<Edge>) {
+	let verts: Vec<Vector2> = vec![
+		Vector2::new(0., 0.),
+		Vector2::new(64., 0.),
+		Vector2::new(64., -64.),
+		Vector2::new(0., -64.),
+		Vector2::new(0., 64.),
+		Vector2::new(-64., 64.),
+		Vector2::new(-64., 0.),
+	];
+	let edges: Vec<Edge> = vec![
+		Edge::new(0, 1),
+		Edge::new(1, 2),
+		Edge::new(2, 3),
+		Edge::new(3, 0),
+		Edge::new(0, 4),
+		Edge::new(4, 5),
+		Edge::new(5, 6),
+		Edge::new(6, 0),
+	];
+	(verts, edges)
+}
 
 #[test]
 fn correct_first_edge_ccw() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
+	let verts: Vec<MapVertex> = verts.iter().enumerate()
+		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let first_edge = find_next_start_edge(false, &edges, &verts);
 	assert_eq!(first_edge, Some((1, 2)));
 }
@@ -15,6 +40,8 @@ fn correct_first_edge_cw() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
+	let verts: Vec<MapVertex> = verts.iter().enumerate()
+		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let first_edge = find_next_start_edge(true, &edges, &verts);
 	assert_eq!(first_edge, Some((3, 2)));
 }
@@ -24,6 +51,8 @@ fn correct_next_vertex() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
+	let verts: Vec<MapVertex> = verts.iter().enumerate()
+		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let from = 2;
 	let previous = 3;
 
@@ -36,6 +65,8 @@ fn correct_next_vertex() {
 fn correct_next_vertex_with_multiple_connected_edges_ccw() {
 	let clockwise = false;
 	let (verts, edges) = test_case_simple();
+	let verts: Vec<MapVertex> = verts.iter().enumerate()
+		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
 
@@ -70,6 +101,8 @@ fn correct_next_vertex_with_multiple_connected_edges_cw() {
 	let (verts, edges) = test_case_simple();
 	let edges: HashMap<Edge, bool, RandomState> = 
 		edges.into_iter().map(|e| (e, false)).collect();
+	let verts: Vec<MapVertex> = verts.iter().enumerate()
+		.map(|(i, v)| MapVertex { p: v.clone(), i }).collect();
 
 	// Inside lower right polygon
 	let from = 0;

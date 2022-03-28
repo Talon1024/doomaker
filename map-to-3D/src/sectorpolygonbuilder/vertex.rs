@@ -3,31 +3,19 @@
 //! This is mostly a thin wrapper around Vector2, so that it can be sorted
 //! differently.
 use std::cmp::Ordering::{self, Equal, Greater, Less};
-use crate::vector::{Vector2, Coordinate, Iter as VIter};
+use crate::vector::{Vector2, Iter as VIter};
 
 #[derive(PartialEq, Clone, Debug, Copy, Default)]
 pub struct MapVertex {
 	/// The point
 	pub p: Vector2,
-	///// The map vertex index
-	// pub i: usize,
+	/// The map vertex index
+	pub i: usize,
 }
 
 impl MapVertex {
 	pub fn xy(&self) -> VIter {
 		self.p.xy()
-	}
-}
-
-impl From<Vector2> for MapVertex {
-	fn from(v: Vector2) -> MapVertex {
-		MapVertex { p: v }
-	}
-}
-
-impl From<&[Coordinate]> for MapVertex {
-	fn from(v: &[Coordinate]) -> MapVertex {
-		MapVertex { p: Vector2::from(v) }
 	}
 }
 
@@ -70,13 +58,13 @@ mod tests {
 	// see tests/data/simple.png for an annotated drawing of this data
 	fn test_case_simple() -> Vec<MapVertex> {
 		let verts: Vec<MapVertex> = vec![
-			MapVertex { p: Vector2::new(0., 0.) },
-			MapVertex { p: Vector2::new(64., 0.) },
-			MapVertex { p: Vector2::new(64., -64.) },
-			MapVertex { p: Vector2::new(0., -64.) },
-			MapVertex { p: Vector2::new(0., 64.) },
-			MapVertex { p: Vector2::new(-64., 64.) },
-			MapVertex { p: Vector2::new(-64., 0.) },
+			MapVertex { p: Vector2::new(0., 0.), i: 0 },
+			MapVertex { p: Vector2::new(64., 0.), i: 1 },
+			MapVertex { p: Vector2::new(64., -64.), i: 2 },
+			MapVertex { p: Vector2::new(0., -64.), i: 3 },
+			MapVertex { p: Vector2::new(0., 64.), i: 4 },
+			MapVertex { p: Vector2::new(-64., 64.), i: 5 },
+			MapVertex { p: Vector2::new(-64., 0.), i: 6 },
 		];
 		verts
 	}
@@ -85,7 +73,7 @@ mod tests {
 	fn correct_max_vertex() {
 		let verts = test_case_simple();
 		assert_eq!(
-			MapVertex { p: Vector2::new(64., -64.) },
+			MapVertex { p: Vector2::new(64., -64.), i: 2 },
 			verts.iter().max().cloned().unwrap());
 	}
 
@@ -93,7 +81,7 @@ mod tests {
 	fn correct_min_vertex() {
 		let verts = test_case_simple();
 		assert_eq!(
-			MapVertex { p: Vector2::new(-64., 64.) },
+			MapVertex { p: Vector2::new(-64., 64.), i: 5 },
 			verts.iter().min().cloned().unwrap());
 	}
 

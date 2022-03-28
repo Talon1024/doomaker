@@ -1,6 +1,5 @@
 use macroquad::prelude::*;
 use map_to_3D::edge::Edge;
-use map_to_3D::vertex::MapVertex;
 use map_to_3D::vector::Vector2;
 use map_to_3D::secplane::SectorPlane;
 use map_to_3D::sectorpolygonbuilder as spb;
@@ -83,20 +82,20 @@ fn rainbowi(h: usize) -> Color {
 */
 
 pub fn holey_mesh() -> Box<Mesh> {
-	let verts: Vec<MapVertex> = vec![
-		MapVertex { p: Vector2::new(70., 30.) },	// 0
-		MapVertex { p: Vector2::new(68., 30.) },
-		MapVertex { p: Vector2::new(69., 32.) },
-		MapVertex { p: Vector2::new(64., 64.) },	// 3
-		MapVertex { p: Vector2::new(64., -64.) },
-		MapVertex { p: Vector2::new(-64., -64.) },
-		MapVertex { p: Vector2::new(-64., 64.) },
-		MapVertex { p: Vector2::new(44., 52.) },	// 7
-		MapVertex { p: Vector2::new(-52., 52.) },
-		MapVertex { p: Vector2::new(-52., -44.) },
-		MapVertex { p: Vector2::new(52., 44.) },	// 10
-		MapVertex { p: Vector2::new(52., -52.) },
-		MapVertex { p: Vector2::new(-44., -52.) },	// 12
+	let verts: Vec<Vector2> = vec![
+		Vector2::new(70., 30.),	// 0
+		Vector2::new(68., 30.),
+		Vector2::new(69., 32.),
+		Vector2::new(64., 64.),	// 3
+		Vector2::new(64., -64.),
+		Vector2::new(-64., -64.),
+		Vector2::new(-64., 64.),
+		Vector2::new(44., 52.),	// 7
+		Vector2::new(-52., 52.),
+		Vector2::new(-52., -44.),
+		Vector2::new(52., 44.),	// 10
+		Vector2::new(52., -52.),
+		Vector2::new(-44., -52.),	// 12
 	];
 	let edges = vec![
 		Edge::new(3, 4),	// 0

@@ -1,5 +1,45 @@
 use super::*;
-use data::test_case_harder;
+
+// see tests/data/harder.png for an annotated drawing of this data
+fn test_case_harder() -> (Vec<Vector2>, Vec<Edge>) {
+	let verts: Vec<Vector2> = vec![
+		Vector2::new(64., 0.),      // 0
+		Vector2::new(48., 48.),
+		Vector2::new(48., -48.),
+		Vector2::new(-48., 48.),
+		Vector2::new(-64., 0.),     // 4
+		Vector2::new(-48., -48.),
+		Vector2::new(0., 64.),
+		Vector2::new(0., -64.),
+		Vector2::new(0., 48.),      // 8
+		Vector2::new(48., 0.),
+		Vector2::new(0., -48.),
+		Vector2::new(-48., 0.),     // 11
+	];
+	let edges: Vec<Edge> = vec![
+		Edge::new(0, 1),
+		Edge::new(0, 2),
+		Edge::new(1, 9),
+		Edge::new(9, 2), // Right polygon end
+		Edge::new(1, 6),
+		Edge::new(6, 3),
+		Edge::new(3, 8),
+		Edge::new(8, 1), // Upper polygon end
+		Edge::new(2, 10),
+		Edge::new(2, 7),
+		Edge::new(7, 5),
+		Edge::new(5, 10), // Lower polygon end
+		Edge::new(5, 4),
+		Edge::new(5, 11),
+		Edge::new(4, 3),
+		Edge::new(11, 3), // Left polygon end
+		Edge::new(8, 9),
+		Edge::new(9, 10),
+		Edge::new(10, 11),
+		Edge::new(11, 8), // Center polygon end
+	];
+	(verts, edges)
+}
 
 #[test]
 fn correct_polygons() {

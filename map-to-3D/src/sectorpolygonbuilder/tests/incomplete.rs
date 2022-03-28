@@ -1,5 +1,26 @@
 use super::*;
-use data::test_case_incomplete;
+
+// see tests/data/incomplete.png for an annotated drawing of this data
+fn test_case_incomplete() -> (Vec<Vector2>, Vec<Edge>) {
+	let verts: Vec<Vector2> = vec![
+		Vector2::new(3., 5.),
+		Vector2::new(3., -5.),
+		Vector2::new(-7., -5.), // Incomplete polygon end
+		Vector2::new(-7., 5.),
+		Vector2::new(-3., 5.),
+		Vector2::new(-3., 2.),
+		Vector2::new(-7., 2.), // Square end
+	];
+	let edges: Vec<Edge> = vec![
+		Edge::new(0, 1),
+		Edge::new(1, 2),
+		Edge::new(3, 4),
+		Edge::new(4, 5),
+		Edge::new(5, 6),
+		Edge::new(6, 3),
+	];
+	(verts, edges)
+}
 
 #[test]
 fn correct_polygons() {

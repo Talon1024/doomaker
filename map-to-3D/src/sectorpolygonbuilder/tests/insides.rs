@@ -1,5 +1,42 @@
 use super::*;
-use data::test_case_insides;
+
+// see tests/data/insides.png for an annotated drawing of this data
+fn test_case_insides() -> (Vec<Vector2>, Vec<Edge>) {
+	let verts: Vec<Vector2> = vec![
+		Vector2::new(64., 64.),     // 0
+		Vector2::new(64., 0.),
+		Vector2::new(64., -64.),
+		Vector2::new(0., -64.),
+		Vector2::new(-64., -64.),       // 4
+		Vector2::new(-64., 0.),
+		Vector2::new(-64., 64.),
+		Vector2::new(0., 64.),
+		Vector2::new(99., 99.),       // 8
+		Vector2::new(99., -99.),
+		Vector2::new(-99., -99.),
+		Vector2::new(-99., 99.),       // 11
+	];
+	let edges: Vec<Edge> = vec![
+		Edge::new(8, 9),
+		Edge::new(10, 9),
+		Edge::new(11, 10),
+		Edge::new(11, 8),   // End of outer square
+		Edge::new(0, 1),
+		Edge::new(7, 0),
+		Edge::new(2, 1),
+		Edge::new(2, 3),
+		Edge::new(3, 4),
+		Edge::new(4, 5),
+		Edge::new(5, 6),
+		Edge::new(6, 7),
+		Edge::new(7, 0),    // End of inner square
+		Edge::new(7, 1),
+		Edge::new(1, 3),
+		Edge::new(3, 5),
+		Edge::new(5, 7),    // End of inner diamond
+	];
+	(verts, edges)
+}
 
 #[test]
 fn correct_polygons() {

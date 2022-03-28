@@ -10,5 +10,4 @@ pub mod secplane;
 pub mod boundingbox;
 pub mod sectorpolygonbuilder;
 pub mod edge;
-pub mod vertex;
 pub mod wall;

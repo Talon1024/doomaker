@@ -4,13 +4,15 @@
 //! consisting of vertex indices
 use crate::vector::{Vector2, Coordinate};
 use crate::edge::{Edge, EdgeVertexIndex};
-use crate::vertex::MapVertex;
 use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
 
 #[cfg(test)]
 mod tests;
+
+mod vertex;
+use vertex::MapVertex;
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
@@ -101,21 +103,6 @@ pub struct SectorPolygon {
 	pub hole_of: Option<usize>
 }
 
-/*
-impl SectorPolygon {
-	/// Get the bounding box for this polygon
-	pub fn bounding_box(&self, vertices: &Vec<MapVertex>) -> BoundingBox {
-		let vertices: Vec<MapVertex> = self.vertices.iter()
-			.map(|&v| vertices[v]).collect();
-		let top = vertices.iter().map(|v| v.p.y()).reduce(f32::max).unwrap();
-		let left = vertices.iter().map(|v| v.p.x()).reduce(f32::min).unwrap();
-		let width = vertices.iter().map(|v| v.p.x()).reduce(f32::max).unwrap() - left;
-		let height = top - vertices.iter().map(|v| v.p.y()).reduce(f32::min).unwrap();
-		BoundingBox{top, left, width, height}
-	}
-}
-*/
-
 /// Build polygon contours from a set of lines and vertices.
 /// 
 /// Returns the polygon contours as a vector of vectors of contour vertex
@@ -130,7 +117,6 @@ impl SectorPolygon {
 /// ```
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
-/// use map_to_3D::vertex::MapVertex;
 /// use map_to_3D::sectorpolygonbuilder as spb;
 /// use spb::SectorPolygon;
 /// 
@@ -139,10 +125,10 @@ impl SectorPolygon {
 /// // 2--1
 ///
 /// let vertices = vec![
-/// 	MapVertex { p: Vector2::new(1.0, 1.0) },
-/// 	MapVertex { p: Vector2::new(1.0, 0.0) },
-/// 	MapVertex { p: Vector2::new(0.0, 0.0) },
-/// 	MapVertex { p: Vector2::new(0.0, 1.0) },
+/// 	Vector2::new(1.0, 1.0),
+/// 	Vector2::new(1.0, 0.0),
+/// 	Vector2::new(0.0, 0.0),
+/// 	Vector2::new(0.0, 1.0),
 /// ];
 /// let lines = vec![
 /// 	Edge::new(0, 1),
@@ -163,7 +149,6 @@ impl SectorPolygon {
 /// ```
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
-/// use map_to_3D::vertex::MapVertex;
 /// use map_to_3D::sectorpolygonbuilder as spb;
 /// use spb::SectorPolygon;
 /// 
@@ -173,14 +158,14 @@ impl SectorPolygon {
 /// //    |  |
 /// //    3--2
 /// 
-/// let verts: Vec<MapVertex> = vec![
-/// 	MapVertex { p: Vector2::new(0., 0.) },
-/// 	MapVertex { p: Vector2::new(64., 0.) },
-/// 	MapVertex { p: Vector2::new(64., -64.) },
-/// 	MapVertex { p: Vector2::new(0., -64.) },
-/// 	MapVertex { p: Vector2::new(0., 64.) },
-/// 	MapVertex { p: Vector2::new(-64., 64.) },
-/// 	MapVertex { p: Vector2::new(-64., 0.) },
+/// let verts: Vec<Vector2> = vec![
+/// 	Vector2::new(0., 0.),
+/// 	Vector2::new(64., 0.),
+/// 	Vector2::new(64., -64.),
+/// 	Vector2::new(0., -64.),
+/// 	Vector2::new(0., 64.),
+/// 	Vector2::new(-64., 64.),
+/// 	Vector2::new(-64., 0.),
 /// ];
 /// let lines: Vec<Edge> = vec![
 /// 	Edge::new(0, 1),
@@ -209,7 +194,6 @@ impl SectorPolygon {
 /// ```
 /// use map_to_3D::vector::Vector2;
 /// use map_to_3D::edge::Edge;
-/// use map_to_3D::vertex::MapVertex;
 /// use map_to_3D::sectorpolygonbuilder as spb;
 /// use spb::SectorPolygon;
 /// 
@@ -219,15 +203,15 @@ impl SectorPolygon {
 /// // | 6--5 |
 /// // 3------2
 /// 
-/// let verts: Vec<MapVertex> = vec![
-/// 	MapVertex { p: Vector2::new(-7., 7.) }, // Outside
-/// 	MapVertex { p: Vector2::new(7., 7.) },
-/// 	MapVertex { p: Vector2::new(7., -7.) },
-/// 	MapVertex { p: Vector2::new(-7., -7.) },
-/// 	MapVertex { p: Vector2::new(5., 5.) }, // Hole
-/// 	MapVertex { p: Vector2::new(5., -5.) },
-/// 	MapVertex { p: Vector2::new(-5., -5.) },
-/// 	MapVertex { p: Vector2::new(-5., 5.) },
+/// let verts: Vec<Vector2> = vec![
+/// 	Vector2::new(-7., 7.), // Outside
+/// 	Vector2::new(7., 7.),
+/// 	Vector2::new(7., -7.),
+/// 	Vector2::new(-7., -7.),
+/// 	Vector2::new(5., 5.), // Hole
+/// 	Vector2::new(5., -5.),
+/// 	Vector2::new(-5., -5.),
+/// 	Vector2::new(-5., 5.),
 /// ];
 /// let lines: Vec<Edge> = vec![
 /// 	Edge::new(0, 1),
@@ -261,8 +245,10 @@ impl SectorPolygon {
 /// angle_between to panic because the angle between them is -0
 pub fn build_polygons(
 	lines: &[Edge],
-	vertices: &[MapVertex]
+	vertices: &[Vector2]
 ) -> Vec<SectorPolygon> {
+	let vertices: Box<[MapVertex]> = vertices.iter()
+		.enumerate().map(|(i, v)| MapVertex {p: v.clone(), i}).collect();
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
 	// edges should be taken care of when the level is being pre-processed.
@@ -270,7 +256,7 @@ pub fn build_polygons(
 	lines.iter().for_each(|&line| {
 		edges_used.insert(line, false);
 	});
-	let first_edge = match find_next_start_edge(false, &edges_used, vertices) {
+	let first_edge = match find_next_start_edge(false, &edges_used, &vertices) {
 		Some(edge) => edge,
 		None => return vec![]
 	};
@@ -294,7 +280,7 @@ pub fn build_polygons(
 			.expect("A polygon should have at least one edge (two vertices)");
 		let next_vertex = find_next_vertex(
 			&current_vertex, &previous_vertex,
-			clockwise, &edges_used, vertices
+			clockwise, &edges_used, &vertices
 		);
 		let mut new_polygon = false;
 		match next_vertex {
@@ -332,7 +318,7 @@ pub fn build_polygons(
 			}
 		};
 		if new_polygon {
-			if let Some(first_edge) = find_next_start_edge(false, &edges_used, vertices) {
+			if let Some(first_edge) = find_next_start_edge(false, &edges_used, &vertices) {
 				let edge = Edge::from(first_edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
@@ -478,7 +464,7 @@ fn is_polygon_complete(polygon: &Vec<EdgeVertexIndex>, last: EdgeVertexIndex) ->
 pub fn triangulate(
 	polygon: &SectorPolygon,
 	holes: &[&SectorPolygon],
-	vertices: &[MapVertex]
+	vertices: &[Vector2]
 ) -> Vec<EdgeVertexIndex> {
 	use std::iter;
 	let orig_index: Vec<usize> = polygon.vertices
@@ -504,7 +490,7 @@ pub fn triangulate(
 /// each polygon, or nothing (None) if the polygon is a hole
 pub fn auto_triangulate(
 	polygons: &[SectorPolygon],
-	vertices: &[MapVertex]
+	vertices: &[Vector2]
 ) -> Vec<Option<Vec<EdgeVertexIndex>>> {
 	polygons.iter().enumerate()
 	.map(|(i, pl)| {
