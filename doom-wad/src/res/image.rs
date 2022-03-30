@@ -1,5 +1,6 @@
-use std::error::Error;
+use thiserror::Error;
 use std::fmt::{Debug, Display};
+use std::ops::Range;
 
 mod blending;
 
@@ -49,30 +50,22 @@ impl Display for ImageFormat {
 	}
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Error)]
 pub enum ImageError {
 	/// The user is trying to convert the image into a format which it cannot
 	/// be converted. For example, they are trying to convert an RGB image into
 	/// an indexed image. This will not work.
+	#[error("This image,which is in {my} format, cannot be converted to {your} format.")]
 	IncompatibleFormat { my: ImageFormat, your: ImageFormat },
 	/// The user is trying to blit an image in a different format onto this one.
+	#[error("The image formats do not match!")]
 	DifferentFormat,
-	OutOfBounds { x: ImageDimension, y: ImageDimension }
+	/// The target image is outside of the original image's bounds
+	#[error("({x} {y}) is outside of this image's boundaries!")]
+	OutOfBounds { x: i32, y: i32 }
 }
 
-impl Display for ImageError {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-		match self {
-			ImageError::IncompatibleFormat{my, your} => write!(f, "This image,which is in {} format, cannot be converted to {} format.", my, your),
-			ImageError::DifferentFormat => write!(f, "The image formats do not match!"),
-			ImageError::OutOfBounds{x, y} => write!(f, "({} {}) is outside of this image's boundaries!", x, y)
-		}
-	}
-}
-
-impl Error for ImageError{}
-
-pub type ImageDimension = u32;
+pub type ImageDimension = usize;
 
 pub struct Image {
 	pub width: ImageDimension,
@@ -81,6 +74,52 @@ pub struct Image {
 	pub x: i32,
 	pub y: i32,
 	pub format: ImageFormat
+}
+
+struct BlitView {
+	awidh: usize,
+	aminx: usize,
+	aminy: usize,
+	bwidh: usize,
+	bminx: usize,
+	bminy: usize,
+	channels: usize,
+	rows: usize,
+	cols: usize,
+	row: usize,
+}
+
+impl Iterator for BlitView {
+	type Item = (Range<usize>, Range<usize>);
+	fn next(&mut self) -> Option<Self::Item> {
+		if self.row < self.rows {
+			// Row * width + column
+			let asta = (self.aminy * self.awidh + self.aminx) * self.channels;
+			let aend = asta + self.cols * self.channels;
+			let bsta = (self.bminy * self.bwidh + self.bminx) * self.channels;
+			let bend = bsta + self.cols * self.channels;
+			Some((asta..aend, bsta..bend))
+		} else {
+			None
+		}
+	}
+}
+
+impl From<(&Image, &Image, i32, i32)> for BlitView {
+	fn from(v: (&Image, &Image, i32, i32)) -> BlitView {
+		BlitView {
+			awidh: v.0.width,
+			aminx: (v.2.max(0) as usize).min(v.0.width - 1),
+			aminy: (v.3.max(0) as usize).min(v.0.height - 1),
+			bwidh: v.1.width,
+			bminx: (-v.2.max(0)) as usize,
+			bminy: (-v.3.max(0)) as usize,
+			channels: v.0.format.channels(),
+			rows: ((v.3.max(0) as usize) + v.1.height).min(v.0.height),
+			cols: ((v.2.max(0) as usize) + v.1.width).min(v.0.width),
+			row: 0,
+		}
+	}
 }
 
 impl Image {
@@ -92,50 +131,21 @@ impl Image {
 			data: vec![0u8; image_size]
 		}
 	}
-	pub fn blit(&mut self, other: &Image, x: ImageDimension, y: ImageDimension) -> Result<(), Box<dyn Error>> {
-		if x > self.width || y > self.height {
-			return Err(Box::new(ImageError::OutOfBounds{x, y}))
+	pub fn blit(&mut self, other: &Image, x: i32, y: i32) -> Result<(), ImageError> {
+		let swidh = self.width as i32;
+		let sheit = self.height as i32;
+		let owidh = other.width as i32;
+		let oheit = other.height as i32;
+		if x > swidh || y > sheit || (x + owidh) < 0 || (y + oheit) < 0 {
+			return Err(ImageError::OutOfBounds{x, y})
 		}
-		if self.format.equivalent_alpha(other.format) {
-			return Err(Box::new(ImageError::DifferentFormat));
+		if self.format != other.format {
+			return Err(ImageError::DifferentFormat);
 		}
-		let channels = self.format.channels();
-		let mut data_slice = {
-			// For the mutable slice of the data, I need the start of row y,
-			// and the end of row y + other.height
-			let slice_start = (y * self.width * channels) as usize;
-			let slice_end = (slice_start +
-				(other.height * self.width * channels) as usize)
-				.min(self.data.len());
-			&mut self.data[slice_start..slice_end]
-		};
-		let mut other_row: ImageDimension = 0;
-		data_slice.chunks_exact_mut(channels as usize)
-			.zip((0..other.width).cycle())
-			.for_each(|(pixel, other_col)| {
-				let self_col = other_col + x;
-				let self_row = other_row + y;
-				if let Some(_) = xy_to_bufpos(self_col, self_row, self.width, self.height, channels) {
-					let other_slice = {
-						let slice_start = ((other_row * other.width + other_col) * channels) as usize;
-						let slice_end = slice_start + channels as usize;
-						&other.data[slice_start..slice_end]
-					};
-					if let Some(index) = self.format.alpha() {
-						if other_slice[index] != 0 {
-							pixel.copy_from_slice(other_slice);
-						}
-					} else {
-						pixel.copy_from_slice(other_slice);
-					}
-				}
-				if other_col == other.width - 1 {
-					other_row += 1;
-				}
-			});
+		let blit_view = BlitView::from((self as &Image, other, x, y));
 		Ok(())
 	}
-	pub fn convert_to(&mut self, format: ImageFormat) -> Result<(), Box<dyn Error>> {
+	pub fn convert_to(&mut self, format: ImageFormat) -> Result<(), ImageError> {
 		if self.format == format {
 			return Ok(());
 		}
@@ -237,5 +247,10 @@ mod tests {
 		assert_eq!(xy_to_bufpos(4, 128, 128, 128, 4), None);
 		assert_eq!(xy_to_bufpos(127, 127, 128, 128, 4), Some(65532));
 		assert_eq!(xy_to_bufpos(128, 127, 128, 128, 4), None);
+	}
+
+	#[test]
+	fn blitview_works() {
+//
 	}
 }
