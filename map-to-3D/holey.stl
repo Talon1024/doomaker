@@ -1,0 +1,93 @@
+solid holey
+facet normal 0 0 1
+	outer loop
+		vertex 70 30 0
+		vertex 69 32 0
+		vertex 68 30 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex -64 64 0
+		vertex -64 -64 0
+		vertex -52 52 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex -52 -44 0
+		vertex -52 52 0
+		vertex -64 -64 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex -64 -64 0
+		vertex -44 -52 0
+		vertex 52 44 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 52 -52 0
+		vertex -44 -52 0
+		vertex -64 -64 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 64 64 0
+		vertex -64 64 0
+		vertex -52 52 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 44 52 0
+		vertex -52 -44 0
+		vertex -64 -64 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 52 -52 0
+		vertex -64 -64 0
+		vertex 64 -64 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 64 64 0
+		vertex -52 52 0
+		vertex 44 52 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 44 52 0
+		vertex -64 -64 0
+		vertex 52 44 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 52 44 0
+		vertex 52 -52 0
+		vertex 64 -64 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 64 64 0
+		vertex 44 52 0
+		vertex 52 44 0
+	endloop
+endfacet
+facet normal 0 0 1
+	outer loop
+		vertex 52 44 0
+		vertex 64 -64 0
+		vertex 64 64 0
+	endloop
+endfacet
+endsolid holey
