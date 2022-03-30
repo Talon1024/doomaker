@@ -51,6 +51,21 @@ impl SectorPlane {
 		}
 	}
 
+	/// Calculate the normal vector of this sector plane
+	pub fn normal(&self, reverse: bool) -> (f32, f32, f32) {
+		match self {
+			SectorPlane::Flat(_) => (0., 0., if reverse {-1.} else {1.}),
+			SectorPlane::Sloped(a, b, c, _) => {
+				if reverse {
+					// I don't know if this is correct
+					(-*a, -*b, -*c)
+				} else {
+					(*a, *b, *c)
+				}
+			}
+		}
+	}
+
 	/// Create a `SectorPlane` from three points (a triangle)
 	/// 
 	/// # Examples
