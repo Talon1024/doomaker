@@ -289,14 +289,26 @@ pub fn build_polygons(
 					new_polygon = true;
 					bounding_boxes.push({
 						let viter = polygons.last().unwrap().vertices.iter();
-						let top = viter.clone().map(|&i| vertices[i].y())
-							.reduce(f32::max).unwrap();
-						let left = viter.clone().map(|&i| vertices[i].x())
-							.reduce(f32::min).unwrap();
-						let right = viter.clone().map(|&i| vertices[i].x())
-							.reduce(f32::max).unwrap();
-						let bottom = viter.clone().map(|&i| vertices[i].y())
-							.reduce(f32::min).unwrap();
+						// The rightmost vertex is the second in the polygon
+						let first_vertex = &vertices[
+							polygons.last().unwrap().vertices[1]];
+						let right = first_vertex.x();
+						let mut left = right;
+						let mut top = first_vertex.y();
+						let mut bottom = top;
+						viter.clone().for_each(|&i| {
+							let x = vertices[i].x();
+							let y = vertices[i].y();
+							if x < left {
+								left = x;
+							}
+							if y < bottom {
+								bottom = y;
+							}
+							if y > top {
+								top = y;
+							}
+						});
 						BoundingBox{
 							top,
 							left,
