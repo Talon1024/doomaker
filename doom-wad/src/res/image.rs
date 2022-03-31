@@ -443,4 +443,37 @@ mod tests {
 		assert_eq!(blit_view.next(), Some((140..144, 24..28)));
 		assert_eq!(blit_view.next(), None);
 	}
+
+	#[test]
+	fn blit() -> Result<(), ImageError> {
+		// Image A: 12 x 12 x 1 channel
+		// Image B: 4  x 4  x 1 channel @ (4,4)
+		let mut ima = Image {
+			width: 12,
+			height: 12,
+			data: Vec::from(include_bytes!("../../tests/data/BLITBACK.raw").as_slice()),
+			x: 0,
+			y: 0,
+			format: ImageFormat::IndexedAlpha
+		};
+		let imb = Image {
+			width: 4,
+			height: 4,
+			data: Vec::from(include_bytes!("../../tests/data/BLITFORE.raw").as_slice()),
+			x: 0,
+			y: 0,
+			format: ImageFormat::IndexedAlpha
+		};
+		let imexpected = Image {
+			width: 12,
+			height: 12,
+			data: Vec::from(include_bytes!("../../tests/data/BLITRESU.raw").as_slice()),
+			x: 0,
+			y: 0,
+			format: ImageFormat::IndexedAlpha
+		};
+		ima.blit(&imb, 4, 4)?;
+		assert_eq!(ima.data, imexpected.data);
+		Ok(())
+	}
 }
