@@ -352,4 +352,44 @@ mod tests {
 		assert_eq!(blit_view.next(), Some((36..40, 60..64)));
 		assert_eq!(blit_view.next(), None);
 	}
+
+	#[test]
+	fn blitview_oob_xy() {
+		// Image A: 12 x 12 x 1 channel
+		// Image B: 8  x 8  x 1 channel @ (8,8)
+		let mut blit_view = BlitView {
+			aw: 12,
+			ax: 8,
+			ay: 8,
+			bw: 8,
+			bx: 0,
+			by: 0,
+			channels: 1,
+			rows: 4,
+			cols: 4,
+			row: 0,
+		};
+		let ima = Image {
+			width: 12,
+			height: 12,
+			data: vec![0u8; 144],
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed
+		};
+		let imb = Image {
+			width: 8,
+			height: 8,
+			data: vec![0u8; 64],
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed
+		};
+		assert_eq!(blit_view, BlitView::from((&ima, &imb, 8, 8)));
+		assert_eq!(blit_view.next(), Some((104..108, 0..4)));
+		assert_eq!(blit_view.next(), Some((116..120, 8..12)));
+		assert_eq!(blit_view.next(), Some((128..132, 16..20)));
+		assert_eq!(blit_view.next(), Some((140..144, 24..28)));
+		assert_eq!(blit_view.next(), None);
+	}
 }
