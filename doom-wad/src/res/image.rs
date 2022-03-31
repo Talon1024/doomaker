@@ -76,16 +76,27 @@ pub struct Image {
 	pub format: ImageFormat
 }
 
+#[derive(PartialEq, Eq, Debug)]
 struct BlitView {
-	awidh: usize,
-	aminx: usize,
-	aminy: usize,
-	bwidh: usize,
-	bminx: usize,
-	bminy: usize,
+	/// Width of image A
+	aw: usize,
+	/// X coordinate of top left corner of view in image A
+	ax: usize,
+	/// Y coordinate of top left corner of view in image A
+	ay: usize,
+	/// Width of image B
+	bw: usize,
+	/// X coordinate of top left corner of view in image B
+	bx: usize,
+	/// Y coordinate of top left corner of view in image B
+	by: usize,
+	/// Image colour channel count
 	channels: usize,
+	/// Number of rows
 	rows: usize,
+	/// Number of columns
 	cols: usize,
+	/// Current row
 	row: usize,
 }
 
@@ -94,10 +105,11 @@ impl Iterator for BlitView {
 	fn next(&mut self) -> Option<Self::Item> {
 		if self.row < self.rows {
 			// Row * width + column
-			let asta = (self.aminy * self.awidh + self.aminx) * self.channels;
+			let asta = ((self.ay + self.row) * self.aw + self.ax) * self.channels;
 			let aend = asta + self.cols * self.channels;
-			let bsta = (self.bminy * self.bwidh + self.bminx) * self.channels;
+			let bsta = ((self.by + self.row) * self.bw + self.bx) * self.channels;
 			let bend = bsta + self.cols * self.channels;
+			self.row += 1;
 			Some((asta..aend, bsta..bend))
 		} else {
 			None
@@ -108,15 +120,27 @@ impl Iterator for BlitView {
 impl From<(&Image, &Image, i32, i32)> for BlitView {
 	fn from(v: (&Image, &Image, i32, i32)) -> BlitView {
 		BlitView {
-			awidh: v.0.width,
-			aminx: (v.2.max(0) as usize).min(v.0.width - 1),
-			aminy: (v.3.max(0) as usize).min(v.0.height - 1),
-			bwidh: v.1.width,
-			bminx: (-v.2.max(0)) as usize,
-			bminy: (-v.3.max(0)) as usize,
+			aw: v.0.width,
+			ax: (v.2.max(0) as usize).min(v.0.width - 1),
+			ay: (v.3.max(0) as usize).min(v.0.height - 1),
+			bw: v.1.width,
+			bx: ((-v.2).max(0)) as usize,
+			by: ((-v.3).max(0)) as usize,
 			channels: v.0.format.channels(),
-			rows: ((v.3.max(0) as usize) + v.1.height).min(v.0.height),
-			cols: ((v.2.max(0) as usize) + v.1.width).min(v.0.width),
+			rows: {
+				if v.3 < 0 {
+					(v.1.height - v.3.abs() as usize).min(v.0.height)
+				} else {
+					(v.0.height - v.3 as usize).min(v.1.height)
+				}
+			},
+			cols: {
+				if v.2 < 0 {
+					(v.1.width - v.2.abs() as usize).min(v.0.width)
+				} else {
+					(v.0.width - v.2 as usize).min(v.1.width)
+				}
+			},
 			row: 0,
 		}
 	}
@@ -250,7 +274,82 @@ mod tests {
 	}
 
 	#[test]
-	fn blitview_works() {
-//
+	fn blitview_inside() {
+		// Image A: 12 x 12 x 1 channel
+		// Image B: 4  x 4  x 1 channel @ (4,4)
+		let mut blit_view = BlitView {
+			aw: 12,
+			ax: 4,
+			ay: 4,
+			bw: 4,
+			bx: 0,
+			by: 0,
+			channels: 1,
+			rows: 4,
+			cols: 4,
+			row: 0,
+		};
+		let ima = Image {
+			width: 12,
+			height: 12,
+			data: vec![0u8; 144],
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed
+		};
+		let imb = Image {
+			width: 4,
+			height: 4,
+			data: vec![0u8; 16],
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed
+		};
+		assert_eq!(blit_view, BlitView::from((&ima, &imb, 4, 4)));
+		assert_eq!(blit_view.next(), Some((52..56, 0..4)));
+		assert_eq!(blit_view.next(), Some((64..68, 4..8)));
+		assert_eq!(blit_view.next(), Some((76..80, 8..12)));
+		assert_eq!(blit_view.next(), Some((88..92, 12..16)));
+		assert_eq!(blit_view.next(), None);
+	}
+
+	#[test]
+	fn blitview_neg_xy() {
+		// Image A: 12 x 12 x 1 channel
+		// Image B: 8  x 8  x 1 channel @ (-4,-4)
+		let mut blit_view = BlitView {
+			aw: 12,
+			ax: 0,
+			ay: 0,
+			bw: 8,
+			bx: 4,
+			by: 4,
+			channels: 1,
+			rows: 4,
+			cols: 4,
+			row: 0,
+		};
+		let ima = Image {
+			width: 12,
+			height: 12,
+			data: vec![0u8; 144],
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed
+		};
+		let imb = Image {
+			width: 8,
+			height: 8,
+			data: vec![0u8; 64],
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed
+		};
+		assert_eq!(blit_view, BlitView::from((&ima, &imb, -4, -4)));
+		assert_eq!(blit_view.next(), Some((0..4, 36..40)));
+		assert_eq!(blit_view.next(), Some((12..16, 44..48)));
+		assert_eq!(blit_view.next(), Some((24..28, 52..56)));
+		assert_eq!(blit_view.next(), Some((36..40, 60..64)));
+		assert_eq!(blit_view.next(), None);
 	}
 }

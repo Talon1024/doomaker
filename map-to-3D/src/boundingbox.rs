@@ -9,14 +9,6 @@ pub struct BoundingBox {
 }
 
 impl BoundingBox {
-	pub fn height(&self) -> Coordinate {
-		// bottom < top
-		self.top - self.bottom
-	}
-	pub fn width(&self) -> Coordinate {
-		// right > left
-		self.right - self.left
-	}
 	pub fn is_inside(&self, vector: &Vector2) -> bool {
 		let x = vector.x();
 		let y = vector.y();
