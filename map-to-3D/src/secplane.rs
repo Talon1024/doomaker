@@ -52,6 +52,48 @@ impl SectorPlane {
 	}
 
 	/// Calculate the normal vector of this sector plane
+	/// 
+	/// If `reverse` is true, inverts the normal vector
+	/// 
+	/// # Examples
+	/// 
+	/// With a flat plane:
+	/// ```
+	/// use map_to_3D::secplane::SectorPlane;
+	/// 
+	/// let expected = (0.0f32, 0.0f32, 1.0f32);
+	/// let actual = SectorPlane::Flat(5.).normal(false);
+	/// assert_eq!(expected, actual);
+	/// ```
+	/// 
+	/// With a slope defined by the equation `z = .5x + .5y`:
+	/// ```
+	/// use map_to_3D::secplane::SectorPlane;
+	/// 
+	/// let plane = {
+	/// 	// Based on z = .5x + .5y + 5
+	/// 	let z: f32 = 1.;
+	/// 	let y = 0.5 * z;
+	/// 	let x = 0.5 * z;
+	/// 	let l = (x * x + y * y + z * z).sqrt();
+	/// 	let a = -x / l;
+	/// 	let b = -y / l;
+	/// 	let c = z / l;
+	/// 	(a, b, c)
+	/// };
+	/// // Use strings because of the inaccuracies caused by how real numbers
+	/// // are represented
+	/// let expected = format!(
+	/// 	"{:.3} {:.3} {:.3}",
+	/// 	plane.0, plane.1, plane.2);
+	/// let actual = SectorPlane::from_triangle(
+	/// 	16., 16., 21.,
+	/// 	-16., 16., 5.,
+	/// 	-16., -16., -11.
+	/// ).normal(false);
+	/// let actual = format!("{:.3} {:.3} {:.3}", actual.0, actual.1, actual.2);
+	/// assert_eq!(expected, actual);
+	/// ```
 	pub fn normal(&self, reverse: bool) -> (f32, f32, f32) {
 		match self {
 			SectorPlane::Flat(_) => (0., 0., if reverse {-1.} else {1.}),
