@@ -17,21 +17,6 @@ impl BoundingBox {
 		x <= self.right &&
 		y >= self.bottom
 	}
-	pub fn from_xy_wh(
-		x: Coordinate,
-		y: Coordinate,
-		w: Coordinate,
-		h: Coordinate
-	) -> BoundingBox {
-		let right = x + w;
-		let bottom = y - h;
-		BoundingBox {
-			top: y,
-			left: x,
-			right,
-			bottom
-		}
-	}
 }
 
 #[cfg(test)]
