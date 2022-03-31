@@ -167,6 +167,31 @@ impl Image {
 			return Err(ImageError::DifferentFormat);
 		}
 		let blit_view = BlitView::from((self as &Image, other, x, y));
+		let blend: blending::BlendFunction = blending::mix;
+		if self.format.alpha().is_none() {
+			blit_view.for_each(|(ra, rb)| {
+				let rowa = &mut self.data[ra];
+				let rowb = &other.data[rb];
+				rowa.copy_from_slice(rowb);
+			});
+		} else if let Some(alpha_index) = self.format.alpha() {
+			blit_view.for_each(|(ra, rb)| {
+				let channels = self.format.channels();
+				let rowa = &mut self.data[ra];
+				let rowb = &other.data[rb];
+				rowa.chunks_exact_mut(channels)
+					.zip(rowb.chunks_exact(channels))
+					.for_each(|(pxa, pxb)| {
+						let alpha = pxb.get(alpha_index).copied().unwrap();
+						if alpha < 255 {
+							let pxl = blend(pxa, pxb, Some(alpha_index));
+							pxa.copy_from_slice(&pxl);
+						} else {
+							pxa.copy_from_slice(pxb);
+						}
+					});
+			});
+		}
 		Ok(())
 	}
 	pub fn convert_to(&mut self, format: ImageFormat) -> Result<(), ImageError> {
@@ -174,10 +199,36 @@ impl Image {
 			return Ok(());
 		}
 		// Allow indexed images to be converted to IndexedAlpha
-		if self.format == ImageFormat::Indexed {
-
+		if format == ImageFormat::IndexedAlpha &&
+			self.format == ImageFormat::Indexed {
+			let default_alpha = 255;
+			// TODO: Use intersperse when it's stable
+			self.data = {
+				let mut data: Vec<u8> = Vec::new();
+				let mut pos: usize = 0;
+				let mut get_orig = false;
+				loop {
+					let new_value = if get_orig {
+						let orig_value = data.get(pos);
+						if orig_value.is_none() {
+							break;
+						}
+						orig_value.copied().unwrap()
+					} else {
+						default_alpha
+					};
+					data.push(new_value);
+					get_orig = !get_orig;
+					pos += 1;
+				}
+				// Alpha channel goes at the end
+				data.push(default_alpha);
+				data
+			};
+			Ok(())
+		} else {
+			Err(ImageError::IncompatibleFormat{my: self.format, your: format})
 		}
-		Ok(())
 	}
 }
 
