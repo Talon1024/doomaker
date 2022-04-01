@@ -7,12 +7,13 @@ use crate::edge::{Edge, EdgeVertexIndex};
 use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
+use wasm_bindgen::prelude::*;
 
 #[cfg(test)]
 mod tests;
 mod vertex;
 use vertex::MapVertex;
-
+mod wasm;
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
@@ -95,8 +96,10 @@ fn angle_between(
 /// Consists of a list of vertices that make up the contour of the polygon, and
 /// the index of the other polygon that this polygon is a hole of.
 #[derive(PartialEq, Debug, Clone, Default)]
+#[wasm_bindgen]
 pub struct SectorPolygon {
 	/// The indices of the vertices of this polygon's contour
+	#[wasm_bindgen(skip)]
 	pub vertices: Vec<EdgeVertexIndex>,
 	/// The index of the other polygon that this polygon is a hole of, if it is
 	/// a hole in another polygon.
