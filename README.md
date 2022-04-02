@@ -1,6 +1,8 @@
 Doomaker
 ========
 
+[![Rust](https://github.com/Talon1024/doomaker/actions/workflows/rust.yml/badge.svg)](https://github.com/Talon1024/doomaker/actions/workflows/rust.yml)
+
 A new map editor for Doom, and possibly other games like Marathon.
 
 Why?
