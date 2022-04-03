@@ -94,15 +94,15 @@ impl SectorPlane {
 	/// let actual = format!("{:.3} {:.3} {:.3}", actual.0, actual.1, actual.2);
 	/// assert_eq!(expected, actual);
 	/// ```
-	pub fn normal(&self, reverse: bool) -> (f32, f32, f32) {
+	pub fn normal(&self, reverse: bool) -> Box<[f32]> {
 		match self {
-			SectorPlane::Flat(_) => (0., 0., if reverse {-1.} else {1.}),
+			SectorPlane::Flat(_) => Box::from([0., 0., if reverse {-1.} else {1.}]),
 			SectorPlane::Sloped(a, b, c, _) => {
 				if reverse {
 					// I don't know if this is correct
-					(-*a, -*b, -*c)
+					Box::from([-*a, -*b, -*c])
 				} else {
-					(*a, *b, *c)
+					Box::from([*a, *b, *c])
 				}
 			}
 		}
