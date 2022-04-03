@@ -296,7 +296,7 @@ pub fn build_polygons(
 						let mut left = right;
 						let mut top = first_vertex.y();
 						let mut bottom = top;
-						viter.clone().for_each(|&i| {
+						viter.for_each(|&i| {
 							let x = vertices[i].x();
 							let y = vertices[i].y();
 							if x < left {
