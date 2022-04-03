@@ -61,7 +61,7 @@ impl SectorPlane {
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
 	/// 
-	/// let expected = (0.0f32, 0.0f32, 1.0f32);
+	/// let expected = Box::from([0.0f32, 0.0f32, 1.0f32]);
 	/// let actual = SectorPlane::Flat(5.).normal(false);
 	/// assert_eq!(expected, actual);
 	/// ```
@@ -84,14 +84,14 @@ impl SectorPlane {
 	/// // Use strings because of the inaccuracies caused by how real numbers
 	/// // are represented
 	/// let expected = format!(
-	/// 	"{:.3} {:.3} {:.3}",
+	/// 	"{:.3} {:.3} {:.3} ",
 	/// 	plane.0, plane.1, plane.2);
 	/// let actual = SectorPlane::from_triangle(
 	/// 	16., 16., 21.,
 	/// 	-16., 16., 5.,
 	/// 	-16., -16., -11.
 	/// ).normal(false);
-	/// let actual = format!("{:.3} {:.3} {:.3}", actual.0, actual.1, actual.2);
+	/// let actual: String = actual.iter().map(|co| format!("{:.3} ", co)).collect();
 	/// assert_eq!(expected, actual);
 	/// ```
 	pub fn normal(&self, reverse: bool) -> Box<[f32]> {
@@ -147,9 +147,14 @@ impl SectorPlane {
 	/// 	-16., 16., 5.,
 	/// 	-16., -16., -11.
 	/// );
-	/// if let SectorPlane::Sloped(a, b, c, d) = actual {
-	/// 	let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
-	/// 	assert_eq!(expected, actual);
+	/// match actual {
+	/// 	SectorPlane::Sloped(a, b, c, d) => {
+	/// 		let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
+	/// 		assert_eq!(expected, actual);
+	/// 	},
+	/// 	SectorPlane::Flat(h) => {
+	/// 		panic!("The plane should be sloped!");
+	/// 	}
 	/// }
 	/// ```
 	pub fn from_triangle(
