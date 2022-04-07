@@ -61,7 +61,7 @@ impl SectorPlane {
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
 	/// 
-	/// let expected = Box::from([0.0f32, 0.0f32, 1.0f32]);
+	/// let expected: [f32; 3] = [0.0f32, 0.0f32, 1.0f32];
 	/// let actual = SectorPlane::Flat(5.).normal(false);
 	/// assert_eq!(expected, actual);
 	/// ```
@@ -94,15 +94,15 @@ impl SectorPlane {
 	/// let actual: String = actual.iter().map(|co| format!("{:.3} ", co)).collect();
 	/// assert_eq!(expected, actual);
 	/// ```
-	pub fn normal(&self, reverse: bool) -> Box<[f32]> {
+	pub fn normal(&self, reverse: bool) -> [f32; 3] {
 		match self {
-			SectorPlane::Flat(_) => Box::from([0., 0., if reverse {-1.} else {1.}]),
+			SectorPlane::Flat(_) => [0., 0., if reverse {-1.} else {1.}],
 			SectorPlane::Sloped(a, b, c, _) => {
 				if reverse {
 					// I don't know if this is correct
-					Box::from([-*a, -*b, -*c])
+					[-*a, -*b, -*c]
 				} else {
-					Box::from([*a, *b, *c])
+					[*a, *b, *c]
 				}
 			}
 		}
