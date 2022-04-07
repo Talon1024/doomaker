@@ -48,14 +48,13 @@ fn main() {
 
 	let secplane = SectorPlane::Flat(0.);
 	let normal = secplane.normal(false);
-	let normal: String = normal.iter().map(|co| format!("{} ", co))
-		.collect::<String>().trim().to_string();
+	let normal: String = normal.iter().map(|co| format!("{} ", co)).collect();
 	let mut stl: String = String::from("solid holey");
 	triangulated.iter().filter(|tp| tp.is_some()).for_each(|tp| {
 		let tp = tp.as_ref().unwrap();
 		tp.chunks_exact(3).for_each(|tri| {
 			stl.push_str("\nfacet normal ");
-			stl.push_str(&normal);
+			stl.push_str(normal.trim());
 			stl.push_str("\n\touter loop");
 			let a = verts[tri[0]];
 			let a = format!("{} {} {}", a.x(), a.y(), secplane.z_at(&a));
