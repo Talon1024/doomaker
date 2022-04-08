@@ -3,6 +3,7 @@ use map_to_3D::edge::Edge;
 use map_to_3D::vector::Vector2;
 use map_to_3D::secplane::SectorPlane;
 use map_to_3D::sectorpolygonbuilder as spb;
+use macroquad::models as mq;
 
 /*
 pub fn tiny_texture() -> Texture2D {
@@ -81,6 +82,20 @@ fn rainbowi(h: usize) -> Color {
 }
 */
 
+fn sector_vertices(
+	verts: &[Vector2],
+	plane: &SectorPlane,
+	colour: Option<Color>
+) -> Vec<mq::Vertex> {
+	verts.iter().map(|v| {
+		mq::Vertex {
+			position: Vec3::new(v.x(), v.y(), plane.z_at(&v)),
+			uv: Vec2::new(v.x() / 64., v.y() / 64.),
+			color: colour.unwrap_or(WHITE),
+		}
+	}).collect()
+}
+
 pub fn holey_mesh() -> Box<Mesh> {
 	let verts: Vec<Vector2> = vec![
 		Vector2::new(70., 30.),	// 0
@@ -117,7 +132,7 @@ pub fn holey_mesh() -> Box<Mesh> {
 	let ptris = spb::auto_triangulate(&polys, &verts);
 	// let mut hue = 0;
 	Box::new(Mesh {
-		vertices: crate::glue::sector_vertices(&verts, &sp, None),
+		vertices: sector_vertices(&verts, &sp, None),
 		indices: ptris.iter().filter_map(|p| {
 			if let Some(p) = p {
 				Some(p)

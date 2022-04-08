@@ -8,7 +8,6 @@ enum MousePointerMode {
 
 mod sample_data;
 mod util;
-mod glue;
 
 #[macroquad::main("Editor/viewer")]
 async fn main() {
