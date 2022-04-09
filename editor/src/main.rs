@@ -9,7 +9,7 @@ enum MousePointerMode {
 mod sample_data;
 mod util;
 
-#[macroquad::main("Editor/viewer")]
+#[macroquad::main("Doomakyr")]
 async fn main() {
     use std::f32::consts::{PI, FRAC_PI_2};
     set_pc_assets_folder("assets");
@@ -18,7 +18,7 @@ async fn main() {
     let mut orientation = (FRAC_PI_2, FRAC_PI_2);
     let mut cam3d = Camera3D {
         position: Vec3::from((0.,0.,0.)),
-        target: util::vec3_from_orientation(orientation),
+        target: util::math::vec3_from_orientation(orientation),
         up: Vec3::Z,
         fovy: util::fov_x_to_y(100f32.to_radians()),
         aspect: None,
@@ -27,7 +27,9 @@ async fn main() {
         viewport: None
     };
     let mut cube_mesh = sample_data::holey_mesh();
-    cube_mesh.texture = load_texture("sky.png").await.ok();
+    cube_mesh.texture = load_image("sky.png").await.ok().map(|image| {
+        util::gl::to_texture(image)
+    });
     let mut ptr_mode = MousePointerMode::Free;
     let mut last_mouse_pos = (0.0f32, 0.0f32);
     let mut movement = Vec3::ZERO;
@@ -88,7 +90,7 @@ async fn main() {
         }
 
         // Apply changes caused by user inputs
-        let dir_vec = util::vec3_from_orientation(orientation);
+        let dir_vec = util::math::vec3_from_orientation(orientation);
         let dir_quat = // Rotation for movement vector
             Quat::from_rotation_z(orientation.0) *
             Quat::from_rotation_y(orientation.1);
