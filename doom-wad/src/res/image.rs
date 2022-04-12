@@ -194,10 +194,10 @@ impl Image {
 		}
 		Ok(())
 	}
-	pub fn add_alpha(&mut self) -> Result<(), ImageError> {
+	pub fn add_alpha(&mut self) -> bool {
 		let alpha_format = self.format.alpha_equivalent();
 		if self.format == alpha_format {
-			return Ok(());
+			return false;
 		}
 		let default_alpha = 255;
 		// TODO: Use intersperse when it's stable
@@ -224,7 +224,7 @@ impl Image {
 		};
 		let channels = alpha_format.channels();
 		self.data = new_data(channels);
-		Ok(())
+		true
 	}
 }
 
@@ -516,7 +516,7 @@ mod tests {
 			format: ImageFormat::Indexed,
 			data: vec![7, 5, 9, 3],
 		};
-		orig_image.add_alpha()?;
+		orig_image.add_alpha();
 		assert_eq!(orig_image.data, vec![7, 255, 5, 255, 9, 255, 3, 255]);
 		Ok(())
 	}
@@ -533,7 +533,7 @@ mod tests {
 				255, 0, 0,		0, 255, 0,
 				0, 0, 255,		128, 128, 128],
 		};
-		orig_image.add_alpha()?;
+		orig_image.add_alpha();
 		assert_eq!(orig_image.data, vec![
 			255, 0, 0, 255,		0, 255, 0, 255,
 			0, 0, 255, 255,		128, 128, 128, 255]);
