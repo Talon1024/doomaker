@@ -155,6 +155,9 @@ impl Image {
 			data: vec![0u8; image_size]
 		}
 	}
+	/// Draws another image on top of this one at the specified location
+	/// 
+	/// This method modifies the image in-place.
 	pub fn blit(&mut self, other: &Image, x: i32, y: i32) -> Result<(), ImageError> {
 		let swidh = self.width as i32;
 		let sheit = self.height as i32;
@@ -194,6 +197,11 @@ impl Image {
 		}
 		Ok(())
 	}
+	/// Add an alpha channel to the image
+	/// 
+	/// Returns whether or not an alpha channel was added.
+	/// 
+	/// This method modifies the image in-place.
 	pub fn add_alpha(&mut self) -> bool {
 		let alpha_format = self.format.alpha_equivalent();
 		if self.format == alpha_format {
@@ -226,14 +234,7 @@ impl Image {
 		self.data = new_data(channels);
 		true
 	}
-}
-
-pub trait ToImage {
-	fn to_image(&self) -> Image;
-}
-
-impl Image {
-	// Generate grayscale palette
+	/// Generate grayscale palette
 	pub fn grayscale_palette() -> [u8; 768] {
 		let mut component = 0;
 		let mut color: u8 = 0;
@@ -246,28 +247,57 @@ impl Image {
 			color
 		})
 	}
-	pub fn to_rgb(&mut self, pal: Option<[u8; 768]>) {
+	/// Convert image to RGB or RGBA format using the given palette
+	/// 
+	/// If `pal` is None, a grayscale palette is used.
+	/// 
+	/// Returns whether or not the image was converted to RGB/RGBA format.
+	/// 
+	/// This method modifies the image in-place.
+	pub fn to_rgb(&mut self, pal: Option<[u8; 768]>) -> bool {
 		let pal = pal.unwrap_or_else(Image::grayscale_palette);
+		let colour = |index: u8| {
+			let start = index as usize * 3;
+			let end = start + 3;
+			&pal[start..end]
+		};
 		match self.format {
-			ImageFormat::RGB => (),
-			ImageFormat::RGBA => {
-
-			},
+			ImageFormat::RGB => false,
+			ImageFormat::RGBA => false,
 			ImageFormat::Indexed => {
-
+				let channels = 3;
+				self.data = {
+					let mut data = vec![0; self.width * self.height * channels];
+					data.chunks_exact_mut(channels).enumerate().for_each(|(index, ch)| {
+						let color = colour(self.data[index]);
+						ch.copy_from_slice(color);
+					});
+					data
+				};
+				self.format = ImageFormat::RGB;
+				true
 			},
 			ImageFormat::IndexedAlpha => {
-
+				let channels = 4;
+				self.data = {
+					let mut data = vec![0; self.width * self.height * channels];
+					data.chunks_exact_mut(channels).enumerate().for_each(|(index, ch)| {
+						let rgb = &mut ch[0..3];
+						let color = colour(self.data[index * 2]);
+						rgb.copy_from_slice(color);
+						ch[3] = self.data[index * 2 + 1];
+					});
+					data
+				};
+				self.format = ImageFormat::RGBA;
+				true
 			}
 		}
 	}
-	/*
-	pub fn clone_to_rgb(&self, pal: Option<[u8; 768]>) -> Image {
-		let image = self.clone();
-		image.to_rgb(pal);
-		image
-	}
-	*/
+}
+
+pub trait ToImage {
+	fn to_image(&self) -> Image;
 }
 
 pub fn xy_to_bufpos(x: ImageDimension, y: ImageDimension, w: ImageDimension, h: ImageDimension, channels: ImageDimension) -> Option<usize> {
@@ -507,7 +537,7 @@ mod tests {
 	}
 
 	#[test]
-	fn convert_indexed_to_indexedalpha() -> Result<(), ImageError> {
+	fn add_alpha_indexed() -> Result<(), ImageError> {
 		let mut orig_image = Image {
 			width: 2,
 			height: 2,
@@ -522,7 +552,7 @@ mod tests {
 	}
 
 	#[test]
-	fn convert_rgb_to_rgba() -> Result<(), ImageError> {
+	fn add_alpha_rgb() -> Result<(), ImageError> {
 		let mut orig_image = Image {
 			width: 2,
 			height: 2,
@@ -537,6 +567,36 @@ mod tests {
 		assert_eq!(orig_image.data, vec![
 			255, 0, 0, 255,		0, 255, 0, 255,
 			0, 0, 255, 255,		128, 128, 128, 255]);
+		Ok(())
+	}
+
+	#[test]
+	fn convert_indexed_to_rgb() -> Result<(), ImageError> {
+		let mut orig_image = Image {
+			width: 2,
+			height: 2,
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed,
+			data: vec![144, 120, 237, 96],
+		};
+		orig_image.to_rgb(Some(*include_bytes!("../../tests/data/PLAYPAL1.pal")));
+		assert_eq!(orig_image.data, vec![255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0]);
+		Ok(())
+	}
+
+	#[test]
+	fn convert_indexedalpha_to_rgb() -> Result<(), ImageError> {
+		let mut orig_image = Image {
+			width: 2,
+			height: 2,
+			x: 0,
+			y: 0,
+			format: ImageFormat::IndexedAlpha,
+			data: vec![144, 255, 120, 255, 237, 255, 96, 255],
+		};
+		orig_image.to_rgb(Some(*include_bytes!("../../tests/data/PLAYPAL1.pal")));
+		assert_eq!(orig_image.data, vec![255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 0, 255]);
 		Ok(())
 	}
 }
