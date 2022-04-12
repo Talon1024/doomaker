@@ -27,7 +27,7 @@ impl Vector2 {
 	}
 	/// The "cross product" of this vector and another. The cross product
 	/// is not defined for 2D vectors, so it is based on this:
-	/// <http://allenchou.net/2013/07/cross-product-of-2d-vectors/>
+	/// <https://allenchou.net/2013/07/cross-product-of-2d-vectors/>
 	/// 
 	/// # Example:
 	/// 
