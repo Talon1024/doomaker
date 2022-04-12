@@ -27,9 +27,7 @@ async fn main() {
         viewport: None
     };
     let mut cube_mesh = sample_data::holey_mesh();
-    cube_mesh.texture = load_image("sky.png").await.ok().map(|image| {
-        util::gl::to_texture(image)
-    });
+    cube_mesh.texture = load_image("sky.png").await.ok().map(util::gl::to_texture);
     let mut ptr_mode = MousePointerMode::Free;
     let mut last_mouse_pos = (0.0f32, 0.0f32);
     let mut movement = Vec3::ZERO;

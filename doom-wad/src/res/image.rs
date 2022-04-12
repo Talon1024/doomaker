@@ -29,12 +29,12 @@ impl ImageFormat {
 			ImageFormat::IndexedAlpha => Some(1),
 		}
 	}
-	pub fn equivalent_alpha(&self, other: ImageFormat) -> bool {
+	pub fn alpha_equivalent(&self) -> ImageFormat {
 		match self {
-			ImageFormat::RGB => other == ImageFormat::RGBA,
-			ImageFormat::RGBA => other == ImageFormat::RGBA,
-			ImageFormat::Indexed => other == ImageFormat::IndexedAlpha,
-			ImageFormat::IndexedAlpha => other == ImageFormat::IndexedAlpha
+			ImageFormat::RGB => ImageFormat::RGBA,
+			ImageFormat::RGBA => ImageFormat::RGBA,
+			ImageFormat::Indexed => ImageFormat::IndexedAlpha,
+			ImageFormat::IndexedAlpha => ImageFormat::IndexedAlpha
 		}
 	}
 }
@@ -55,7 +55,7 @@ pub enum ImageError {
 	/// The user is trying to convert the image into a format which it cannot
 	/// be converted. For example, they are trying to convert an RGB image into
 	/// an indexed image. This will not work.
-	#[error("This image,which is in {my} format, cannot be converted to {your} format.")]
+	#[error("This image, which is in {my} format, cannot be converted to {your} format.")]
 	IncompatibleFormat { my: ImageFormat, your: ImageFormat },
 	/// The user is trying to blit an image in a different format onto this one.
 	#[error("The image formats do not match!")]
@@ -194,41 +194,37 @@ impl Image {
 		}
 		Ok(())
 	}
-	pub fn convert_to(&mut self, format: ImageFormat) -> Result<(), ImageError> {
-		if self.format == format {
+	pub fn add_alpha(&mut self) -> Result<(), ImageError> {
+		let alpha_format = self.format.alpha_equivalent();
+		if self.format == alpha_format {
 			return Ok(());
 		}
-		// Allow indexed images to be converted to IndexedAlpha
-		if format == ImageFormat::IndexedAlpha &&
-			self.format == ImageFormat::Indexed {
-			let default_alpha = 255;
-			// TODO: Use intersperse when it's stable
-			self.data = {
-				let mut data: Vec<u8> = Vec::new();
-				let mut pos: usize = 0;
-				let mut get_orig = false;
-				loop {
-					let new_value = if get_orig {
-						let orig_value = data.get(pos);
-						if orig_value.is_none() {
-							break;
-						}
-						orig_value.copied().unwrap()
-					} else {
-						default_alpha
-					};
-					data.push(new_value);
-					get_orig = !get_orig;
-					pos += 1;
-				}
-				// Alpha channel goes at the end
-				data.push(default_alpha);
-				data
-			};
-			Ok(())
-		} else {
-			Err(ImageError::IncompatibleFormat{my: self.format, your: format})
-		}
+		let default_alpha = 255;
+		// TODO: Use intersperse when it's stable
+		let new_data = |channels| {
+			let mut data: Vec<u8> = Vec::with_capacity(
+				self.width * self.height * channels);
+			let mut opos: usize = 0; // Orig data position
+			let mut npos: usize = 0; // New data position
+			loop {
+				let new_value = if ((npos+1) % channels) != 0 {
+					let orig_value = self.data.get(opos);
+					if orig_value.is_none() {
+						break;
+					}
+					opos += 1;
+					orig_value.copied().unwrap()
+				} else {
+					default_alpha
+				};
+				data.push(new_value);
+				npos += 1;
+			}
+			data
+		};
+		let channels = alpha_format.channels();
+		self.data = new_data(channels);
+		Ok(())
 	}
 }
 
@@ -251,7 +247,7 @@ impl Image {
 		})
 	}
 	pub fn to_rgb(&mut self, pal: Option<[u8; 768]>) {
-		let pal = pal.unwrap_or(Image::grayscale_palette());
+		let pal = pal.unwrap_or_else(Image::grayscale_palette);
 		match self.format {
 			ImageFormat::RGB => (),
 			ImageFormat::RGBA => {
@@ -507,6 +503,40 @@ mod tests {
 		};
 		ima.blit(&imb, 4, 4)?;
 		assert_eq!(ima.data, imexpected.data);
+		Ok(())
+	}
+
+	#[test]
+	fn convert_indexed_to_indexedalpha() -> Result<(), ImageError> {
+		let mut orig_image = Image {
+			width: 2,
+			height: 2,
+			x: 0,
+			y: 0,
+			format: ImageFormat::Indexed,
+			data: vec![7, 5, 9, 3],
+		};
+		orig_image.add_alpha()?;
+		assert_eq!(orig_image.data, vec![7, 255, 5, 255, 9, 255, 3, 255]);
+		Ok(())
+	}
+
+	#[test]
+	fn convert_rgb_to_rgba() -> Result<(), ImageError> {
+		let mut orig_image = Image {
+			width: 2,
+			height: 2,
+			x: 0,
+			y: 0,
+			format: ImageFormat::RGB,
+			data: vec![
+				255, 0, 0,		0, 255, 0,
+				0, 0, 255,		128, 128, 128],
+		};
+		orig_image.add_alpha()?;
+		assert_eq!(orig_image.data, vec![
+			255, 0, 0, 255,		0, 255, 0, 255,
+			0, 0, 255, 255,		128, 128, 128, 255]);
 		Ok(())
 	}
 }
