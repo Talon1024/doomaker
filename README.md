@@ -8,7 +8,7 @@ A new map editor for Doom, and possibly other games like Marathon.
 Why?
 ----
 
-Ultimate Doom Builder was originally built for Windows, and is not easy to run on Linux through WINE.
+Ultimate Doom Builder was originally built for Windows using C# and .NET, and is not easy to run on Linux through WINE. In addition, the Linux/Mono version has some issues which make it impractical for serious mapping.
 
 SLADE uses wxWidgets, and its map editor is not easy to maintain or improve.
 
