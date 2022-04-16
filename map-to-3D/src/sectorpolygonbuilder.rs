@@ -2,11 +2,12 @@
 //! 
 //! Takes a set of edges and vertices, and sorts them into "polygons"
 //! consisting of vertex indices
-use crate::vector::{Vector2, Coordinate};
+use glam::Vec2;
 use crate::edge::{Edge, EdgeVertexIndex};
 use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
+use crate::util::vec2_angle;
 
 #[cfg(test)]
 mod tests;
@@ -16,7 +17,7 @@ use vertex::MapVertex;
 
 // Ported from https://github.com/pineapplemachine/jsdoom/blob/6dbc5540b8c7fd4a2c61dac9323fe0e77a51ddc6/src/convert/3DMapBuilder.ts#L117
 
-fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
+fn point_in_polygon(point: Vec2, polygon: &Vec<Vec2>) -> bool {
 	// Based on https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
 	let mut inside = false;
 	for i in 0..polygon.len() {
@@ -24,8 +25,8 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 		let vi = polygon[i];
 		let vj = polygon[j];
 		if (
-			(vi.y() > point.y()) != (vj.y() > point.y())) && (
-			point.x() < (vj.x() - vi.x()) * (point.y() - vi.y()) / (vj.y() - vi.y()) + vi.x()
+			(vi.y > point.y) != (vj.y > point.y)) && (
+			point.x < (vj.x - vi.x) * (point.y - vi.y) / (vj.y - vi.y) + vi.x
 		) {
 			inside = !inside;
 		}
@@ -36,21 +37,21 @@ fn point_in_polygon(point: Vector2, polygon: &Vec<Vector2>) -> bool {
 fn edge_in_polygon(
 	edge: &Edge,
 	polygon: &[EdgeVertexIndex],
-	map_vertices: &[Vector2]
+	map_vertices: &[Vec2]
 ) -> bool {
-	let a = &map_vertices[edge.lo()];
-	let b = &map_vertices[edge.hi()];
-	let midpoint = a.midpoint(&b);
-	let polygon: Vec<Vector2> = polygon.iter()
+	let a = map_vertices[edge.lo()];
+	let b = map_vertices[edge.hi()];
+	let midpoint = (a + b) / 2.;
+	let polygon: Vec<Vec2> = polygon.iter()
 		.map(|&index| map_vertices[index])
 		.collect();
 	point_in_polygon(midpoint, &polygon)
 }
 
 fn angle_between(
-	p1: &Vector2,
-	p2: &Vector2,
-	center: &Vector2,
+	p1: Vec2,
+	p2: Vec2,
+	center: Vec2,
 	clockwise: bool
 ) -> f32 {
 	#[cfg(micromath)]
@@ -59,23 +60,16 @@ fn angle_between(
 	let bc = p2 - center;
 
 	let ang = {
+		// Based on jsdoom: https://github.com/pineapplemachine/jsdoom/blob/04593d2c/src/convert/3DMapBuilder.ts#L172
+		// which was in itself based on what I learned after playing
+		// around with 2D vector dot/cross products
+		let d = ac.dot(bc);
+		let c = ac.perp_dot(bc);
 		cfg_if::cfg_if! {
-			if #[cfg(atan_angle_calc)] {
-				// Based on https://www.euclideanspace.com/maths/algebra/vectors/angleBetween/index.htm
-				ac.angle() - bc.angle()
+			if #[cfg(micromath)] {
+				F32(c).atan2(F32(d)).0
 			} else {
-				// Based on jsdoom: https://github.com/pineapplemachine/jsdoom/blob/04593d2c30311212ccb9af9aa503cf5c83465655/src/convert/3DMapBuilder.ts#L172
-				// which was in itself based on what I learned after playing
-				// around with 2D vector dot/cross products
-				let d = ac.dot(&bc);
-				let c = ac.cross(&bc);
-				cfg_if::cfg_if! {
-					if #[cfg(micromath)] {
-						F32(c).atan2(F32(d)).0
-					} else {
-						c.atan2(d)
-					}
-				}
+				c.atan2(d)
 			}
 		}
 	} * if clockwise {-1.} else {1.};
@@ -115,7 +109,7 @@ pub struct SectorPolygon {
 /// A square:
 /// 
 /// ```
-/// use map_to_3D::vector::Vector2;
+/// use glam::Vec2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::sectorpolygonbuilder as spb;
 /// use spb::SectorPolygon;
@@ -125,10 +119,10 @@ pub struct SectorPolygon {
 /// // 2--1
 ///
 /// let vertices = vec![
-/// 	Vector2::new(1.0, 1.0),
-/// 	Vector2::new(1.0, 0.0),
-/// 	Vector2::new(0.0, 0.0),
-/// 	Vector2::new(0.0, 1.0),
+/// 	Vec2::new(1.0, 1.0),
+/// 	Vec2::new(1.0, 0.0),
+/// 	Vec2::new(0.0, 0.0),
+/// 	Vec2::new(0.0, 1.0),
 /// ];
 /// let lines = vec![
 /// 	Edge::new(0, 1),
@@ -147,7 +141,7 @@ pub struct SectorPolygon {
 /// 
 /// A simple example:
 /// ```
-/// use map_to_3D::vector::Vector2;
+/// use glam::Vec2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::sectorpolygonbuilder as spb;
 /// use spb::SectorPolygon;
@@ -158,14 +152,14 @@ pub struct SectorPolygon {
 /// //    |  |
 /// //    3--2
 /// 
-/// let verts: Vec<Vector2> = vec![
-/// 	Vector2::new(0., 0.),
-/// 	Vector2::new(64., 0.),
-/// 	Vector2::new(64., -64.),
-/// 	Vector2::new(0., -64.),
-/// 	Vector2::new(0., 64.),
-/// 	Vector2::new(-64., 64.),
-/// 	Vector2::new(-64., 0.),
+/// let verts: Vec<Vec2> = vec![
+/// 	Vec2::new(0., 0.),
+/// 	Vec2::new(64., 0.),
+/// 	Vec2::new(64., -64.),
+/// 	Vec2::new(0., -64.),
+/// 	Vec2::new(0., 64.),
+/// 	Vec2::new(-64., 64.),
+/// 	Vec2::new(-64., 0.),
 /// ];
 /// let lines: Vec<Edge> = vec![
 /// 	Edge::new(0, 1),
@@ -192,7 +186,7 @@ pub struct SectorPolygon {
 /// 
 /// Example with a hole:
 /// ```
-/// use map_to_3D::vector::Vector2;
+/// use glam::Vec2;
 /// use map_to_3D::edge::Edge;
 /// use map_to_3D::sectorpolygonbuilder as spb;
 /// use spb::SectorPolygon;
@@ -203,15 +197,15 @@ pub struct SectorPolygon {
 /// // | 6--5 |
 /// // 3------2
 /// 
-/// let verts: Vec<Vector2> = vec![
-/// 	Vector2::new(-7., 7.), // Outside
-/// 	Vector2::new(7., 7.),
-/// 	Vector2::new(7., -7.),
-/// 	Vector2::new(-7., -7.),
-/// 	Vector2::new(5., 5.), // Hole
-/// 	Vector2::new(5., -5.),
-/// 	Vector2::new(-5., -5.),
-/// 	Vector2::new(-5., 5.),
+/// let verts: Vec<Vec2> = vec![
+/// 	Vec2::new(-7., 7.), // Outside
+/// 	Vec2::new(7., 7.),
+/// 	Vec2::new(7., -7.),
+/// 	Vec2::new(-7., -7.),
+/// 	Vec2::new(5., 5.), // Hole
+/// 	Vec2::new(5., -5.),
+/// 	Vec2::new(-5., -5.),
+/// 	Vec2::new(-5., 5.),
 /// ];
 /// let lines: Vec<Edge> = vec![
 /// 	Edge::new(0, 1),
@@ -245,7 +239,7 @@ pub struct SectorPolygon {
 /// angle_between to panic because the angle between them is -0
 pub fn build_polygons(
 	lines: &[Edge],
-	vertices: &[Vector2]
+	vertices: &[Vec2]
 ) -> Vec<SectorPolygon> {
 	// jsdoom's SectorPolygonBuilder takes care of duplicate vertices and
 	// edges in its constructor. For this project, duplicate vertices and
@@ -292,13 +286,13 @@ pub fn build_polygons(
 						// The rightmost vertex is the second in the polygon
 						let first_vertex = &vertices[
 							polygons.last().unwrap().vertices[1]];
-						let right = first_vertex.x();
+						let right = first_vertex.x;
 						let mut left = right;
-						let mut top = first_vertex.y();
+						let mut top = first_vertex.y;
 						let mut bottom = top;
 						viter.for_each(|&i| {
-							let x = vertices[i].x();
-							let y = vertices[i].y();
+							let x = vertices[i].x;
+							let y = vertices[i].y;
 							if x < left {
 								left = x;
 							}
@@ -335,10 +329,10 @@ pub fn build_polygons(
 				clockwise = false;
 				polygons.iter().zip(bounding_boxes.iter()).enumerate()
 					.for_each(|(index, (polygon, boundingbox))| {
-					let va = &vertices[edge.lo()];
-					let vb = &vertices[edge.hi()];
-					let mid = va.midpoint(vb);
-					if boundingbox.is_inside(&mid) && edge_in_polygon(&edge, &polygon.vertices, vertices) {
+					let va = vertices[edge.lo()];
+					let vb = vertices[edge.hi()];
+					let mid = (va + vb) / 2.;
+					if boundingbox.is_inside(mid) && edge_in_polygon(&edge, &polygon.vertices, vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);
@@ -362,7 +356,7 @@ pub fn build_polygons(
 fn find_next_start_edge(
 	clockwise: bool,  // Polygon's interior angles should be clockwise or not?
 	edges: &HashMap<Edge, bool, RandomState>,
-	vertices: &[Vector2]
+	vertices: &[Vec2]
 ) -> Option<(EdgeVertexIndex, EdgeVertexIndex)> {
 	// Filter out used edges
 	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
@@ -376,7 +370,7 @@ fn find_next_start_edge(
 			});
 			set
 		// Convert indices to vertices
-		}).into_iter().map(|i| MapVertex {p: &vertices[i], i}).max()?.i;
+		}).into_iter().map(|i| MapVertex {p: vertices[i], i}).max()?.i;
 	let other_vertex = usable_edges.keys()
 		.filter(|&key| key.contains(rightmost_vertex))
 		.map(|&edge| edge.other_unchecked(rightmost_vertex))
@@ -384,11 +378,11 @@ fn find_next_start_edge(
 			// To ensure the interior angle is counterclockwise, pick the
 			// connected vertex with the lowest angle. Necessary for proper
 			// 3d-ification
-			let rightmost_vertex = &vertices[rightmost_vertex];
-			let current_vertex = &vertices[current_index];
-			let other_vertex = &vertices[other_index];
-			let current_angle = (rightmost_vertex - current_vertex).angle();
-			let other_angle = (rightmost_vertex - other_vertex).angle();
+			let rightmost_vertex = vertices[rightmost_vertex];
+			let current_vertex = vertices[current_index];
+			let other_vertex = vertices[other_index];
+			let current_angle = vec2_angle(rightmost_vertex - current_vertex);
+			let other_angle = vec2_angle(rightmost_vertex - other_vertex);
 			if clockwise {
 				if other_angle > current_angle {
 					return other_index;
@@ -408,7 +402,7 @@ fn find_next_vertex(
 	previous: &EdgeVertexIndex,
 	clockwise: bool,
 	edges: &HashMap<Edge, bool, RandomState>,
-	vertices: &[Vector2]
+	vertices: &[Vec2]
 ) -> Option<EdgeVertexIndex> {
 	let from = from.clone();
 	let previous = previous.clone();
@@ -428,22 +422,22 @@ fn find_next_vertex(
 	if usable_vertices.len() == 1 { return Some(usable_vertices[0]); }
 	// Find the vertex with the lowest angle in comparison to "from"
 	// The "previous" and "from" vertices will remain constant
-	let previous_vertex = &vertices[previous];
-	let from_vertex = &vertices[from];
+	let previous_vertex = vertices[previous];
+	let from_vertex = vertices[from];
 	let next_vertex = usable_vertices.into_iter()
 		.reduce(|current_index, other_index| {
-			let current_vertex = &vertices[current_index];
-			let other_vertex = &vertices[other_index];
+			let current_vertex = vertices[current_index];
+			let other_vertex = vertices[other_index];
 			let current_angle = angle_between(
-				&previous_vertex,
-				&current_vertex,
-				&from_vertex,
+				previous_vertex,
+				current_vertex,
+				from_vertex,
 				clockwise
 			);
 			let other_angle = angle_between(
-				&previous_vertex,
-				&other_vertex,
-				&from_vertex,
+				previous_vertex,
+				other_vertex,
+				from_vertex,
 				clockwise
 			);
 			if other_angle < current_angle {
@@ -467,15 +461,16 @@ fn is_polygon_complete(polygon: &Vec<EdgeVertexIndex>, last: EdgeVertexIndex) ->
 pub fn triangulate(
 	polygon: &SectorPolygon,
 	holes: &[&SectorPolygon],
-	vertices: &[Vector2]
+	vertices: &[Vec2]
 ) -> Vec<EdgeVertexIndex> {
 	use std::iter;
 	let orig_index: Vec<usize> = polygon.vertices
 		.iter().chain(holes.iter().flat_map(|h| h.vertices.iter()))
 		.copied().collect();
-	let vertex_pos: Vec<Coordinate> = polygon.vertices.iter()
+	let vertex_pos: Vec<f32> = polygon.vertices.iter()
 		.chain(holes.iter().flat_map(|h| h.vertices.iter()))
-		.flat_map(|&i| (&vertices[i]).xy()).collect();
+		.flat_map(|&i| [vertices[i].x, vertices[i].y])
+		.collect();
 	let mut cur_hole = polygon.vertices.len();
 	let hole_indices: Vec<usize> = iter::once(cur_hole)
 		.chain(holes.iter().map(|h| {
@@ -493,7 +488,7 @@ pub fn triangulate(
 /// each polygon, or nothing (None) if the polygon is a hole
 pub fn auto_triangulate(
 	polygons: &[SectorPolygon],
-	vertices: &[Vector2]
+	vertices: &[Vec2]
 ) -> Vec<Option<Vec<EdgeVertexIndex>>> {
 	polygons.iter().enumerate()
 	.map(|(i, pl)| {

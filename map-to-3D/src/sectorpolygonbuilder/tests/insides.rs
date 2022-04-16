@@ -1,20 +1,20 @@
 use super::*;
 
 // see tests/data/insides.png for an annotated drawing of this data
-fn test_case_insides() -> (Vec<Vector2>, Vec<Edge>) {
-	let verts: Vec<Vector2> = vec![
-		Vector2::new(64., 64.),     // 0
-		Vector2::new(64., 0.),
-		Vector2::new(64., -64.),
-		Vector2::new(0., -64.),
-		Vector2::new(-64., -64.),       // 4
-		Vector2::new(-64., 0.),
-		Vector2::new(-64., 64.),
-		Vector2::new(0., 64.),
-		Vector2::new(99., 99.),       // 8
-		Vector2::new(99., -99.),
-		Vector2::new(-99., -99.),
-		Vector2::new(-99., 99.),       // 11
+fn test_case_insides() -> (Vec<Vec2>, Vec<Edge>) {
+	let verts: Vec<Vec2> = vec![
+		Vec2::new(64., 64.),     // 0
+		Vec2::new(64., 0.),
+		Vec2::new(64., -64.),
+		Vec2::new(0., -64.),
+		Vec2::new(-64., -64.),       // 4
+		Vec2::new(-64., 0.),
+		Vec2::new(-64., 64.),
+		Vec2::new(0., 64.),
+		Vec2::new(99., 99.),       // 8
+		Vec2::new(99., -99.),
+		Vec2::new(-99., -99.),
+		Vec2::new(-99., 99.),       // 11
 	];
 	let edges: Vec<Edge> = vec![
 		Edge::new(8, 9),

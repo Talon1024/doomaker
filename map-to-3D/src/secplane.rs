@@ -1,5 +1,5 @@
 //! Sector floor/ceiling planes
-use crate::vector::Vector2;
+use glam::Vec2;
 /// The geometric plane of a sector floor/ceiling
 #[derive(Debug, Clone, PartialEq)]
 pub enum SectorPlane {
@@ -29,13 +29,13 @@ impl SectorPlane {
 	/// 
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
-	/// use map_to_3D::vector::Vector2;
+	/// use glam::Vec2;
 	/// 
 	/// let flat_plane = SectorPlane::Flat(16.);
-	/// let pos = Vector2::new(16., 16.);
+	/// let pos = Vec2::new(16., 16.);
 	/// assert_eq!(flat_plane.z_at(&pos), 16.);
 	/// ```
-	pub fn z_at(&self, pos: &Vector2) -> f32 {
+	pub fn z_at(&self, pos: Vec2) -> f32 {
 		match self {
 			SectorPlane::Flat(height) => *height,
 			SectorPlane::Sloped(
@@ -43,8 +43,8 @@ impl SectorPlane {
 			) => {
 				// https://github.com/Talon1024/jsdoom/blob/5c3ca7553b/src/convert/3DMapBuilder.ts#L650
 				// Also https://github.com/coelckers/gzdoom/blob/7ba5a74f2e/src/gamedata/r_defs.h#L356
-				let x = pos.x();
-				let y = pos.y();
+				let x = pos.x;
+				let y = pos.y;
 				let dividend = a * x + b * y + d;
 				dividend / -c
 			}
@@ -203,16 +203,16 @@ mod tests {
 
 	#[test]
 	fn z_at_flat() -> Result<(), ()> {
-		let positions: Vec<Vector2> = vec![
-			Vector2::new(16., 16.),
-			Vector2::new(-16., 16.),
-			Vector2::new(-16., -16.),
-			Vector2::new(16., -16.),
+		let positions: Vec<Vec2> = vec![
+			Vec2::new(16., 16.),
+			Vec2::new(-16., 16.),
+			Vec2::new(-16., -16.),
+			Vec2::new(16., -16.),
 		];
 		let flat_height = 16.;
 		let flat_plane = SectorPlane::Flat(flat_height);
 
-		positions.iter().for_each(|pos| {
+		positions.iter().for_each(|&pos| {
 			assert_eq!(flat_height, flat_plane.z_at(pos))
 		});
 		Ok(())
@@ -220,11 +220,11 @@ mod tests {
 
 	#[test]
 	fn z_at_sloped() -> Result<(), ()> {
-		let positions: Vec<Vector2> = vec![
-			Vector2::new(16., 16.),
-			Vector2::new(-16., 16.),
-			Vector2::new(-16., -16.),
-			Vector2::new(16., -16.),
+		let positions: Vec<Vec2> = vec![
+			Vec2::new(16., 16.),
+			Vec2::new(-16., 16.),
+			Vec2::new(-16., -16.),
+			Vec2::new(16., -16.),
 		];
 
 		let sloped_plane = {
@@ -241,7 +241,7 @@ mod tests {
 		};
 		let sloped_heights = vec![8., -8., -8., 8.];
 
-		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, pos)| {
+		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, &pos)| {
 			let actual = sloped_plane.z_at(pos);
 			// Compare strings because of the inaccuracies caused by how
 			// computers represent decimal numbers internally
@@ -255,11 +255,11 @@ mod tests {
 	#[test]
 	fn z_at_advanced_slope() -> Result<(), ()> {
 		// Sloped plane with a more "advanced" slope
-		let positions: Vec<Vector2> = vec![
-			Vector2::new(16., 16.),
-			Vector2::new(-16., 16.),
-			Vector2::new(-16., -16.),
-			Vector2::new(16., -16.),
+		let positions: Vec<Vec2> = vec![
+			Vec2::new(16., 16.),
+			Vec2::new(-16., 16.),
+			Vec2::new(-16., -16.),
+			Vec2::new(16., -16.),
 		];
 
 		let sloped_plane = {
@@ -273,9 +273,9 @@ mod tests {
 			let c = z / l;
 			SectorPlane::Sloped(a, b, c, 5. * -c)
 		};
-		let sloped_heights = vec![21., 5., -11., 5.];
+		let sloped_heights: Vec<f32> = vec![21., 5., -11., 5.];
 
-		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, pos)| {
+		sloped_heights.iter().zip(positions.iter()).for_each(|(&expected, &pos)| {
 			let actual = sloped_plane.z_at(pos);
 			// Compare strings because of the inaccuracies caused by how
 			// computers represent decimal numbers internally

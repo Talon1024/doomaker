@@ -1,36 +1,39 @@
 use crate::secplane::SectorPlane;
-use crate::edge::EdgeVertexIndex;
 use crate::vector::Vector2;
-use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct LineQuad {
-    a: EdgeVertexIndex,
-    b: EdgeVertexIndex,
-    upper: Rc<SectorPlane>,
-    lower: Rc<SectorPlane>,
+    a: Vector2,
+    b: Vector2,
+    width: f32,
+    height: f32,
+    tscale: Vector2,
+    upper: SectorPlane,
+    lower: SectorPlane,
     colour_top: Option<[u8; 3]>,
     colour_btm: Option<[u8; 3]>,
+    quad_type: QuadType,
 }
 
+#[derive(Debug, Clone)]
 enum QuadType {
     NormalQuad,
     OppositeTriangles,
     Vavoom3DFloor,
 }
 
-type VertexPosition = [f32; 3];
-
 impl LineQuad {
-    pub fn to_3D(&self, vertices: &[Vector2]) -> Vec<VertexPosition> {
-        let mut positions: Vec<VertexPosition> = Vec::new();
-        let va = &vertices[self.a];
-        let vb = &vertices[self.b];
-        // "A/B upper/lower height"
-        let auh = self.upper.z_at(va);
-        let buh = self.upper.z_at(vb);
-        let alh = self.lower.z_at(va);
-        let blh = self.lower.z_at(vb);
+    pub fn new(a: usize, b: usize, vertices: &[Vector2], sector: &Sector) -> LineQuad {
+        let mut positions: Vec<Vector3> = Vec::new();
+        let va = vertices[a];
+        let vb = vertices[b];
+        let upper = sector.upper.clone();
+        let lower = sector.lower.clone();
+        // "A/B upper/lower (absolute) height"
+        let auh = upper.z_at(va);
+        let buh = upper.z_at(vb);
+        let alh = lower.z_at(va);
+        let blh = lower.z_at(vb);
         let quad_type = {
             if alh > auh && blh > buh {
                 QuadType::Vavoom3DFloor
@@ -40,6 +43,20 @@ impl LineQuad {
                 QuadType::NormalQuad
             }
         };
-        positions
+        LineQuad {
+            a: va,
+            b: vb,
+            width: (vb - va).length(),
+            height: 64.,
+            tscale: Vector2::new(1., 1.),
+            upper,
+            lower,
+            colour_top: sector.colour_top,
+            colour_btm: sector.colour_btm,
+            quad_type
+        }
+    }
+    pub fn colour(&self) -> Vec<Vector3> {
+        //
     }
 }

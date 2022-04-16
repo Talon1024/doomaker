@@ -1,26 +1,26 @@
 #![warn(clippy::all)]
-use map_to_3D::vector::Vector2;
+use glam::Vec2;
 use map_to_3D::edge::Edge;
 use map_to_3D::sectorpolygonbuilder as spb;
 use map_to_3D::secplane::SectorPlane;
 use std::fs;
 
 // See tests/data/holey.png for an illustration
-fn test_case() -> (Vec<Vector2>, Vec<Edge>) {
-	let verts: Vec<Vector2> = vec![
-		Vector2::new(70., 30.),	// 0
-		Vector2::new(68., 30.),
-		Vector2::new(69., 32.),
-		Vector2::new(64., 64.),	// 3
-		Vector2::new(64., -64.),
-		Vector2::new(-64., -64.),
-		Vector2::new(-64., 64.),
-		Vector2::new(44., 52.),	// 7
-		Vector2::new(-52., 52.),
-		Vector2::new(-52., -44.),
-		Vector2::new(52., 44.),	// 10
-		Vector2::new(52., -52.),
-		Vector2::new(-44., -52.),	// 12
+fn test_case() -> (Vec<Vec2>, Vec<Edge>) {
+	let verts: Vec<Vec2> = vec![
+		Vec2::new(70., 30.),	// 0
+		Vec2::new(68., 30.),
+		Vec2::new(69., 32.),
+		Vec2::new(64., 64.),	// 3
+		Vec2::new(64., -64.),
+		Vec2::new(-64., -64.),
+		Vec2::new(-64., 64.),
+		Vec2::new(44., 52.),	// 7
+		Vec2::new(-52., 52.),
+		Vec2::new(-52., -44.),
+		Vec2::new(52., 44.),	// 10
+		Vec2::new(52., -52.),
+		Vec2::new(-44., -52.),	// 12
 	];
 	let edges = vec![
 		Edge::new(3, 4),	// 0
@@ -57,11 +57,11 @@ fn main() {
 			stl.push_str(normal.trim());
 			stl.push_str("\n\touter loop");
 			let a = verts[tri[0]];
-			let a = format!("{} {} {}", a.x(), a.y(), secplane.z_at(&a));
+			let a = format!("{} {} {}", a.x, a.y, secplane.z_at(a));
 			let b = verts[tri[1]];
-			let b = format!("{} {} {}", b.x(), b.y(), secplane.z_at(&b));
+			let b = format!("{} {} {}", b.x, b.y, secplane.z_at(b));
 			let c = verts[tri[2]];
-			let c = format!("{} {} {}", c.x(), c.y(), secplane.z_at(&c));
+			let c = format!("{} {} {}", c.x, c.y, secplane.z_at(c));
 			stl.push_str("\n\t\tvertex "); stl.push_str(&a);
 			stl.push_str("\n\t\tvertex "); stl.push_str(&b);
 			stl.push_str("\n\t\tvertex "); stl.push_str(&c);

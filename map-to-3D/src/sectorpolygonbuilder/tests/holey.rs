@@ -1,21 +1,21 @@
 use super::*;
 
 // See tests/data/holey.png for an illustration
-fn test_case() -> (Vec<Vector2>, Vec<Edge>) {
-	let verts: Vec<Vector2> = vec![
-		Vector2::new(70., 30.),	// 0
-		Vector2::new(68., 30.),
-		Vector2::new(69., 32.),
-		Vector2::new(64., 64.),	// 3
-		Vector2::new(64., -64.),
-		Vector2::new(-64., -64.),
-		Vector2::new(-64., 64.),
-		Vector2::new(44., 52.),	// 7
-		Vector2::new(-52., 52.),
-		Vector2::new(-52., -44.),
-		Vector2::new(52., 44.),	// 10
-		Vector2::new(52., -52.),
-		Vector2::new(-44., -52.),	// 12
+fn test_case() -> (Vec<Vec2>, Vec<Edge>) {
+	let verts: Vec<Vec2> = vec![
+		Vec2::new(70., 30.),	// 0
+		Vec2::new(68., 30.),
+		Vec2::new(69., 32.),
+		Vec2::new(64., 64.),	// 3
+		Vec2::new(64., -64.),
+		Vec2::new(-64., -64.),
+		Vec2::new(-64., 64.),
+		Vec2::new(44., 52.),	// 7
+		Vec2::new(-52., 52.),
+		Vec2::new(-52., -44.),
+		Vec2::new(52., 44.),	// 10
+		Vec2::new(52., -52.),
+		Vec2::new(-44., -52.),	// 12
 	];
 	let edges = vec![
 		Edge::new(3, 4),	// 0
