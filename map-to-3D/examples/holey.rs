@@ -2,7 +2,7 @@
 use map_to_3D::vector::Vector2;
 use map_to_3D::edge::Edge;
 use map_to_3D::sectorpolygonbuilder as spb;
-use map_to_3D::secplane::SectorPlane;
+use map_to_3D::plane::Plane;
 use std::fs;
 
 // See tests/data/holey.png for an illustration
@@ -46,7 +46,7 @@ fn main() {
 
 	let triangulated = spb::auto_triangulate(&polys, &verts);
 
-	let secplane = SectorPlane::Flat(0.);
+	let secplane = Plane::Flat(0.);
 	let normal = secplane.normal(false);
 	let normal: String = normal.iter().map(|co| format!("{} ", co)).collect();
 	let mut stl: String = String::from("solid holey");

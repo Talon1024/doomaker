@@ -1,4 +1,4 @@
-use crate::secplane::SectorPlane;
+use crate::plane::Plane;
 use crate::edge::EdgeVertexIndex;
 use crate::vector::Vector2;
 use std::rc::Rc;
@@ -7,8 +7,8 @@ use std::rc::Rc;
 pub struct LineQuad {
     a: EdgeVertexIndex,
     b: EdgeVertexIndex,
-    upper: Rc<SectorPlane>,
-    lower: Rc<SectorPlane>,
+    upper: Rc<Plane>,
+    lower: Rc<Plane>,
     colour_top: Option<[u8; 3]>,
     colour_btm: Option<[u8; 3]>,
 }

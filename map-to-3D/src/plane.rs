@@ -2,7 +2,7 @@
 use crate::vector::Vector2;
 /// The geometric plane of a sector floor/ceiling
 #[derive(Debug, Clone, PartialEq)]
-pub enum SectorPlane {
+pub enum Plane {
 	/// A flat sector plane, represented by a single floating point value,
 	/// which is the height of the plane
 	Flat( /// Height
@@ -22,23 +22,23 @@ pub enum SectorPlane {
 		f32)
 }
 
-impl SectorPlane {
+impl Plane {
 	/// Get the height of the sector plane at the given position
 	/// 
 	/// # Examples
 	/// 
 	/// ```
-	/// use map_to_3D::secplane::SectorPlane;
+	/// use map_to_3D::plane::Plane;
 	/// use map_to_3D::vector::Vector2;
 	/// 
-	/// let flat_plane = SectorPlane::Flat(16.);
+	/// let flat_plane = Plane::Flat(16.);
 	/// let pos = Vector2::new(16., 16.);
 	/// assert_eq!(flat_plane.z_at(&pos), 16.);
 	/// ```
 	pub fn z_at(&self, pos: &Vector2) -> f32 {
 		match self {
-			SectorPlane::Flat(height) => *height,
-			SectorPlane::Sloped(
+			Plane::Flat(height) => *height,
+			Plane::Sloped(
 				a, b, c, d
 			) => {
 				// https://github.com/Talon1024/jsdoom/blob/5c3ca7553b/src/convert/3DMapBuilder.ts#L650
@@ -59,16 +59,16 @@ impl SectorPlane {
 	/// 
 	/// With a flat plane:
 	/// ```
-	/// use map_to_3D::secplane::SectorPlane;
+	/// use map_to_3D::plane::Plane;
 	/// 
 	/// let expected: [f32; 3] = [0.0f32, 0.0f32, 1.0f32];
-	/// let actual = SectorPlane::Flat(5.).normal(false);
+	/// let actual = Plane::Flat(5.).normal(false);
 	/// assert_eq!(expected, actual);
 	/// ```
 	/// 
 	/// With a slope defined by the equation `z = .5x + .5y`:
 	/// ```
-	/// use map_to_3D::secplane::SectorPlane;
+	/// use map_to_3D::plane::Plane;
 	/// 
 	/// let plane = {
 	/// 	// Based on z = .5x + .5y + 5
@@ -86,7 +86,7 @@ impl SectorPlane {
 	/// let expected = format!(
 	/// 	"{:.3} {:.3} {:.3} ",
 	/// 	plane.0, plane.1, plane.2);
-	/// let actual = SectorPlane::from_triangle(
+	/// let actual = Plane::from_triangle(
 	/// 	16., 16., 21.,
 	/// 	-16., 16., 5.,
 	/// 	-16., -16., -11.
@@ -96,8 +96,8 @@ impl SectorPlane {
 	/// ```
 	pub fn normal(&self, reverse: bool) -> [f32; 3] {
 		match self {
-			SectorPlane::Flat(_) => [0., 0., if reverse {-1.} else {1.}],
-			SectorPlane::Sloped(a, b, c, _) => {
+			Plane::Flat(_) => [0., 0., if reverse {-1.} else {1.}],
+			Plane::Sloped(a, b, c, _) => {
 				if reverse {
 					// I don't know if this is correct
 					[-*a, -*b, -*c]
@@ -114,16 +114,16 @@ impl SectorPlane {
 	/// 
 	/// With a flat plane:
 	/// ```
-	/// use map_to_3D::secplane::SectorPlane;
+	/// use map_to_3D::plane::Plane;
 	/// 
-	/// let expected = SectorPlane::Flat(5.);
-	/// let actual = SectorPlane::from_triangle(16., 16., 5., -16., 16., 5., -16., -16., 5.);
+	/// let expected = Plane::Flat(5.);
+	/// let actual = Plane::from_triangle(16., 16., 5., -16., 16., 5., -16., -16., 5.);
 	/// assert_eq!(expected, actual);
 	/// ```
 	/// 
 	/// With a slope defined by the equation `z = .5x + .5y`:
 	/// ```
-	/// use map_to_3D::secplane::SectorPlane;
+	/// use map_to_3D::plane::Plane;
 	/// 
 	/// let plane = {
 	/// 	// Based on z = .5x + .5y + 5
@@ -142,17 +142,17 @@ impl SectorPlane {
 	/// let expected = format!(
 	/// 	"{:.3} {:.3} {:.3} {:.3}",
 	/// 	plane.0, plane.1, plane.2, plane.3);
-	/// let actual = SectorPlane::from_triangle(
+	/// let actual = Plane::from_triangle(
 	/// 	16., 16., 21.,
 	/// 	-16., 16., 5.,
 	/// 	-16., -16., -11.
 	/// );
 	/// match actual {
-	/// 	SectorPlane::Sloped(a, b, c, d) => {
+	/// 	Plane::Sloped(a, b, c, d) => {
 	/// 		let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
 	/// 		assert_eq!(expected, actual);
 	/// 	},
-	/// 	SectorPlane::Flat(h) => {
+	/// 	Plane::Flat(h) => {
 	/// 		panic!("The plane should be sloped!");
 	/// 	}
 	/// }
@@ -167,9 +167,9 @@ impl SectorPlane {
 		x3: f32,
 		y3: f32,
 		z3: f32,
-	) -> SectorPlane {
+	) -> Plane {
 		if z1 == z2 && z1 == z3 {
-			SectorPlane::Flat(z1)
+			Plane::Flat(z1)
 		} else {
 			// Diff point 1 and 2
 			let d1x = x2 - x1;
@@ -192,7 +192,7 @@ impl SectorPlane {
 			// Ax + By + Cz = -D
 			// D = -(Ax + By + Cz)
 			let d = -(a * x1 + b * y1 + c * z1);
-			SectorPlane::Sloped(a, b, c, d)
+			Plane::Sloped(a, b, c, d)
 		}
 	}
 }
@@ -210,7 +210,7 @@ mod tests {
 			Vector2::new(16., -16.),
 		];
 		let flat_height = 16.;
-		let flat_plane = SectorPlane::Flat(flat_height);
+		let flat_plane = Plane::Flat(flat_height);
 
 		positions.iter().for_each(|pos| {
 			assert_eq!(flat_height, flat_plane.z_at(pos))
@@ -237,7 +237,7 @@ mod tests {
 			// Normal vectors are perpendicular to lines/planes.
 			let a = -y / l;
 			let c = x / l;
-			SectorPlane::Sloped(a, 0., c, 0.)
+			Plane::Sloped(a, 0., c, 0.)
 		};
 		let sloped_heights = vec![8., -8., -8., 8.];
 
@@ -271,7 +271,7 @@ mod tests {
 			let a = -x / l;
 			let b = -y / l;
 			let c = z / l;
-			SectorPlane::Sloped(a, b, c, 5. * -c)
+			Plane::Sloped(a, b, c, 5. * -c)
 		};
 		let sloped_heights = vec![21., 5., -11., 5.];
 
@@ -309,12 +309,12 @@ mod tests {
 			let d = 5. * -c;
 			format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d)
 		};
-		let plane = SectorPlane::from_triangle(
+		let plane = Plane::from_triangle(
 			x1, y1, z1,
 			x2, y2, z2,
 			x3, y3, z3
 		);
-		if let SectorPlane::Sloped(a, b, c, d) = plane {
+		if let Plane::Sloped(a, b, c, d) = plane {
 			let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
 			assert_eq!(expected, actual);
 			Ok(())

@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 use map_to_3D::edge::Edge;
 use map_to_3D::vector::Vector2;
-use map_to_3D::secplane::SectorPlane;
+use map_to_3D::plane::Plane;
 use map_to_3D::sectorpolygonbuilder as spb;
 use macroquad::models as mq;
 
@@ -84,7 +84,7 @@ fn rainbowi(h: usize) -> Color {
 
 fn sector_vertices(
 	verts: &[Vector2],
-	plane: &SectorPlane,
+	plane: &Plane,
 	colour: Option<Color>
 ) -> Vec<mq::Vertex> {
 	verts.iter().map(|v| {
@@ -127,7 +127,7 @@ pub fn holey_mesh() -> Box<Mesh> {
 		Edge::new(1, 2),
 		Edge::new(2, 0),	// 12
 	];
-	let sp = SectorPlane::Flat(-7.);
+	let sp = Plane::Flat(-7.);
 	let polys = spb::build_polygons(&edges, &verts);
 	let ptris = spb::auto_triangulate(&polys, &verts);
 	// let mut hue = 0;
