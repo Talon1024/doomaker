@@ -33,7 +33,7 @@ impl SectorPlane {
 	/// 
 	/// let flat_plane = SectorPlane::Flat(16.);
 	/// let pos = Vec2::new(16., 16.);
-	/// assert_eq!(flat_plane.z_at(&pos), 16.);
+	/// assert_eq!(flat_plane.z_at(pos), 16.);
 	/// ```
 	pub fn z_at(&self, pos: Vec2) -> f32 {
 		match self {

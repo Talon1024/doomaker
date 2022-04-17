@@ -270,7 +270,7 @@ dependencies = [
  "ahash 0.7.6",
  "cfg-if",
  "earcutr",
- "glam 0.20.5",
+ "glam 0.14.0",
  "micromath",
 ]
 
