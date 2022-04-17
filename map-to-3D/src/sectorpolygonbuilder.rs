@@ -63,6 +63,7 @@ fn angle_between(
 		if clockwise {-1.} else {1.};
 
 	if ang < 0.0 {
+		// For ordering purposes
 		ang + std::f32::consts::PI * 2.0
 	} else if ang == -0.0 {
 		panic!("Angle is -0.0");

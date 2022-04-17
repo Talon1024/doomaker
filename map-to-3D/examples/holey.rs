@@ -48,7 +48,7 @@ fn main() {
 
 	let secplane = SectorPlane::Flat(0.);
 	let normal = secplane.normal(false);
-	let normal: String = normal.iter().map(|co| format!("{} ", co)).collect();
+	let normal: String = (0usize..3).map(|co| format!("{} ", normal[co])).collect();
 	let mut stl: String = String::from("solid holey");
 	triangulated.iter().filter(|tp| tp.is_some()).for_each(|tp| {
 		let tp = tp.as_ref().unwrap();

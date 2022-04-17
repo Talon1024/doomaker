@@ -1,5 +1,5 @@
 //! Sector floor/ceiling planes
-use glam::Vec2;
+use glam::{Vec2, Vec3};
 /// The geometric plane of a sector floor/ceiling
 #[derive(Debug, Clone, PartialEq)]
 pub enum SectorPlane {
@@ -60,8 +60,9 @@ impl SectorPlane {
 	/// With a flat plane:
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
+	/// use glam::{Vec3, const_vec3};
 	/// 
-	/// let expected: [f32; 3] = [0.0f32, 0.0f32, 1.0f32];
+	/// let expected: Vec3 = const_vec3!([0.0f32, 0.0f32, 1.0f32]);
 	/// let actual = SectorPlane::Flat(5.).normal(false);
 	/// assert_eq!(expected, actual);
 	/// ```
@@ -91,18 +92,18 @@ impl SectorPlane {
 	/// 	-16., 16., 5.,
 	/// 	-16., -16., -11.
 	/// ).normal(false);
-	/// let actual: String = actual.iter().map(|co| format!("{:.3} ", co)).collect();
+	/// let actual: String = (0..3).map(|co| format!("{:.3} ", actual[co])).collect();
 	/// assert_eq!(expected, actual);
 	/// ```
-	pub fn normal(&self, reverse: bool) -> [f32; 3] {
+	pub fn normal(&self, reverse: bool) -> Vec3 {
 		match self {
-			SectorPlane::Flat(_) => [0., 0., if reverse {-1.} else {1.}],
+			SectorPlane::Flat(_) => Vec3::new(0., 0., if reverse {-1.} else {1.}),
 			SectorPlane::Sloped(a, b, c, _) => {
 				if reverse {
 					// I don't know if this is correct
-					[-*a, -*b, -*c]
+					Vec3::new(-*a, -*b, -*c)
 				} else {
-					[*a, *b, *c]
+					Vec3::new(*a, *b, *c)
 				}
 			}
 		}
