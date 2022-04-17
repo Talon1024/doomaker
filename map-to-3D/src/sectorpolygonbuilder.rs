@@ -59,20 +59,8 @@ fn angle_between(
 	let ac = p1 - center;
 	let bc = p2 - center;
 
-	let ang = {
-		// Based on jsdoom: https://github.com/pineapplemachine/jsdoom/blob/04593d2c/src/convert/3DMapBuilder.ts#L172
-		// which was in itself based on what I learned after playing
-		// around with 2D vector dot/cross products
-		let d = ac.dot(bc);
-		let c = ac.perp_dot(bc);
-		cfg_if::cfg_if! {
-			if #[cfg(micromath)] {
-				F32(c).atan2(F32(d)).0
-			} else {
-				c.atan2(d)
-			}
-		}
-	} * if clockwise {-1.} else {1.};
+	let ang = ac.angle_between(bc) *
+		if clockwise {-1.} else {1.};
 
 	if ang < 0.0 {
 		ang + std::f32::consts::PI * 2.0
