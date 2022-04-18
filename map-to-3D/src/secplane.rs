@@ -70,6 +70,7 @@ impl SectorPlane {
 	/// With a slope defined by the equation `z = .5x + .5y`:
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
+	/// use glam::Vec3;
 	/// 
 	/// let plane = {
 	/// 	// Based on z = .5x + .5y + 5
@@ -88,9 +89,9 @@ impl SectorPlane {
 	/// 	"{:.3} {:.3} {:.3} ",
 	/// 	plane.0, plane.1, plane.2);
 	/// let actual = SectorPlane::from_triangle(
-	/// 	16., 16., 21.,
-	/// 	-16., 16., 5.,
-	/// 	-16., -16., -11.
+	/// 	Vec3::new(16., 16., 21.),
+	/// 	Vec3::new(-16., 16., 5.),
+	/// 	Vec3::new(-16., -16., -11.)
 	/// ).normal(false);
 	/// let actual: String = (0..3).map(|co| format!("{:.3} ", actual[co])).collect();
 	/// assert_eq!(expected, actual);
@@ -116,15 +117,21 @@ impl SectorPlane {
 	/// With a flat plane:
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
+	/// use glam::Vec3;
 	/// 
 	/// let expected = SectorPlane::Flat(5.);
-	/// let actual = SectorPlane::from_triangle(16., 16., 5., -16., 16., 5., -16., -16., 5.);
+	/// let actual = SectorPlane::from_triangle(
+	/// 	Vec3::new(16., 16., 5.),
+	/// 	Vec3::new(-16., 16., 5.),
+	/// 	Vec3::new(-16., -16., 5.)
+	/// );
 	/// assert_eq!(expected, actual);
 	/// ```
 	/// 
 	/// With a slope defined by the equation `z = .5x + .5y`:
 	/// ```
 	/// use map_to_3D::secplane::SectorPlane;
+	/// use glam::Vec3;
 	/// 
 	/// let plane = {
 	/// 	// Based on z = .5x + .5y + 5
@@ -144,9 +151,9 @@ impl SectorPlane {
 	/// 	"{:.3} {:.3} {:.3} {:.3}",
 	/// 	plane.0, plane.1, plane.2, plane.3);
 	/// let actual = SectorPlane::from_triangle(
-	/// 	16., 16., 21.,
-	/// 	-16., 16., 5.,
-	/// 	-16., -16., -11.
+	/// 	Vec3::new(16., 16., 21.),
+	/// 	Vec3::new(-16., 16., 5.),
+	/// 	Vec3::new(-16., -16., -11.),
 	/// );
 	/// match actual {
 	/// 	SectorPlane::Sloped(a, b, c, d) => {
@@ -159,40 +166,25 @@ impl SectorPlane {
 	/// }
 	/// ```
 	pub fn from_triangle(
-		x1: f32,
-		y1: f32,
-		z1: f32,
-		x2: f32,
-		y2: f32,
-		z2: f32,
-		x3: f32,
-		y3: f32,
-		z3: f32,
+		v1: Vec3,
+		v2: Vec3,
+		v3: Vec3,
 	) -> SectorPlane {
-		if z1 == z2 && z1 == z3 {
-			SectorPlane::Flat(z1)
+		if v1.z == v2.z && v1.z == v3.z {
+			SectorPlane::Flat(v1.z)
 		} else {
 			// Diff point 1 and 2
-			let d1x = x2 - x1;
-			let d1y = y2 - y1;
-			let d1z = z2 - z1;
+			let d1 = v2 - v1;
 			// Diff point 1 and 3
-			let d2x = x3 - x1;
-			let d2y = y3 - y1;
-			let d2z = z3 - z1;
+			let d2 = v3 - v1;
 			// Calculate ABC
-			let a = d1y * d2z - d1z * d2y; // a2b3 - a3b2
-			let b = d1z * d2x - d1x * d2z; // a3b1 - a1b3
-			let c = d1x * d2y - d1y * d2x; // a1b2 - a2b1
-			let l = (a * a + b * b + c * c).sqrt();
-			let a = a / l;
-			let b = b / l;
-			let c = c / l;
+			let abc = d1.cross(d2).normalize_or_zero();
+			let (a, b, c) = (abc.x, abc.y, abc.z);
 			// Calculate D
 			// Ax + By + Cz + D = 0
 			// Ax + By + Cz = -D
 			// D = -(Ax + By + Cz)
-			let d = -(a * x1 + b * y1 + c * z1);
+			let d = -(a * v1.x + b * v1.y + c * v1.z);
 			SectorPlane::Sloped(a, b, c, d)
 		}
 	}
@@ -311,9 +303,9 @@ mod tests {
 			format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d)
 		};
 		let plane = SectorPlane::from_triangle(
-			x1, y1, z1,
-			x2, y2, z2,
-			x3, y3, z3
+			Vec3::new(x1, y1, z1),
+			Vec3::new(x2, y2, z2),
+			Vec3::new(x3, y3, z3)
 		);
 		if let SectorPlane::Sloped(a, b, c, d) = plane {
 			let actual = format!("{:.3} {:.3} {:.3} {:.3}", a, b, c, d);
