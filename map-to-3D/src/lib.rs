@@ -5,9 +5,11 @@
 //! useful for 3D WYSIWYG viewers/editors. A "map" consists of lines,
 //! vertices, sectors, and objects.
 
-pub mod vector;
+// pub mod vector; // Now using glam
 pub mod plane;
 pub(crate) mod boundingbox;
 pub mod sectorpolygonbuilder;
 pub mod edge;
-pub mod wall;
+// pub mod wall;
+// pub mod sector;
+pub mod util;
