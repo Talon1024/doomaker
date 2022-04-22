@@ -196,7 +196,7 @@ impl Plane {
 		// being a and b. Calculate slope and y-intercept for both lines
 		let xy = b - a;
 		let line_len = xy.length();
-		let (sa, ya, sb, yb) = {
+		let (ss, ys, so, yo) = {
 			let zas = self.z_at(a);
 			let zbs = self.z_at(b);
 			let zao = other.z_at(a);
@@ -206,12 +206,12 @@ impl Plane {
 		};
 		// https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_line_equations
 		// ptx = (d - c) / (a - b)
-		let ptx = (yb - ya) / (sa - sb);
-		if ptx <= 0. || ptx > line_len {
+		let ptx = (yo - ys) / (ss - so);
+		if ptx.is_nan() || ptx <= 0. || ptx > line_len {
 			None
 		} else {
-			let xy = ptx / line_len * xy;
-			let ptz = sa * ptx + ya;
+			let xy = ptx / line_len * xy + a;
+			let ptz = ss * ptx + ys;
 			Some(xy.extend(ptz))
 		}
 	}
@@ -347,15 +347,19 @@ mod tests {
 	fn intersection() {
 		use glam::{const_vec2, const_vec3};
 		let pa = Plane::from_triangle(
-			const_vec3!([0., -1., 1.]),
-			const_vec3!([-2., -1., 1.]),
-			const_vec3!([0., 1., 2.]));
+			const_vec3!([8., 7., 1.]),
+			const_vec3!([6., 7., 1.]),
+			const_vec3!([8., 9., 2.]));
 		let pb = Plane::from_triangle(
-			const_vec3!([0., -1., 1.]),
-			const_vec3!([-2., -1., 1.]),
-			const_vec3!([0., 1., 2.]));
-		let intersection_point = pa.intersection(const_vec2!([0., 1.]), const_vec2!([0., -1.]), &pb);
-		assert_eq!(intersection_point, Some(const_vec3!([0., 0.333333333, 1.6666666666])));
+			const_vec3!([8., 7., 3.]),
+			const_vec3!([10., 7., 3.]),
+			const_vec3!([8., 9., 1.]));
+		let intersection_point = pa.intersection(const_vec2!([8., 9.]), const_vec2!([8., 7.]), &pb);
+		assert!(intersection_point.is_some());
+		let expected = const_vec3!([8.0, 8.333333333, 1.666666666]);
+		let intersection_point = intersection_point.map(|v| format!("{:.3} {:.3} {:.3}", v.x, v.y, v.z)).unwrap();
+		let expected = format!("{:.3} {:.3} {:.3}", expected.x, expected.y, expected.z);
+		assert_eq!(expected, intersection_point);
 	}
 }
 
