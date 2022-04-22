@@ -1,7 +1,7 @@
 //! Sector floor/ceiling planes
 use glam::{Vec2, Vec3};
 /// The geometric plane of a sector floor/ceiling
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Plane {
 	/// A flat sector plane, represented by a single floating point value,
 	/// which is the height of the plane
@@ -110,7 +110,7 @@ impl Plane {
 		}
 	}
 
-	/// Create a `SectorPlane` from three points (a triangle)
+	/// Create a `Plane` from three points (a triangle)
 	/// 
 	/// # Examples
 	/// 
@@ -186,6 +186,33 @@ impl Plane {
 			// D = -(Ax + By + Cz)
 			let d = -(a * v1.x + b * v1.y + c * v1.z);
 			Plane::Sloped(a, b, c, d)
+		}
+	}
+
+	/// Calculate the intersection point between two planes on a line, if they
+	/// intersect.
+	pub fn intersection(&self, a: Vec2, b: Vec2, other: &Plane) -> Option<Vec3> {
+		// Pretend the slopes are lines in 2D space, with the two points on them
+		// being a and b. Calculate slope and y-intercept for both lines
+		let xy = b - a;
+		let line_len = xy.length();
+		let (sa, ya, sb, yb) = {
+			let zas = self.z_at(a);
+			let zbs = self.z_at(b);
+			let zao = other.z_at(a);
+			let zbo = other.z_at(b);
+			((zbs - zas) / line_len, zas,
+			 (zbo - zao) / line_len, zao)
+		};
+		// https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_line_equations
+		// ptx = (d - c) / (a - b)
+		let ptx = (yb - ya) / (sa - sb);
+		if ptx <= 0. || ptx > line_len {
+			None
+		} else {
+			let xy = ptx / line_len * xy;
+			let ptz = sa * ptx + ya;
+			Some(xy.extend(ptz))
 		}
 	}
 }
@@ -314,6 +341,21 @@ mod tests {
 		} else {
 			Err(String::from("Plane is not sloped!"))
 		}
+	}
+
+	#[test]
+	fn intersection() {
+		use glam::{const_vec2, const_vec3};
+		let pa = Plane::from_triangle(
+			const_vec3!([0., -1., 1.]),
+			const_vec3!([-2., -1., 1.]),
+			const_vec3!([0., 1., 2.]));
+		let pb = Plane::from_triangle(
+			const_vec3!([0., -1., 1.]),
+			const_vec3!([-2., -1., 1.]),
+			const_vec3!([0., 1., 2.]));
+		let intersection_point = pa.intersection(const_vec2!([0., 1.]), const_vec2!([0., -1.]), &pb);
+		assert_eq!(intersection_point, Some(const_vec3!([0., 0.333333333, 1.6666666666])));
 	}
 }
 
