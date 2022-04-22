@@ -356,10 +356,15 @@ mod tests {
 			const_vec3!([8., 9., 1.]));
 		let intersection_point = pa.intersection(const_vec2!([8., 9.]), const_vec2!([8., 7.]), &pb);
 		assert!(intersection_point.is_some());
+
 		let expected = const_vec3!([8.0, 8.333333333, 1.666666666]);
 		let intersection_point = intersection_point.map(|v| format!("{:.3} {:.3} {:.3}", v.x, v.y, v.z)).unwrap();
 		let expected = format!("{:.3} {:.3} {:.3}", expected.x, expected.y, expected.z);
 		assert_eq!(expected, intersection_point);
+
+		// Same as above, with a shorter line
+		let no_intersection = pa.intersection(const_vec2!([8., 7.5]), const_vec2!([8., 7.]), &pb);
+		assert_eq!(no_intersection, None);
 	}
 }
 
