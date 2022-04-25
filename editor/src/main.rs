@@ -8,13 +8,15 @@ enum MousePointerMode {
 
 mod sample_data;
 mod util;
+mod velocity; use velocity::Velocity;
 
 #[macroquad::main("Doomakyr")]
 async fn main() {
     use std::f32::consts::{PI, FRAC_PI_2};
     set_pc_assets_folder("assets");
     let mouse_fac = 0.001953125; // 1 / 512 or 2^-9
-    let move_fac = 0.25; // 1 / 64 or 2^-6
+    let move_fac = 0.25; // 1 / 4 or 2^-2
+    let move_max_speed = 7.;
     let mut orientation = (FRAC_PI_2, FRAC_PI_2);
     let mut cam3d = Camera3D {
         position: Vec3::from((0.,0.,0.)),
@@ -31,6 +33,7 @@ async fn main() {
     let mut ptr_mode = MousePointerMode::Free;
     let mut last_mouse_pos = (0.0f32, 0.0f32);
     let mut movement = Vec3::ZERO;
+    let mut velocity = Velocity::new(move_max_speed, None);
     let ptr_lock_tex = load_texture("ptrlock.png").await.ok().or_else(||{
         println!("ptrlock.png not found");
         None
@@ -80,9 +83,9 @@ async fn main() {
                 // Forward, left, right, backward movement
                 // TODO: Configurable key mapping
                 movement = Vec3::new(
-                    if is_key_down(KeyCode::Z) {move_fac} else if is_key_down(KeyCode::Q) {-move_fac} else {0.},
-                    if is_key_down(KeyCode::A) {move_fac} else if is_key_down(KeyCode::D) {-move_fac} else {0.},
-                    if is_key_down(KeyCode::W) {move_fac} else if is_key_down(KeyCode::S) {-move_fac} else {0.},
+                    if is_key_down(KeyCode::Z) {1.} else if is_key_down(KeyCode::Q) {-1.} else {0.},
+                    if is_key_down(KeyCode::A) {1.} else if is_key_down(KeyCode::D) {-1.} else {0.},
+                    if is_key_down(KeyCode::W) {1.} else if is_key_down(KeyCode::S) {-1.} else {0.},
                 );
             }
         }
@@ -93,7 +96,8 @@ async fn main() {
             Quat::from_rotation_z(orientation.0) *
             Quat::from_rotation_y(orientation.1);
         movement = dir_quat.mul_vec3(movement);
-        cam3d.position += Vec3::from(movement);
+        velocity.move_dir(movement, move_fac);
+        cam3d.position += velocity.get();
         cam3d.target = cam3d.position + dir_vec;
         cam3d.fovy = util::fov_x_to_y(100f32.to_radians());
         last_mouse_pos = mouse_position();

@@ -156,7 +156,7 @@ name = "editor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "glam 0.20.5",
+ "glam",
  "macroquad",
  "map-to-3D",
 ]
@@ -187,12 +187,6 @@ name = "glam"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "333928d5eb103c5d4050533cec0384302db6be8ef7d3cebd30ec6a35350353da"
-
-[[package]]
-name = "glam"
-version = "0.20.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f43e957e744be03f5801a55472f593d43fabdebf25a4585db250f04d86b1675f"
 
 [[package]]
 name = "hashbrown"
@@ -249,7 +243,7 @@ checksum = "e69f39283065a2ebea3ae41294a44a9d61951d255917bdcc9ada0ec97612499f"
 dependencies = [
  "bumpalo",
  "fontdue",
- "glam 0.14.0",
+ "glam",
  "image",
  "macroquad_macro",
  "miniquad",
@@ -270,7 +264,7 @@ dependencies = [
  "ahash 0.7.6",
  "cfg-if",
  "earcutr",
- "glam 0.14.0",
+ "glam",
  "micromath",
 ]
 
