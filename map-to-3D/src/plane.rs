@@ -217,6 +217,33 @@ impl Plane {
 	}
 }
 
+// Necessary?
+/* 
+#[derive(Debug, Clone, Copy)]
+struct Line {
+	slope: f32,
+	y_intercept: f32
+}
+
+impl Line {
+	fn intersection(&self, other: Line) -> f32 {
+		// https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_line_equations
+		// ptx = (d - c) / (a - b)
+		(other.y_intercept - self.y_intercept) /
+			(self.slope - other.slope)
+	}
+}
+
+impl From<(f32, f32)> for Line {
+	fn from(v: (f32, f32)) -> Line {
+		Line {
+			slope: v.0,
+			y_intercept: v.1
+		}
+	}
+}
+ */
+
 #[cfg(test)]
 mod tests {
 	use super::*;
