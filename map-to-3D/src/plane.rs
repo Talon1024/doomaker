@@ -193,10 +193,12 @@ impl Plane {
 	/// intersect.
 	pub fn intersection(&self, a: Vec2, b: Vec2, other: &Plane) -> Option<Vec3> {
 		// Pretend the slopes are lines in 2D space, with the two points on them
-		// being a and b. Calculate slope and y-intercept for both lines
+		// being a and b, and that the X of point a is at 0. Calculate slope
+		// and y-intercept for both lines
 		let xy = b - a;
 		let line_len = xy.length();
-		let (ss, ys, so, yo) = {
+		// Self slope, self y-intercept, other slope, other y-intercept
+		let (ss, sy, os, oy) = {
 			let zas = self.z_at(a);
 			let zbs = self.z_at(b);
 			let zao = other.z_at(a);
@@ -206,12 +208,12 @@ impl Plane {
 		};
 		// https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_line_equations
 		// ptx = (d - c) / (a - b)
-		let ptx = (yo - ys) / (ss - so);
+		let ptx = (oy - sy) / (ss - os);
 		if ptx.is_nan() || ptx <= 0. || ptx > line_len {
 			None
 		} else {
 			let xy = ptx / line_len * xy + a;
-			let ptz = ss * ptx + ys;
+			let ptz = ss * ptx + sy;
 			Some(xy.extend(ptz))
 		}
 	}
@@ -234,11 +236,24 @@ impl Line {
 	}
 }
 
+// Slope and Y-intercept
 impl From<(f32, f32)> for Line {
 	fn from(v: (f32, f32)) -> Line {
 		Line {
 			slope: v.0,
 			y_intercept: v.1
+		}
+	}
+}
+
+// X and Y of 2 points on the line
+impl From<(Vec2, Vec2)> for Line {
+	fn from(v: (Vec2, Vec2)) -> Line {
+		let slope = (v.1.y - v.0.y) / (v.1.x - v.0.x);
+		let y_intercept = slope * v.0.x.min(v.1.x);
+		Line {
+			slope,
+			y_intercept
 		}
 	}
 }
