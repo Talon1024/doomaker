@@ -9,6 +9,8 @@ enum MousePointerMode {
 mod sample_data;
 mod util;
 mod velocity; use velocity::Velocity;
+mod data;
+mod property;
 
 #[macroquad::main("Doomakyr")]
 async fn main() {

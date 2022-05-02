@@ -73,6 +73,30 @@ fn angle_between(
 	}
 }
 
+mod angle {
+	use std::cmp::{PartialOrd, PartialEq, Ordering::{self, *}};
+	pub(super) struct Angle(f32);
+	impl PartialEq for Angle {
+		fn eq(&self, other: &Self) -> bool {
+			self.0 == other.0
+		}
+	}
+	impl PartialOrd for Angle {
+		fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+			let result = self.0.partial_cmp(&other.0);
+			if self.0 > 0. && other.0 > 0. {
+				result
+			} else if self.0 < 0. && other.0 > 0. {
+				Some(Greater)
+			} else if self.0 < 0. && other.0 < 0. {
+				result.map(Ordering::reverse)
+			} else /*if self.0 > 0. && other.0 < 0.*/ {
+				Some(Less)
+			}
+		}
+	}
+}
+
 /// A Sector Polygon
 /// 
 /// Consists of a list of vertices that make up the contour of the polygon, and

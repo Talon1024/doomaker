@@ -22,6 +22,12 @@ pub enum Plane {
 		f32)
 }
 
+impl Default for Plane {
+	fn default() -> Self {
+		Plane::Flat(0.)
+	}
+}
+
 impl Plane {
 	/// Get the height of the sector plane at the given position
 	/// 
