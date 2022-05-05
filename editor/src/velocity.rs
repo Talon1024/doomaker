@@ -12,7 +12,8 @@ impl Velocity {
 			max
 		}
 	}
-	pub fn move_dir(&mut self, dir: Vec3, accel: f32) {
+	pub fn move_dir(&mut self, dir: Vec3, mut accel: f32) {
+		accel *= dir.length() + 1.;
 		let dest = dir * self.max;
 		let diff = (dest - self.vel).clamp_length(0., accel);
 		self.vel += diff;
