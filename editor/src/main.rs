@@ -55,7 +55,8 @@ async fn main() {
 	let mut exit = false;
 	loop {
 		if exit { break; }
-		// Set up egui
+
+		// STEP: Set up egui
 		egui_macroquad::ui(|egui_ctx| {
 			egui::TopBottomPanel::top("menu_bar").show(egui_ctx, |ui| {
 				egui::menu::bar(ui, |ui| {
@@ -83,7 +84,7 @@ async fn main() {
 			egui_wants_pointer = egui_ctx.wants_pointer_input();
 		});
 
-		// Draw stuff
+		// STEP: Draw stuff
 		clear_background(BEIGE);
 		set_camera(&cam3d);
 		draw_mesh(&cube_mesh);
@@ -133,16 +134,16 @@ async fn main() {
 			}
 		}
 
-		// Draw egui after everything else so it is on top
+		// STEP: Draw egui after everything else so it is on top
 		egui_macroquad::draw();
 
-		// Show/hide mouse cursor
+		// STEP: Show/hide mouse cursor
 		match ptr_mode {
 			PointerMode::Free => { show_mouse(true); },
 			PointerMode::Locked => { show_mouse(false); },
 		}
 
-		// Apply changes caused by user inputs
+		// STEP: Apply changes caused by user inputs
 		let dir_vec = util::math::vec3_from_orientation(orientation);
 		let dir_quat = // Rotation for movement vector
 			Quat::from_rotation_z(orientation.0) *
