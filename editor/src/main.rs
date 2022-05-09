@@ -89,7 +89,7 @@ async fn main() {
 		set_camera(&cam3d);
 		draw_mesh(&cube_mesh);
 
-		// Handle input
+		// STEP: Handle input
 		match ptr_mode {
 			PointerMode::Free => {
 				if is_mouse_button_pressed(MouseButton::Left) &&

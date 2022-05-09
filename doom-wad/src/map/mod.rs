@@ -1,12 +1,19 @@
 // Structures for the original Doom map format
 use crate::wad::{DoomWad, DoomWadLump};
+use std::{mem, io::{Read, Cursor, LineWriter}, error::Error};
 mod lumps;
 
-/* 
 #[derive(Debug, Clone)]
 pub struct Vertex {
 	pub x: i16,
 	pub y: i16
+}
+
+/// Console port Doom map vertex
+#[derive(Debug, Clone)]
+pub struct VertexConsole {
+	pub x: i32,
+	pub y: i32
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +60,6 @@ pub struct Thing {
 	pub ednum: i16,
 	pub flags: i16,
 }
- */
 
 #[derive(Debug, Clone, Copy)]
 pub enum Format {
@@ -63,10 +69,59 @@ pub enum Format {
 	Doom64,
 }
 
+#[derive(Clone)]
 pub struct Map<'a> {
 	pub name: String,
 	pub format: Format,
 	pub lumps: &'a [DoomWadLump],
+}
+
+impl<'a> Map<'a> {
+	pub fn vertices(&self) -> Result<Vec<Vertex>, Box<dyn Error>> {
+		let lump = self.lumps.iter().find(|lump| lump.name == "VERTEXES")
+			.expect("All maps MUST have a VERTEXES lump!");
+		lump.data.chunks_exact(mem::size_of::<Vertex>()).map(|ch| {
+			let mut cur = Cursor::new(ch);
+			let mut numbuf: [u8; 2] = [0; 2];
+			cur.read_exact(&mut numbuf)?;
+			let x = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let y = i16::from_le_bytes(numbuf);
+			Ok(Vertex { x, y })
+		}).collect()
+	}
+
+	pub fn linedefs(&self) -> Result<Vec<Linedef>, Box<dyn Error>> {
+		let lump = self.lumps.iter().find(|lump| lump.name == "VERTEXES")
+			.expect("All maps MUST have a VERTEXES lump!");
+			lump.data.chunks_exact(mem::size_of::<Linedef>()).map(|ch| {
+				let mut cur = Cursor::new(ch);
+				let mut numbuf: [u8; 2] = [0; 2];
+				cur.read_exact(&mut numbuf)?;
+				let a = u16::from_le_bytes(numbuf);
+				cur.read_exact(&mut numbuf)?;
+				let b = u16::from_le_bytes(numbuf);
+				cur.read_exact(&mut numbuf)?;
+				let flags = u16::from_le_bytes(numbuf);
+				cur.read_exact(&mut numbuf)?;
+				let special = u16::from_le_bytes(numbuf);
+				cur.read_exact(&mut numbuf)?;
+				let tag = u16::from_le_bytes(numbuf);
+				cur.read_exact(&mut numbuf)?;
+				let front = u16::from_le_bytes(numbuf);
+				cur.read_exact(&mut numbuf)?;
+				let back = u16::from_le_bytes(numbuf);
+				Ok(Linedef {
+					a,
+					b,
+					flags,
+					special,
+					tag,
+					front,
+					back
+				})
+			}).collect()
+	}
 }
 
 /// Check a lump to see whether it is a vanilla Doom map lump (or similar)
