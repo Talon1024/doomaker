@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0"
+
+[features]
+# Support for Doom console port map data structures
+console = []
