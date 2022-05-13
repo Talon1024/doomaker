@@ -1,19 +1,14 @@
-// Structures for the original Doom map format
+//! Structures for the original Doom map format
 use crate::wad::{DoomWad, DoomWadLump};
-use std::{mem, io::{Read, Cursor, LineWriter}, error::Error};
+use std::{mem, io::{Read, Cursor}, error::Error};
 mod lumps;
+#[cfg(feature="console")]
+mod console;
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
 	pub x: i16,
 	pub y: i16
-}
-
-/// Console port Doom map vertex
-#[derive(Debug, Clone)]
-pub struct VertexConsole {
-	pub x: i32,
-	pub y: i32
 }
 
 #[derive(Debug, Clone)]
@@ -31,9 +26,9 @@ pub struct Linedef {
 pub struct Sidedef {
 	pub x: i16,
 	pub y: i16,
-	pub upper: String,
-	pub lower: String,
-	pub middle: String,
+	pub upper: [u8; 8],
+	pub lower: [u8; 8],
+	pub middle: [u8; 8],
 	pub sec: u16,
 }
 
@@ -44,9 +39,9 @@ pub struct Sector {
 	/// Ceiling height
 	pub ceilh: i16,
 	/// Floor material
-	pub flort: String,
+	pub flort: [u8; 8],
 	/// Ceiling material
-	pub ceilt: String,
+	pub ceilt: [u8; 8],
 	pub light: i16,
 	pub special: i16,
 	pub tag: i16,
@@ -92,35 +87,124 @@ impl<'a> Map<'a> {
 	}
 
 	pub fn linedefs(&self) -> Result<Vec<Linedef>, Box<dyn Error>> {
-		let lump = self.lumps.iter().find(|lump| lump.name == "VERTEXES")
-			.expect("All maps MUST have a VERTEXES lump!");
-			lump.data.chunks_exact(mem::size_of::<Linedef>()).map(|ch| {
-				let mut cur = Cursor::new(ch);
-				let mut numbuf: [u8; 2] = [0; 2];
-				cur.read_exact(&mut numbuf)?;
-				let a = u16::from_le_bytes(numbuf);
-				cur.read_exact(&mut numbuf)?;
-				let b = u16::from_le_bytes(numbuf);
-				cur.read_exact(&mut numbuf)?;
-				let flags = u16::from_le_bytes(numbuf);
-				cur.read_exact(&mut numbuf)?;
-				let special = u16::from_le_bytes(numbuf);
-				cur.read_exact(&mut numbuf)?;
-				let tag = u16::from_le_bytes(numbuf);
-				cur.read_exact(&mut numbuf)?;
-				let front = u16::from_le_bytes(numbuf);
-				cur.read_exact(&mut numbuf)?;
-				let back = u16::from_le_bytes(numbuf);
-				Ok(Linedef {
-					a,
-					b,
-					flags,
-					special,
-					tag,
-					front,
-					back
-				})
-			}).collect()
+		let lump = self.lumps.iter().find(|lump| lump.name == "LINEDEFS")
+			.expect("All maps MUST have a LINEDEFS lump!");
+		lump.data.chunks_exact(mem::size_of::<Linedef>()).map(|ch| {
+			let mut cur = Cursor::new(ch);
+			let mut numbuf: [u8; 2] = [0; 2];
+			cur.read_exact(&mut numbuf)?;
+			let a = u16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let b = u16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let flags = u16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let special = u16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let tag = u16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let front = u16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let back = u16::from_le_bytes(numbuf);
+			Ok(Linedef {
+				a,
+				b,
+				flags,
+				special,
+				tag,
+				front,
+				back,
+			})
+		}).collect()
+	}
+
+	pub fn sidedefs(&self) -> Result<Vec<Sidedef>, Box<dyn Error>> {
+		let lump = self.lumps.iter().find(|lump| lump.name == "SIDEDEFS")
+			.expect("All maps MUST have a SIDEDEFS lump!");
+		lump.data.chunks_exact(mem::size_of::<Sidedef>()).map(|ch| {
+			let mut cur = Cursor::new(ch);
+			let mut numbuf: [u8; 2] = [0; 2];
+			let mut strbuf: [u8; 8] = [0; 8];
+			cur.read_exact(&mut numbuf)?;
+			let x = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let y = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut strbuf)?;
+			let upper = strbuf;
+			cur.read_exact(&mut strbuf)?;
+			let middle = strbuf;
+			cur.read_exact(&mut strbuf)?;
+			let lower = strbuf;
+			cur.read_exact(&mut numbuf)?;
+			let sec = u16::from_le_bytes(numbuf);
+			Ok(Sidedef {
+				x,
+				y,
+				upper,
+				middle,
+				lower,
+				sec
+			})
+		}).collect()
+	}
+
+	pub fn sectors(&self) -> Result<Vec<Sector>, Box<dyn Error>> {
+		let lump = self.lumps.iter().find(|lump| lump.name == "SECTORS")
+			.expect("All maps MUST have a SECTORS lump!");
+		lump.data.chunks_exact(mem::size_of::<Sector>()).map(|ch| {
+			let mut cur = Cursor::new(ch);
+			let mut numbuf: [u8; 2] = [0; 2];
+			let mut strbuf: [u8; 8] = [0; 8];
+			cur.read_exact(&mut numbuf)?;
+			let florh = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let ceilh = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut strbuf)?;
+			let flort = strbuf;
+			cur.read_exact(&mut strbuf)?;
+			let ceilt = strbuf;
+			cur.read_exact(&mut numbuf)?;
+			let light = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let special = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let tag = i16::from_le_bytes(numbuf);
+			Ok(Sector {
+				florh,
+				ceilh,
+				flort,
+				ceilt,
+				light,
+				special,
+				tag
+			})
+		}).collect()
+	}
+
+	pub fn things(&self) -> Result<Vec<Thing>, Box<dyn Error>> {
+		let lump = self.lumps.iter().find(|lump| lump.name == "THINGS")
+			.expect("All maps MUST have a THINGS lump!");
+		lump.data.chunks_exact(mem::size_of::<Thing>()).map(|ch| {
+			let mut cur = Cursor::new(ch);
+			let mut numbuf: [u8; 2] = [0; 2];
+			cur.read_exact(&mut numbuf)?;
+			let x = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let y = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let angle = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let ednum = i16::from_le_bytes(numbuf);
+			cur.read_exact(&mut numbuf)?;
+			let flags = i16::from_le_bytes(numbuf);
+			Ok(Thing {
+				x,
+				y,
+				angle,
+				ednum,
+				flags,
+			})
+		}).collect()
 	}
 }
 
