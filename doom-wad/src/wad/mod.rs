@@ -172,46 +172,41 @@ impl DoomWad {
 }
 
 impl<'a> DoomWad {
-	pub fn namespace(&'a self, ns_start: &[&str], ns_end: &[&str], sub_start: Option<&[&str]>, sub_end: Option<&[&str]>) -> Vec<&'a [DoomWadLump]> {
-		let ns_index = {
-			match self.lumps.iter().position(
-			|lu| ns_start.iter().any(|n| n == &lu.name)) {
-				Some(index) => index + 1,
-				// Namespace not found in this WAD
-				None => { return vec![]; }
-			}
-		};
-		let ns_endindex = {
-			match self.lumps.iter().skip(ns_index).position(
-			|lu| ns_end.iter().any(|n| n == &lu.name)) {
-				Some(index) => index - 1,
-				// Namespace not complete and therefore invalid
-				None => { return vec![]; }
-			}
-		};
+	pub fn namespace(&'a self, ns: (&[&str], &[&str]), sub: Option<(&[&str], &[&str])>) -> Vec<&'a [DoomWadLump]> {
+		let ns_index = self.lumps.iter().position(
+			|lu| ns.0.iter().any(|n| n == &lu.name));
+		if ns_index.is_none() {
+			return vec![];
+		}
+		let ns_index = ns_index.unwrap() + 1;
+		let ns_endindex = self.lumps.iter().skip(ns_index).position(
+			|lu| ns.1.iter().any(|n| n == &lu.name));
+		if ns_endindex.is_none() {
+			return vec![];
+		}
+		let ns_endindex = ns_index + ns_endindex.unwrap() - 1;
 		let ns_slice = &self.lumps[ns_index..ns_endindex];
-		let has_subsections = sub_start.is_some() && sub_end.is_some() && {
+		let has_subsections = sub.is_some() && {
 			// The first lump after a namespace start marker can be a
 			// subsection start marker
 			match ns_slice.iter().next() {
 				Some(lu) => {
-					sub_start.unwrap().iter().any(|&n| n == &lu.name)
+					sub.unwrap().0.iter().any(|&n| n == &lu.name)
 				},
 				None => false,
 			}
 		};
 		if has_subsections {
 			// Should be a vector of all the subsection slices
-			let sub_start = sub_start.unwrap();
-			let sub_end = sub_end.unwrap();
+			let (sub_start, sub_end) = sub.unwrap();
 			struct SubsectionIteration<'a> {
 				start_index: usize,
 				end_name: &'a str,
 			}
 			let sub_start_info: Vec<SubsectionIteration> = ns_slice.iter()
 				.enumerate().filter_map(|(i, lu)| {
-					let poncho = sub_start.iter().position(|n| n == &lu.name)?;
-					let end_name = sub_end[poncho];
+					let name_index = sub_start.iter().position(|n| n == &lu.name)?;
+					let end_name = sub_end[name_index];
 					Some(SubsectionIteration{
 						start_index: i,
 						end_name
@@ -233,10 +228,10 @@ impl<'a> DoomWad {
 		let subsect_start = ["P1_START", "P2_START", "P3_START"];
 		let patches_end = ["P_END", "PP_END"];
 		let subsect_end = ["P1_END", "P2_END", "P3_END"];
-		self.namespace(&patches_start, &patches_end, Some(&subsect_start),
-			Some(&subsect_end))
+		self.namespace((&patches_start, &patches_end),
+			Some((&subsect_start, &subsect_end)))
 	}/* 
-	pub fn ns_flats(&'a self) -> Vec<&' a[DoomWadLump]> {
+	pub fn ns_flats(&'a self) -> Vec<&'a [DoomWadLump]> {
 		let flats_start = ["F_START", "FF_START"];
 		let subsect_start = ["F1_START", "F2_START", "F3_START"];
 		let flats_end = ["F_END", "FF_END"];
