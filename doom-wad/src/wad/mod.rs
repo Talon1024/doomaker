@@ -1,30 +1,40 @@
 pub mod util;
 
-use std::io::*;
-use std::fs::{File, read};
-use std::result::Result;
-use std::str::from_utf8;
-use util::lump_name;
-use util::to_lump_name;
-use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::{
+	io::*,
+	fs::{File, read},
+	ops::{Deref, DerefMut},
+	result::Result,
+	str::from_utf8,
+	error::Error,
+	fmt::{Display, Formatter}, collections::HashMap
+};
+use ahash::RandomState;
+use util::{lump_name, to_lump_name};
+
+/// The type used for WAD lump names
+pub type LumpName = String;
 
 const IWAD_HEADER: &str = "IWAD";
 const PWAD_HEADER: &str = "PWAD";
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DoomWadType {
 	IWAD,
 	PWAD,
 	Invalid,
 }
+#[derive(Debug, Clone)]
 pub struct DoomWadLump {
 	pub name: String,
 	pub data: Vec<u8>,
 }
+#[derive(Debug, Clone)]
 pub struct DoomWad {
 	pub wtype: DoomWadType,
 	pub lumps: Vec<DoomWadLump>,
 }
+#[derive(Debug, Clone)]
 struct DoomWadDirEntry {
 	name: String,
 	pos: u64,
@@ -171,8 +181,59 @@ impl DoomWad {
 	}
 }
 
+pub trait Namespaced<'a> {
+	fn namespace(&'a self, namespace: &str) -> Vec<&'a DoomWadLump>;
+}
+
+#[derive(Debug, Default)]
+pub struct DoomWadCollection(Vec<DoomWad>);
+
+impl Deref for DoomWadCollection {
+	type Target = Vec<DoomWad>;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+impl DerefMut for DoomWadCollection {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl DoomWadCollection {
+	fn lump_map(&self) -> HashMap<LumpName, &DoomWadLump, RandomState> {
+		let mut lump_map = HashMap::<LumpName, &DoomWadLump, RandomState>::default();
+		self.iter().for_each(|wad| {
+			wad.lumps.iter().for_each(|lump| {
+				lump_map.insert(lump.name.clone(), lump);
+			})
+		});
+		lump_map
+	}
+}
+// WIP!
+/* 
+impl<'a> Namespaced<'a> for DoomWadCollection {
+	fn namespace(&'a self, namespace: &str) -> Vec<&'a DoomWadLump> {
+		let bounds: (&[&str], &[&str]) = match namespace {
+			"patches" => (&["P_START", "PP_START"], &["P_END", "PP_END"]),
+			"flats" => (&["F_START", "FF_START"], &["F_END", "FF_END"]),
+			"sprites" => (&["S_START"], &["S_END"])
+		};
+		let subsections: Option<(&[&str], &[&str])> = match namespace {
+			"patches" => Some((&["P1_START", "P2_START", "P3_START"], &["P1_END", "P2_END", "P3_END"])),
+			"flats" => Some((&["F1_START", "F2_START", "F3_START"], &["F1_END", "F2_END", "F3_END"])),
+			"sprites" => None
+		};
+		self.iter().map(|wad| {
+			let namespace_slices = wad.namespace_lumps(bounds, subsections);
+		}).collect()
+	}
+}
+ */
 impl<'a> DoomWad {
-	pub fn namespace(&'a self, ns: (&[&str], &[&str]), sub: Option<(&[&str], &[&str])>) -> Vec<&'a [DoomWadLump]> {
+	pub fn namespace_lumps(&'a self, ns: (&[&str], &[&str]), sub: Option<(&[&str], &[&str])>) -> Vec<&'a [DoomWadLump]> {
 		let ns_index = self.lumps.iter().position(
 			|lu| ns.0.iter().any(|n| n == &lu.name));
 		if ns_index.is_none() {
@@ -228,7 +289,7 @@ impl<'a> DoomWad {
 		let subsect_start = ["P1_START", "P2_START", "P3_START"];
 		let patches_end = ["P_END", "PP_END"];
 		let subsect_end = ["P1_END", "P2_END", "P3_END"];
-		self.namespace((&patches_start, &patches_end),
+		self.namespace_lumps((&patches_start, &patches_end),
 			Some((&subsect_start, &subsect_end)))
 	}/* 
 	pub fn ns_flats(&'a self) -> Vec<&'a [DoomWadLump]> {
