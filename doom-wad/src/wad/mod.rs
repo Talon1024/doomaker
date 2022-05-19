@@ -269,7 +269,7 @@ impl<'a> DoomWad {
 					let name_index = sub_start.iter().position(|n| n == &lu.name)?;
 					let end_name = sub_end[name_index];
 					Some(SubsectionIteration{
-						start_index: i,
+						start_index: i + 1,
 						end_name
 					})
 				}).collect();
@@ -302,4 +302,72 @@ impl<'a> DoomWad {
 		let b = self.lumps.iter().skip(a).position(|lu| lu.name == "P_END" || lu.name == "PP_END")? - 1;
 		vec![]
 	} */
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	macro_rules! empty_lump {
+		($name:expr) => {
+			DoomWadLump {
+				name: String::from($name),
+				data: vec![]
+			}
+		};
+	}
+
+	#[test]
+	fn basic_namespace() -> Result<(), Box<dyn Error>> {
+		let wad = DoomWad {
+			wtype: DoomWadType::PWAD,
+			lumps: vec![
+				empty_lump!("P_START"),
+				empty_lump!("PSTONE2"),
+				empty_lump!("PIVY3"),
+				empty_lump!("GNYX"),
+				empty_lump!("EBG13"),
+				empty_lump!("NUTS"),
+				empty_lump!("CRAPPED"),
+				empty_lump!("P_END"),
+			],
+		};
+		let expected_slice = vec![&wad.lumps[1..wad.lumps.len()-2]];
+		let actual_slice = wad.ns_patches();
+		assert_eq!(expected_slice[0].as_ptr_range(), actual_slice[0].as_ptr_range());
+		Ok(())
+	}
+
+	#[test]
+	fn adv_namespace() -> Result<(), Box<dyn Error>> {
+		let wad = DoomWad {
+			wtype: DoomWadType::PWAD,
+			lumps: vec![
+				empty_lump!("P_START"),
+				empty_lump!("P1_START"),
+				empty_lump!("PSTONE2"),
+				empty_lump!("PIVY3"),
+				empty_lump!("P1_END"),
+				empty_lump!("P2_START"),
+				empty_lump!("GNYX"),
+				empty_lump!("EBG13"),
+				empty_lump!("P2_END"),
+				empty_lump!("P3_START"),
+				empty_lump!("NUTS"),
+				empty_lump!("CRAPPED"),
+				empty_lump!("P3_END"),
+				empty_lump!("P_END"),
+			],
+		};
+		let expected_slice = vec![&wad.lumps[2..4], &wad.lumps[6..8], &wad.lumps[10..12]];
+		let actual_slice = wad.ns_patches();
+		expected_slice.iter().zip(actual_slice).for_each(|(&exp, act)| {
+			println!("Expected:");
+			exp.iter().for_each(|lu| println!("{}", lu.name));
+			println!("Actual:");
+			act.iter().for_each(|lu| println!("{}", lu.name));
+			assert_eq!(exp.as_ptr_range(), act.as_ptr_range());
+		});
+		Ok(())
+	}
 }
