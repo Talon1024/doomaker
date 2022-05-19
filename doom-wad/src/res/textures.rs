@@ -1,25 +1,28 @@
 // TEXTURE1, TEXTURE2, and PNAMES
-use crate::wad;
+use crate::wad::{self, DoomWad, DoomWadLump};
 use crate::wad::util::*;
 use crate::res::{Image, ImageFormat, ToImage};
 use std::error::Error;
 use std::io::{Cursor, Read, Seek, SeekFrom};
 
-pub struct TexturePatch {
+use super::DoomPicture;
+
+pub struct TexturePatch<'a> {
 	patch: String,
 	x: i16, // X and Y offsets
 	y: i16,
 	flags: i32,
+	lump: Option<&'a DoomPicture<'a>>,
 }
-pub struct Texture {
+pub struct Texture<'a> {
 	name: String,
 	flags: i32,
 	width: u16,
 	height: u16,
-	patches: Vec<TexturePatch>,
+	patches: Vec<TexturePatch<'a>>,
 }
 pub struct TextureDefinitions<'a> {
-	textures: Vec<Texture>,
+	textures: Vec<Texture<'a>>,
 	lump: &'a wad::DoomWadLump,
 	// https://users.rust-lang.org/t/hashmap-of-a-vector-of-objects/29220
 	// by_name: HashMap<String, &'a Texture>
@@ -44,7 +47,7 @@ fn read_pnames(pnames: &wad::DoomWadLump) ->
 	Ok(names)
 }
 
-pub fn read_texturex<'a>(list: &'a wad::DoomWadLump, pnames: &wad::DoomWadLump) ->
+pub fn read_texturex<'a>(list: &'a DoomWadLump, pnames: &DoomWadLump, wad: &'a DoomWad) ->
 	Result<TextureDefinitions<'a>, Box<dyn Error>>
 {
 	let patches = read_pnames(pnames)?;
@@ -99,7 +102,8 @@ pub fn read_texturex<'a>(list: &'a wad::DoomWadLump, pnames: &wad::DoomWadLump) 
 					patch: patch_name,
 					x: x,
 					y: y, 
-					flags: flags
+					flags: flags,
+					lump: None
 				})
 			}).collect::<Result<Vec<TexturePatch>, Box<dyn Error>>>()?
 		});
@@ -108,8 +112,21 @@ pub fn read_texturex<'a>(list: &'a wad::DoomWadLump, pnames: &wad::DoomWadLump) 
 	Ok(defs)
 }
 
-impl ToImage for Texture {
+impl<'a> ToImage for Texture<'a> {
 	fn to_image(&self) -> Image {
-		unimplemented!();
+		let mut image = Image::new(self.width as usize, self.height as usize, ImageFormat::IndexedAlpha);
+		self.patches.iter().for_each(|pa| {
+			match pa.lump {
+				Some(lump) => {
+					let patch_image = lump.to_image();
+					let blit_res = image.blit(&patch_image, pa.x as i32, pa.y as i32);
+					if let Err(e) = blit_res {
+						eprintln!("{}", e);
+					}
+				},
+				None => (),
+			};
+		});
+		image
 	}
 }
