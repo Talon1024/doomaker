@@ -233,7 +233,7 @@ impl<'a> Namespaced<'a> for DoomWadCollection {
 }
  */
 impl<'a> DoomWad {
-	pub fn namespace_lumps(&'a self, ns: (&[&str], &[&str]), sub: Option<(&[&str], &[&str])>) -> Vec<&'a [DoomWadLump]> {
+	pub fn namespace_lumps(&'a self, ns: (&[&str], &[&str]), sub: Option<(&[&str], &[&str])>) -> Vec<&'a DoomWadLump> {
 		let ns_index = self.lumps.iter().position(
 			|lu| ns.0.iter().any(|n| n == &lu.name));
 		if ns_index.is_none() {
@@ -259,32 +259,20 @@ impl<'a> DoomWad {
 		};
 		if has_subsections {
 			// Should be a vector of all the subsection slices
-			let (sub_start, sub_end) = sub.unwrap();
-			struct SubsectionIteration<'a> {
-				start_index: usize,
-				end_name: &'a str,
-			}
-			let sub_start_info: Vec<SubsectionIteration> = ns_slice.iter()
-				.enumerate().filter_map(|(i, lu)| {
-					let name_index = sub_start.iter().position(|n| n == &lu.name)?;
-					let end_name = sub_end[name_index];
-					Some(SubsectionIteration{
-						start_index: i + 1,
-						end_name
-					})
-				}).collect();
-			sub_start_info.iter().filter_map(|iteration| {
-				// Position is relative from "skip" index
-				let end_index = ns_slice.iter().skip(iteration.start_index)
-				.position(|lu| { &lu.name == iteration.end_name})? +
-				iteration.start_index;
-				Some(&ns_slice[iteration.start_index..end_index])
+			let sub = sub.unwrap();
+			let sub = sub.0.iter().chain(sub.1);
+			ns_slice.iter().filter_map(|lu| {
+				if sub.clone().any(|ln| ln == &lu.name) {
+					None
+				} else {
+					Some(lu)
+				}
 			}).collect()
 		} else {
-			vec![ns_slice]
+			ns_slice.iter().map(|lu| lu).collect()
 		}
 	}
-	pub fn ns_patches(&'a self) -> Vec<&'a [DoomWadLump]> {
+	pub fn ns_patches(&'a self) -> Vec<&'a DoomWadLump> {
 		let patches_start = ["P_START", "PP_START"];
 		let subsect_start = ["P1_START", "P2_START", "P3_START"];
 		let patches_end = ["P_END", "PP_END"];
@@ -332,9 +320,13 @@ mod tests {
 				empty_lump!("P_END"),
 			],
 		};
-		let expected_slice = vec![&wad.lumps[1..wad.lumps.len()-2]];
-		let actual_slice = wad.ns_patches();
-		assert_eq!(expected_slice[0].as_ptr_range(), actual_slice[0].as_ptr_range());
+		let expected: Vec<&DoomWadLump> = (1..7).map(|index| {
+			&wad.lumps[index]
+		}).collect();
+		let actual = wad.ns_patches();
+		expected.into_iter().zip(actual).for_each(|(exp, act)| {
+			assert_eq!(exp.name, act.name);
+		});
 		Ok(())
 	}
 
@@ -359,14 +351,12 @@ mod tests {
 				empty_lump!("P_END"),
 			],
 		};
-		let expected_slice = vec![&wad.lumps[2..4], &wad.lumps[6..8], &wad.lumps[10..12]];
+		let expected_slice: Vec<&DoomWadLump> =
+		(2..4).chain(6..8).chain(10..12).map(
+			|index| &wad.lumps[index]).collect();
 		let actual_slice = wad.ns_patches();
-		expected_slice.iter().zip(actual_slice).for_each(|(&exp, act)| {
-			println!("Expected:");
-			exp.iter().for_each(|lu| println!("{}", lu.name));
-			println!("Actual:");
-			act.iter().for_each(|lu| println!("{}", lu.name));
-			assert_eq!(exp.as_ptr_range(), act.as_ptr_range());
+		expected_slice.into_iter().zip(actual_slice).for_each(|(exp, act)| {
+			assert_eq!(exp.name, act.name);
 		});
 		Ok(())
 	}
