@@ -26,7 +26,7 @@ pub enum DoomWadType {
 }
 #[derive(Debug, Clone)]
 pub struct DoomWadLump {
-	pub name: String,
+	pub name: LumpName,
 	pub data: Vec<u8>,
 }
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ pub struct DoomWad {
 }
 #[derive(Debug, Clone)]
 struct DoomWadDirEntry {
-	name: String,
+	name: LumpName,
 	pos: u64,
 	size: usize,
 }
@@ -311,7 +311,7 @@ mod tests {
 	macro_rules! empty_lump {
 		($name:expr) => {
 			DoomWadLump {
-				name: String::from($name),
+				name: LumpName::from($name),
 				data: vec![]
 			}
 		};

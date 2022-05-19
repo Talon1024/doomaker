@@ -1,5 +1,5 @@
 // TEXTURE1, TEXTURE2, and PNAMES
-use crate::wad::{self, DoomWad, DoomWadLump};
+use crate::wad::{self, DoomWad, DoomWadLump, LumpName};
 use crate::wad::util::*;
 use crate::res::{Image, ImageFormat, ToImage};
 use std::error::Error;
@@ -8,14 +8,14 @@ use std::io::{Cursor, Read, Seek, SeekFrom};
 use super::DoomPicture;
 
 pub struct TexturePatch<'a> {
-	patch: String,
+	patch: LumpName,
 	x: i16, // X and Y offsets
 	y: i16,
 	flags: i32,
 	lump: Option<&'a DoomPicture<'a>>,
 }
 pub struct Texture<'a> {
-	name: String,
+	name: LumpName,
 	flags: i32,
 	width: u16,
 	height: u16,

@@ -47,7 +47,7 @@ pub fn lump_name(slice: &[u8]) -> Vec<u8> {
 	vec
 }
 
-pub fn to_lump_name(name: &String) -> [u8; 8] {
+pub fn to_lump_name(name: &str) -> [u8; 8] {
 	let mut lump_name: [u8; 8] = [0; 8];
 	let mut name_chars = name.bytes();
 	for boot in 0..8 {
