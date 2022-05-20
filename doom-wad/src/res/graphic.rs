@@ -7,6 +7,9 @@ pub struct DoomPicture<'a> {
 	lump: &'a DoomWadLump
 }
 
+#[cfg(feature = "png")]
+const PNG_HEADER: [u8; 8] = *b"\x89PNG\r\n\x1A\n";
+
 impl<'a> ToImage for DoomPicture<'a> {
 	fn to_image(&self) -> Image {
 
@@ -25,6 +28,39 @@ impl<'a> ToImage for DoomPicture<'a> {
 			width: 0, height: 0, x: 0, y: 0,
 			format: ImageFormat::Indexed, data: Vec::new()
 		};
+
+		/*
+		#[cfg(feature = "png")]
+		match {
+			let mut png_head_buf: [u8; 8] = [0; 8];
+			let mut pos = Cursor::new(&self.lump.data);
+			if pos.read_exact(&mut png_head_buf).is_err() {
+				return bad_image;
+			}
+			if png_head_buf == PNG_HEADER {
+				pos.set_position(0);
+				let decoder = png::Decoder::new(pos);
+				let mut reader = decoder.read_info().ok()?;
+				let mut data = vec![0; reader.output_buffer_size()];
+				let png::Info {width, height, ..} = reader.info();
+				Some(Image {
+					width: todo!(),
+					height: todo!(),
+					data: todo!(),
+					x: todo!(),
+					y: todo!(),
+					format: todo!(),
+				})
+			} else {
+				None
+			}
+		} {
+			Some(image) => {
+				return image;
+			},
+			None => ()
+		}
+		*/
 
 		let width = {
 			if pos.read_exact(&mut short_buffer).is_err() {

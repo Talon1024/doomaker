@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 thiserror = "1.0"
 ahash = "0.7.6"
+png = {version = "0.17.5", optional = true}
 
 [features]
 # Support for Doom console port map data structures
+default = ["png"]
 console = []
