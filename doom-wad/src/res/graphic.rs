@@ -18,16 +18,13 @@ impl<'a> DoomPicture<'a> {
 		}
 		if png_head_buf == Self::PNG_HEADER {
 			pos.set_position(0);
-			let decoder = png::Decoder::new(pos);
+			let transform = png::Transformations::normalize_to_color8();
+			let mut decoder = png::Decoder::new(pos);
+			decoder.set_transformations(transform);
 			let mut reader = decoder.read_info().ok()?;
 			let mut data = vec![0; reader.output_buffer_size()];
 			reader.next_frame(&mut data).ok()?;
-			let png::Info {width, height, bit_depth, color_type, ..} = reader.info();
-			if *bit_depth != png::BitDepth::Eight || (*color_type != png::ColorType::Rgb && *color_type != png::ColorType::Rgba) {
-				// Colour bit depths other than 8 are not supported
-				// Colour types other than RGB and RGBA are not supported
-				return None;
-			}
+			let png::Info {width, height, color_type, ..} = reader.info();
 			let width = *width; let height = *height;
 			let format = match color_type {
 				png::ColorType::Rgb => Some(ImageFormat::RGB),
