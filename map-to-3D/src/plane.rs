@@ -223,6 +223,14 @@ impl Plane {
 			Some(xy.extend(ptz))
 		}
 	}
+
+	/// Convert a flat plane to a sloped plane
+	pub fn to_sloped(self) -> Plane {
+		match self {
+			Plane::Flat(h) => { Plane::Sloped(0., 0., 1., h) }
+			_ => self
+		}
+	}
 }
 
 // Necessary?
