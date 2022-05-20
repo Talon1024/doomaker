@@ -8,11 +8,51 @@ pub struct DoomPicture<'a> {
 }
 
 #[cfg(feature = "png")]
-const PNG_HEADER: [u8; 8] = *b"\x89PNG\r\n\x1A\n";
+impl<'a> DoomPicture<'a> {
+	const PNG_HEADER: [u8; 8] = *b"\x89PNG\r\n\x1A\n";
+	fn read_png(&self) -> Option<Image> {
+		let mut png_head_buf: [u8; 8] = [0; 8];
+		let mut pos = Cursor::new(&self.lump.data);
+		if pos.read_exact(&mut png_head_buf).is_err() {
+			return None;
+		}
+		if png_head_buf == Self::PNG_HEADER {
+			pos.set_position(0);
+			let decoder = png::Decoder::new(pos);
+			let mut reader = decoder.read_info().ok()?;
+			let mut data = vec![0; reader.output_buffer_size()];
+			reader.next_frame(&mut data).ok()?;
+			let png::Info {width, height, bit_depth, color_type, ..} = reader.info();
+			if *bit_depth != png::BitDepth::Eight || (*color_type != png::ColorType::Rgb && *color_type != png::ColorType::Rgba) {
+				// Colour bit depths other than 8 are not supported
+				// Colour types other than RGB and RGBA are not supported
+				return None;
+			}
+			let width = *width; let height = *height;
+			let format = match color_type {
+				png::ColorType::Rgb => Some(ImageFormat::RGB),
+				png::ColorType::Rgba => Some(ImageFormat::RGBA),
+				_ => None
+			}?;
+			Some(Image {
+				width: width as usize,
+				height: height as usize,
+				data,
+				x: 0, // Requires handling unknown chunks like grAb. The `png`
+				y: 0, // crate currently does not support unknown chunks
+				format,
+			})
+		} else {
+			None
+		}
+	}
+}
+
 
 impl<'a> ToImage for DoomPicture<'a> {
 	fn to_image(&self) -> Image {
 
+		// TODO: Format detection and processing
 		struct DoomPicturePost {
 			column: ImageDimension,
 			top_delta: u8,
@@ -29,38 +69,10 @@ impl<'a> ToImage for DoomPicture<'a> {
 			format: ImageFormat::Indexed, data: Vec::new()
 		};
 
-		/*
 		#[cfg(feature = "png")]
-		match {
-			let mut png_head_buf: [u8; 8] = [0; 8];
-			let mut pos = Cursor::new(&self.lump.data);
-			if pos.read_exact(&mut png_head_buf).is_err() {
-				return bad_image;
-			}
-			if png_head_buf == PNG_HEADER {
-				pos.set_position(0);
-				let decoder = png::Decoder::new(pos);
-				let mut reader = decoder.read_info().ok()?;
-				let mut data = vec![0; reader.output_buffer_size()];
-				let png::Info {width, height, ..} = reader.info();
-				Some(Image {
-					width: todo!(),
-					height: todo!(),
-					data: todo!(),
-					x: todo!(),
-					y: todo!(),
-					format: todo!(),
-				})
-			} else {
-				None
-			}
-		} {
-			Some(image) => {
-				return image;
-			},
-			None => ()
+		if let Some(image) = self.read_png() {
+			return image;
 		}
-		*/
 
 		let width = {
 			if pos.read_exact(&mut short_buffer).is_err() {

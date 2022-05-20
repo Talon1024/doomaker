@@ -22,6 +22,19 @@ pub struct Linedef {
 	pub back: u16,
 }
 
+pub mod linedef_flags {
+	// Linedef flags. See https://doomwiki.org/wiki/Linedef#Linedef_flags
+	pub const LF_BLOCK_PLAYERS: u16 = 0x01;
+	pub const LF_BLOCK_MONSTERS: u16 = 0x02;
+	pub const LF_TWO_SIDED: u16 = 0x04;
+	pub const LF_UPPER_UNPEGGED: u16 = 0x08;
+	pub const LF_LOWER_UNPEGGED: u16 = 0x10;
+	pub const LF_AUTOMAP_SOLID: u16 = 0x20;
+	pub const LF_BLOCK_SOUND: u16 = 0x40;
+	pub const LF_AUTOMAP_HIDDEN: u16 = 0x80;
+	pub const LF_AUTOMAP_SHOWN: u16 = 0x100;
+}
+
 #[derive(Debug, Clone)]
 pub struct Sidedef {
 	pub x: i16,

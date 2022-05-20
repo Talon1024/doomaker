@@ -10,6 +10,12 @@ pub(crate) struct Vertex {
 	properties: HashMap<String, PVal, RandomState>,
 }
 
+impl Vertex {
+	pub fn new(xy: Vec2) -> Vertex {
+		Vertex { xy, ..Default::default() }
+	}
+}
+
 // I could probably generate these with a custom macro, but I don't know a lot
 // about Rust's macros to write a custom one to do this.
 impl Properties for Vertex {
@@ -61,6 +67,12 @@ pub(crate) struct Line {
 	properties: HashMap<String, PVal, RandomState>,
 }
 
+impl Line {
+	pub fn new(va: usize, vb: usize, sf: usize, sb: usize) -> Line {
+		Line {va, vb, sf, sb, ..Default::default()}
+	}
+}
+
 impl Properties for Line {
 	fn set_property(&mut self, prop: &str, value: Option<PVal>) {
 		if let Some(value) = value {
@@ -107,6 +119,12 @@ pub(crate) struct Side {
 	pub mtl_lower: String,
 	pub sector: usize,
 	properties: HashMap<String, PVal, RandomState>,
+}
+
+impl Side {
+	pub fn new(mtl_upper: String, mtl_middle: String, mtl_lower: String, sector: usize) -> Side {
+		Side { mtl_upper, mtl_middle, mtl_lower, sector, ..Default::default() }
+	}
 }
 
 impl Properties for Side {
@@ -157,6 +175,12 @@ pub(crate) struct Sector {
 	properties: HashMap<String, PVal, RandomState>,
 }
 
+impl Sector {
+	pub fn new(floor: Plane, ceil: Plane, mtl_floor: String, mtl_ceil: String) -> Sector {
+		Sector { plane_floor: floor, plane_ceil: ceil, mtl_floor, mtl_ceil, ..Default::default() }
+	}
+}
+
 impl Properties for Sector {
 	fn set_property(&mut self, prop: &str, value: Option<PVal>) {
 		if let Some(value) = value {
@@ -192,6 +216,12 @@ pub(crate) struct Thing {
 	pub z: f32,
 	pub typeid: usize,
 	properties: HashMap<String, PVal, RandomState>,
+}
+
+impl Thing {
+	pub fn new(pos: Vec2, z: f32, typeid: usize) -> Thing {
+		Thing { pos, z, typeid, ..Default::default() }
+	}
 }
 
 impl Properties for Thing {

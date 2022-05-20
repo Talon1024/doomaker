@@ -9,6 +9,7 @@ enum PointerMode {
 mod sample_data;
 mod util;
 mod velocity; use velocity::Velocity;
+mod readmap;
 mod data;
 mod property;
 

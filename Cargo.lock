@@ -255,6 +255,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
  "anyhow",
+ "doomwad",
  "egui",
  "egui-macroquad",
  "glam",
