@@ -214,12 +214,13 @@ impl Properties for Sector {
 pub(crate) struct Thing {
 	pub pos: Vec2,
 	pub z: f32,
+	pub angle: f32,
 	pub typeid: usize,
 	properties: HashMap<String, PVal, RandomState>,
 }
 
 impl Thing {
-	pub fn new(pos: Vec2, z: f32, typeid: usize) -> Thing {
+	pub fn new(pos: Vec2, z: f32, angle: f32, typeid: usize) -> Thing {
 		Thing { pos, z, typeid, ..Default::default() }
 	}
 }
@@ -234,6 +235,9 @@ impl Properties for Thing {
 				"z" => if let PVal::Float(v) = value {
 					self.z = v
 				},
+				"angle" => if let PVal::Float(v) = value {
+					self.angle = v
+				}
 				"typeid" => if let PVal::Index(v) = value {
 					self.typeid = v
 				},
@@ -243,6 +247,7 @@ impl Properties for Thing {
 			match prop {
 				"pos" => (),
 				"z" => {self.z = 0.;}, // Default
+				"angle" => (),
 				"typeid" => (),
 				_ => {self.properties.remove(prop);},
 			}
@@ -252,6 +257,7 @@ impl Properties for Thing {
 		match prop {
 			"pos" => Some(PVal::Vec2(self.pos)),
 			"z" => Some(PVal::Float(self.z)),
+			"angle" => Some(PVal::Float(self.angle)),
 			"typeid" => Some(PVal::Index(self.typeid)),
 			_ => self.properties.get(prop).cloned()
 		}

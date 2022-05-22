@@ -1,5 +1,9 @@
 use glam::Vec2;
-use crate::{data::{Vertex, Line}, property::{Properties, PropertyValue}};
+use map_to_3D::plane::Plane;
+use crate::{
+	data::{Vertex, Line, Side, Sector, Thing},
+	property::{Properties, PropertyValue}
+};
 use doomwad::map::{
 	Vertex as DVVertex,
 	Linedef as DVLine,
@@ -58,5 +62,39 @@ impl From<DVLine> for Line {
 			line.set_property("mapped", Some(PropertyValue::Boolean(true)));
 		}
 		line
+	}
+}
+
+impl From<DVSide> for Side {
+	fn from(v: DVSide) -> Self {
+		let upper = String::from(String::from_utf8_lossy(&v.upper));
+		let middle = String::from(String::from_utf8_lossy(&v.middle));
+		let lower = String::from(String::from_utf8_lossy(&v.lower));
+		let mut side = Side::new(upper, middle, lower, v.sec as usize);
+		side.set_property("offsetx", Some(PropertyValue::Integer(v.x as i32)));
+		side.set_property("offsety", Some(PropertyValue::Integer(v.y as i32)));
+		side
+	}
+}
+
+impl From<DVSector> for Sector {
+	fn from(v: DVSector) -> Self {
+		let florp = Plane::Flat(v.florh as f32);
+		let ceilp = Plane::Flat(v.ceilh as f32);
+		let florm = String::from(String::from_utf8_lossy(&v.flort));
+		let ceilm = String::from(String::from_utf8_lossy(&v.ceilt));
+		let mut sector = Sector::new(florp, ceilp, florm, ceilm);
+		sector.set_property("lightlevel", Some(PropertyValue::Integer(v.light as i32)));
+		sector.set_property("special", Some(PropertyValue::Integer(v.special as i32)));
+		sector.set_property("tag", Some(PropertyValue::Integer(v.tag as i32)));
+		sector
+	}
+}
+
+impl From<DVThing> for Thing {
+	fn from(v: DVThing) -> Self {
+		let /* mut */ thing = Thing::new(Vec2::new(v.x as f32, v.y as f32), 0., v.angle as f32, v.ednum as usize);
+		// TODO: Flags to properties
+		thing
 	}
 }
