@@ -38,7 +38,7 @@ pub struct Data3D {
 }
 
 pub trait Renderable {
-	fn setup(&mut self, glc: &Context);
+	fn setup(&mut self, glc: &Context) -> Result<(), Box<dyn Error>>;
 	fn update(&mut self, glc: &Context) {}
 	fn draw(&self, glc: &Context);
 }
@@ -115,26 +115,23 @@ pub fn init_shaders(
 }
 
 impl Renderable for Data3D {
-	fn setup(&mut self, glc: &Context) {
+	fn setup(&mut self, glc: &Context) -> Result<(), Box<dyn Error>> {
 		let vec_size = mem::size_of::<Vec3>() as i32;
 		let stride = mem::size_of::<Vertex3D>() as i32;
-		self.vertex_buffer = Some(unsafe { glc.create_buffer() }.expect("Cannot create vbuffer"));
+		self.vertex_buffer = Some(unsafe { glc.create_buffer() }?);
 		if let Some(_) = &self.indices {
-			self.index_buffer = Some(unsafe { glc.create_buffer() }.expect("Cannot create ibuffer"));
+			self.index_buffer = Some(unsafe { glc.create_buffer() }?);
 		}
-		self.vertex_array = Some(unsafe { glc.create_vertex_array() }.expect("Cannot create array"));
+		self.vertex_array = Some(unsafe { glc.create_vertex_array() }?);
 		unsafe {
+			// STEP: Set up vertex array (attributes and buffers)
+			glc.bind_vertex_array(self.vertex_array);
 			// STEP: Bind and upload index buffer
 			if let Some(b) = &self.indices {
 			let raw_index_data = ptr_range_to_u8_slice(b.as_ptr_range());
 			glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, self.index_buffer);
 			glc.buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, raw_index_data, glow::STATIC_DRAW);
-			glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
 			}
-
-			// STEP: Set up vertex array (attributes)
-			glc.bind_vertex_array(self.vertex_array);
-
 			// STEP: Bind and upload vertex buffer
 			let raw_vertex_data = ptr_range_to_u8_slice(self.vertices.as_ptr_range());
 			glc.bind_buffer(glow::ARRAY_BUFFER, self.vertex_buffer);
@@ -171,7 +168,9 @@ impl Renderable for Data3D {
 			// setting up the attributes, so that the vertex array stores a
 			// reference to the vertex buffer.
 			glc.bind_buffer(glow::ARRAY_BUFFER, None);
+			glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
 		}
+		Ok(())
 	}
 	fn draw(&self, glc: &Context) {
 		unsafe {
@@ -183,7 +182,7 @@ impl Renderable for Data3D {
 			// STEP: Draw call
 			match &self.indices {
 				Some(indices) => {
-					glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, self.index_buffer);
+					// glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, self.index_buffer);
 					glc.draw_elements(glow::TRIANGLES, indices.len() as i32, glow::UNSIGNED_INT, 0);
 				},
 				None => {

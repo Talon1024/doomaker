@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		program: Some(renderer::init_shaders("simple.vert", "simple.frag", &glc)?),
 		..Default::default()
 	};
-	my_rect.setup(&glc);
+	my_rect.setup(&glc)?;
 	// STEP: Initial OpenGL calls
 	unsafe {
 		glc.viewport(0, 0, 550, 300);
@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		glc.cull_face(glow::BACK);
 	}
 	let mut tex_name_filter = String::new();
+	let mut tex_full_path = false;
 	el.run(move |event, _window, control_flow| {
 		match event {
 /* 			glutin::event::Event::NewEvents(e) => {
@@ -140,6 +141,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 							.desired_width(70.).show(ui);
 							ui.label("Selected:");
 							ui.label("texture");
+							ui.checkbox(&mut tex_full_path, "Full path");
 						});
 						ui.separator();
 						egui::ScrollArea::vertical().show(ui, |ui| {
