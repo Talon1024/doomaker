@@ -1,0 +1,12 @@
+[package]
+name = "texbrowse"
+version = "0.1.0"
+authors = ["Kevin Caccamo <kevin@ciinet.org>"]
+edition = "2021"
+
+[dependencies]
+glam = "0.20.5"
+glow = "0.11.2"
+glutin = "0.28.0"
+egui = "0.18.1"
+egui_glow = {version = "0.18.0", features=["winit"]}
