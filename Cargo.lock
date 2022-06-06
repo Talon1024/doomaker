@@ -1510,6 +1510,7 @@ dependencies = [
  "glam 0.20.5",
  "glow",
  "glutin",
+ "png 0.17.5",
 ]
 
 [[package]]

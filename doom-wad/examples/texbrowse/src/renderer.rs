@@ -1,5 +1,5 @@
 use glam::Vec3;
-use glow::{Context, HasContext};
+use glow::{Context, HasContext, NativeTexture};
 use std::{
 	ops::Range,
 	path::Path,
@@ -8,6 +8,7 @@ use std::{
 	error::Error,
 	mem,
 	slice,
+	ptr::addr_of
 };
 
 #[repr(C)]
@@ -37,10 +38,17 @@ pub struct Data3D {
 	pub vertex_array: Option<glow::NativeVertexArray>,
 }
 
+pub trait UniformDataSource {
+	fn set_uniforms(&self, glc: &Context) {}
+}
+
+impl UniformDataSource for Data3D {}
+
 pub trait Renderable {
+	type UniformData : UniformDataSource;
 	fn setup(&mut self, glc: &Context) -> Result<(), Box<dyn Error>>;
 	fn update(&mut self, glc: &Context) {}
-	fn draw(&self, glc: &Context);
+	fn draw(&self, glc: &Context, uds: Option<Self::UniformData>);
 }
 
 pub unsafe fn ptr_range_to_u8_slice<'a, T>(range: Range<*const T>) -> &'a [u8] {
@@ -115,13 +123,14 @@ pub fn init_shaders(
 }
 
 impl Renderable for Data3D {
+	type UniformData = Data3D;
 	fn setup(&mut self, glc: &Context) -> Result<(), Box<dyn Error>> {
-		let vec_size = mem::size_of::<Vec3>() as i32;
 		let stride = mem::size_of::<Vertex3D>() as i32;
 		self.vertex_buffer = Some(unsafe { glc.create_buffer() }?);
 		if let Some(_) = &self.indices {
 			self.index_buffer = Some(unsafe { glc.create_buffer() }?);
 		}
+		let vertex = Vertex3D::default(); // For calculating offsets
 		self.vertex_array = Some(unsafe { glc.create_vertex_array() }?);
 		unsafe {
 			// STEP: Set up vertex array (attributes and buffers)
@@ -139,27 +148,32 @@ impl Renderable for Data3D {
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_POSITION, 3, glow::FLOAT, false,
-				stride, 0);
+				stride, (addr_of!(vertex.position) as *const u8).offset_from(
+					addr_of!(vertex.position) as *const u8) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_POSITION);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_COLOUR, 3, glow::FLOAT, false,
-				stride, vec_size);
+				stride, (addr_of!(vertex.colour) as *const u8).offset_from(
+					addr_of!(vertex.position) as *const u8) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_COLOUR);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_NORMAL, 3, glow::FLOAT, false,
-				stride, vec_size * 2);
+				stride, (addr_of!(vertex.normal) as *const u8).offset_from(
+					addr_of!(vertex.position) as *const u8) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_NORMAL);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_FOG_COLOUR, 3, glow::FLOAT, false,
-				stride, vec_size * 3);
+				stride, (addr_of!(vertex.fog_colour) as *const u8).offset_from(
+					addr_of!(vertex.position) as *const u8) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_FOG_COLOUR);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_FOG_DIST, 1, glow::FLOAT, false,
-				stride, vec_size * 4);
+				stride, (addr_of!(vertex.fog_dist) as *const u8).offset_from(
+					addr_of!(vertex.position) as *const u8) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_FOG_DIST);
 
 			// STEP: Unbind buffers
@@ -172,28 +186,42 @@ impl Renderable for Data3D {
 		}
 		Ok(())
 	}
-	fn draw(&self, glc: &Context) {
+	fn draw(&self, glc: &Context, uds: Option<Self::UniformData>) {
 		unsafe {
 			// STEP: Set shader program
 			glc.use_program(self.program);
 			// STEP: Upload uniforms
-			// STEP: Bind vertex buffer and array
+			if let Some(uds) = uds {
+				uds.set_uniforms(glc);
+			}
+			// STEP: Bind vertex array
 			glc.bind_vertex_array(self.vertex_array);
 			// STEP: Draw call
 			match &self.indices {
 				Some(indices) => {
-					// glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, self.index_buffer);
 					glc.draw_elements(glow::TRIANGLES, indices.len() as i32, glow::UNSIGNED_INT, 0);
 				},
 				None => {
-					// glc.bind_buffer(glow::ARRAY_BUFFER, self.vertex_buffer);
 					glc.draw_arrays(glow::TRIANGLES, 0, self.vertices.len() as i32);
 				}
 			}
-			/* glc.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
-			glc.bind_buffer(glow::ARRAY_BUFFER, None);
-			glc.bind_vertex_array(None);
-			glc.use_program(None); */
 		}
+	}
+}
+
+pub fn texture(glc: &Context, data: &[u8], width: i32, height: i32) -> Result<(NativeTexture, u32), Box<dyn Error>> {
+	unsafe {
+	let tex = glc.create_texture()?;
+	glc.bind_texture(glow::TEXTURE_2D, Some(tex));
+	glc.tex_image_2d(glow::TEXTURE_2D, 0, glow::RGBA as i32, width, height, 0,
+		glow::RGBA, glow::UNSIGNED_BYTE, Some(data));
+	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
+	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR_MIPMAP_LINEAR as i32);
+	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
+	glc.generate_mipmap(glow::TEXTURE_2D);
+	glc.bind_texture(glow::TEXTURE_2D, None);
+	let tex_name = mem::transmute::<NativeTexture, u32>(tex.clone());
+	Ok((tex, tex_name))
 	}
 }

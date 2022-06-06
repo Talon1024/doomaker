@@ -9,4 +9,5 @@ glam = "0.20.5"
 glow = "0.11.2"
 glutin = "0.28.0"
 egui = "0.18.1"
+png = "0.17.5"
 egui_glow = {version = "0.18.0", features=["winit"]}

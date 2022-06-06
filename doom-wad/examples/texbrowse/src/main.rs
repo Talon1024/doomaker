@@ -1,15 +1,19 @@
-use std::{error::Error, rc::Rc};
+use std::{error::Error, rc::Rc, fs::File, io::Read};
 use egui_glow::EguiGlow;
 use glutin::{
 	event_loop::ControlFlow,
 };
-use glow::HasContext;
+use glow::{HasContext, NativeTexture};
 use glam::f32::Vec3;
+use png::{Decoder, Transformations};
 
 mod window;
 mod renderer;
+mod camera;
 
 use renderer::{Data3D, Vertex3D, Renderable};
+
+type VecResult<T> = Result<Vec<T>, Box<dyn Error>>;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	// STEP: Set up window and context
@@ -55,6 +59,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 		glc.enable(glow::CULL_FACE);
 		glc.cull_face(glow::BACK);
 	}
+	// STEP: Textures
+	let tex_names = ["TALLASS", "WIDEASS", "PIVY3"];
+	let tex_files = ["tallass.png", "wideass.png", "pivy3.png"];
+	let tex_textures = tex_files.iter().map(|fname| {
+		let file = File::open(fname)?;
+		let mut decoder = Decoder::new(file);
+		decoder.set_transformations(Transformations::normalize_to_color8());
+		let mut reader = decoder.read_info()?;
+		let png::Info {width, height, ..} = *reader.info();
+		let mut data = vec![0; reader.output_buffer_size()];
+		reader.next_frame(&mut data)?;
+		let tex = renderer::texture(&glc, &data, width as i32, height as i32)?;
+		Ok(egui::TextureId::User(tex.1 as u64))
+	}).collect::<VecResult<egui::TextureId>>()?;
 	let mut tex_name_filter = String::new();
 	let mut tex_full_path = false;
 	el.run(move |event, _window, control_flow| {
@@ -112,7 +130,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 					glc.clear_color(1.0, 0.0, 1.0, 1.0);
 					glc.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 				}
-				my_rect.draw(&glc);
+				my_rect.draw(&glc, None);
 				my_rect.update(&glc);
 				egui_glow.run(ctx.window(), |ectx| {
 					egui::Window::new("Texture browser")
@@ -144,11 +162,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 							ui.checkbox(&mut tex_full_path, "Full path");
 						});
 						ui.separator();
+						let available_width = ui.min_rect().size().x;
 						egui::ScrollArea::vertical().show(ui, |ui| {
-							ui.label("Booba");
-							ui.label("Feet");
-							ui.label("Manga");
-							ui.label("Lorian");
+							let column_width = 48.;
+							let columns = (available_width / column_width).floor() as usize;
+							egui::Grid::new("textures").num_columns(columns).show(ui, |ui| {
+								let mut cur_col = 0;
+								tex_names.iter().zip(tex_textures.iter()).cycle().take(100).for_each(|(&name, &txid)| {
+									ui.vertical(|ui| {
+										ui.image(txid, (column_width, column_width));
+										ui.label(name);
+										cur_col += 1;
+									});
+									if cur_col == columns {
+										ui.end_row();
+										cur_col = 0;
+									}
+								});
+							});
 						});
 					});
 				});
