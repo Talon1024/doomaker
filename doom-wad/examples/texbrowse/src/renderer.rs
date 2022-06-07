@@ -1,4 +1,4 @@
-use glam::Vec3;
+use glam::{Vec3, Mat4};
 use glow::{Context, HasContext, NativeTexture};
 use std::{
 	ops::Range,
@@ -224,4 +224,12 @@ pub fn texture(glc: &Context, data: &[u8], width: i32, height: i32) -> Result<(N
 	let tex_name = mem::transmute::<NativeTexture, u32>(tex.clone());
 	Ok((tex, tex_name))
 	}
+}
+
+pub trait Viewpoint {
+	fn view_matrix(&self) -> Mat4;
+}
+
+pub trait WorldObject {
+	fn model_matrix(&self) -> Mat4;
 }

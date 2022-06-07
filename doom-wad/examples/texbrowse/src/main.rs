@@ -10,8 +10,10 @@ use png::{Decoder, Transformations};
 mod window;
 mod renderer;
 mod camera;
+mod custom_widgets;
 
 use renderer::{Data3D, Vertex3D, Renderable};
+use custom_widgets::tex::TextureSquare;
 
 type VecResult<T> = Result<Vec<T>, Box<dyn Error>>;
 
@@ -60,9 +62,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 		glc.cull_face(glow::BACK);
 	}
 	// STEP: Textures
-	let tex_names = ["TALLASS", "WIDEASS", "PIVY3"];
-	let tex_files = ["tallass.png", "wideass.png", "pivy3.png"];
-	let tex_textures = tex_files.iter().map(|fname| {
+	let tex_names = ["TALLASS", "WIDEASS", "PIVY3", "TINY"];
+	let tex_files = ["tallass.png", "wideass.png", "pivy3.png", "tiny.png"];
+	let tex_images = tex_files.iter().map(|fname| {
 		let file = File::open(fname)?;
 		let mut decoder = Decoder::new(file);
 		decoder.set_transformations(Transformations::normalize_to_color8());
@@ -71,8 +73,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 		let mut data = vec![0; reader.output_buffer_size()];
 		reader.next_frame(&mut data)?;
 		let tex = renderer::texture(&glc, &data, width as i32, height as i32)?;
-		Ok(egui::TextureId::User(tex.1 as u64))
-	}).collect::<VecResult<egui::TextureId>>()?;
+		let txid = egui::TextureId::User(tex.1 as u64);
+		Ok(egui::Image::new(txid, (width as f32, height as f32)))
+	}).collect::<VecResult<egui::Image>>()?;
 	let mut tex_name_filter = String::new();
 	let mut tex_full_path = false;
 	el.run(move |event, _window, control_flow| {
@@ -162,24 +165,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 							ui.checkbox(&mut tex_full_path, "Full path");
 						});
 						ui.separator();
-						let available_width = ui.min_rect().size().x;
-						egui::ScrollArea::vertical().show(ui, |ui| {
+						egui::ScrollArea::vertical()
+						.always_show_scroll(true).show(ui, |ui| {
 							let column_width = 48.;
-							let columns = (available_width / column_width).floor() as usize;
-							egui::Grid::new("textures").num_columns(columns).show(ui, |ui| {
-								let mut cur_col = 0;
-								tex_names.iter().zip(tex_textures.iter()).cycle().take(100).for_each(|(&name, &txid)| {
-									ui.vertical(|ui| {
-										ui.image(txid, (column_width, column_width));
-										ui.label(name);
-										cur_col += 1;
-									});
-									if cur_col == columns {
-										ui.end_row();
-										cur_col = 0;
-									}
+							ui.horizontal_wrapped(|ui| {
+								tex_names.iter().zip(tex_images.iter())
+								.cycle().take(100).for_each(|(&name, &tex)| {
+									let mut ts = TextureSquare {
+										size: column_width,
+										selected: false,
+										tex
+									};
+									ts.show(ui);
 								});
 							});
+							// });
 						});
 					});
 				});
