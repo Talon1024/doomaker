@@ -209,16 +209,31 @@ impl Renderable for Data3D {
 	}
 }
 
-pub fn texture(glc: &Context, data: &[u8], width: i32, height: i32) -> Result<(NativeTexture, u32), Box<dyn Error>> {
+pub fn texture(glc: &Context,
+	data: &[u8], width: u32, height: u32,
+	channels: u8, bytes_per_pixel: u8
+) ->Result<(NativeTexture, u32), Box<dyn Error>> {
 	unsafe {
 	let tex = glc.create_texture()?;
+	let format = match channels {
+		1 => Ok(glow::RED),
+		2 => Ok(glow::RG),
+		3 => Ok(glow::RGB),
+		4 => Ok(glow::RGBA),
+		_ => Err("Invalid number of channels")
+	}?;
+	let component_type = match bytes_per_pixel {
+		1 => Ok(glow::UNSIGNED_BYTE),
+		2 => Ok(glow::UNSIGNED_SHORT),
+		_ => Err("Invalid bytes per pixel")
+	}?;
 	glc.bind_texture(glow::TEXTURE_2D, Some(tex));
-	glc.tex_image_2d(glow::TEXTURE_2D, 0, glow::RGBA as i32, width, height, 0,
-		glow::RGBA, glow::UNSIGNED_BYTE, Some(data));
 	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
 	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
 	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR_MIPMAP_LINEAR as i32);
 	glc.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
+	glc.tex_image_2d(glow::TEXTURE_2D, 0, format as i32, width as i32,
+		height as i32, 0, format, component_type, Some(data));
 	glc.generate_mipmap(glow::TEXTURE_2D);
 	glc.bind_texture(glow::TEXTURE_2D, None);
 	let tex_name = mem::transmute::<NativeTexture, u32>(tex.clone());

@@ -26,13 +26,13 @@ impl<'a> TextureSquare {
 			} else {
 				ui.style().interact_selectable(&response, self.selected)
 			};
-			let mut new_rect = rect.expand(visuals.expansion);
+			let new_rect = rect.expand(visuals.expansion);
 			if hovered || self.selected {
 				ui.painter()
 				.rect(new_rect, 7., visuals.bg_fill, visuals.bg_stroke);
 			}
 			// Texture name at bottom of rectangle
-			let text_pos = new_rect.center_bottom();
+			let text_pos = rect.center_bottom();
 			ui.painter().text(text_pos, egui::Align2::CENTER_BOTTOM,
 				"Tex", font, ui.visuals().text_color());
 			// Zoom resize
@@ -42,7 +42,8 @@ impl<'a> TextureSquare {
 			*rect.bottom_mut() -= font_height;
 			let image_rect = egui::Rect::from_center_size(
 				rect.center(), image_resize);
-			self.tex.paint_at(ui, image_rect);
+			// self.tex.paint_at(ui, image_rect);
+			ui.painter().rect_filled(image_rect, 0., egui::Color32::BLACK);
 		}
 		response
 	}
@@ -72,6 +73,7 @@ impl<'a> std::fmt::Display for TextureName<'a> {
 			let mut dot_count = self.0.chars()
 				.filter(|&ch| ch == '.').count();
 			let mut ct = ComponentType::FolderNameStart;
+			let mut tex_name_chars = 0u8;
 			let mut ci = self.0.chars().skip(1);
 			let text: String = self.0.chars().filter_map(|ch| {
 				use ComponentType::*;
@@ -102,6 +104,12 @@ impl<'a> std::fmt::Display for TextureName<'a> {
 					}
 				} else if ct == FolderNameStart {
 					ct = FolderName;
+				} else if ct == TextureNameFirst8Chars {
+					if tex_name_chars != 8 {
+						tex_name_chars += 1;
+					} else {
+						ct = TextureName;
+					}
 				}
 				rv
 			}).collect();

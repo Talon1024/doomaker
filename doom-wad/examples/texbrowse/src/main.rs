@@ -69,10 +69,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 		let mut decoder = Decoder::new(file);
 		decoder.set_transformations(Transformations::normalize_to_color8());
 		let mut reader = decoder.read_info()?;
-		let png::Info {width, height, ..} = *reader.info();
+		let png::Info {width, height, color_type , bit_depth , ..} = *reader.info();
+		let channels = match color_type {
+			png::ColorType::Grayscale => 1,
+			png::ColorType::Rgb => 3,
+			png::ColorType::Indexed => 1,
+			png::ColorType::GrayscaleAlpha => 2,
+			png::ColorType::Rgba => 4,
+		};
+		let bytes_per_pixel = match bit_depth {
+			png::BitDepth::One => 1,
+			png::BitDepth::Two => 1,
+			png::BitDepth::Four => 1,
+			png::BitDepth::Eight => 1,
+			png::BitDepth::Sixteen => 2,
+		};
 		let mut data = vec![0; reader.output_buffer_size()];
 		reader.next_frame(&mut data)?;
-		let tex = renderer::texture(&glc, &data, width as i32, height as i32)?;
+		let tex = renderer::texture(&glc, &data, width, height, channels,
+			bytes_per_pixel)?;
 		let txid = egui::TextureId::User(tex.1 as u64);
 		Ok(egui::Image::new(txid, (width as f32, height as f32)))
 	}).collect::<VecResult<egui::Image>>()?;
@@ -116,7 +131,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				}
 			}
 			},
-			glutin::event::Event::DeviceEvent { device_id, event } => {
+			glutin::event::Event::DeviceEvent { device_id:_, event:_ } => {
 				// println!("DeviceEvent device_id {:?} event {:?}", device_id, event);
 			}, 
 			glutin::event::Event::UserEvent(e) => {
@@ -179,9 +194,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 									ts.show(ui);
 								});
 							});
-							// });
 						});
 					});
+					/* egui::Window::new("texture info").show(ectx, |ui| {
+						ectx.texture_ui(ui);
+					}); */
 				});
 				egui_glow.paint(ctx.window());
 				if let Err(e) = ctx.swap_buffers() {
