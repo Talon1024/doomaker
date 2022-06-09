@@ -3,7 +3,7 @@ use egui_glow::EguiGlow;
 use glutin::{
 	event_loop::ControlFlow,
 };
-use glow::{HasContext, NativeTexture};
+use glow::HasContext;
 use glam::f32::Vec3;
 use png::{Decoder, Transformations};
 
@@ -84,11 +84,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 			png::BitDepth::Eight => 1,
 			png::BitDepth::Sixteen => 2,
 		};
-		let mut data = vec![0; reader.output_buffer_size()];
-		reader.next_frame(&mut data)?;
+		let data = {
+			let mut data = vec![0; reader.output_buffer_size()];
+			reader.next_frame(&mut data)?;
+			data
+		};
 		let tex = renderer::texture(&glc, &data, width, height, channels,
 			bytes_per_pixel)?;
-		let txid = egui::TextureId::User(tex.1 as u64);
+		let txid = egui_glow.painter.register_native_texture(tex);
 		Ok(egui::Image::new(txid, (width as f32, height as f32)))
 	}).collect::<VecResult<egui::Image>>()?;
 	let mut tex_name_filter = String::new();

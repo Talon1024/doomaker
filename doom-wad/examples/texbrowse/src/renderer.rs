@@ -40,6 +40,7 @@ pub struct Data3D {
 
 pub trait UniformDataSource {
 	fn set_uniforms(&self, glc: &Context) {}
+	fn set_textures(&self, glc: &Context) {}
 }
 
 impl UniformDataSource for Data3D {}
@@ -190,8 +191,10 @@ impl Renderable for Data3D {
 		unsafe {
 			// STEP: Set shader program
 			glc.use_program(self.program);
-			// STEP: Upload uniforms
 			if let Some(uds) = uds {
+				// STEP: Activate texture units and bind textures
+				uds.set_textures(glc);
+				// STEP: Upload uniforms
 				uds.set_uniforms(glc);
 			}
 			// STEP: Bind vertex array
@@ -212,7 +215,7 @@ impl Renderable for Data3D {
 pub fn texture(glc: &Context,
 	data: &[u8], width: u32, height: u32,
 	channels: u8, bytes_per_pixel: u8
-) ->Result<(NativeTexture, u32), Box<dyn Error>> {
+) ->Result<NativeTexture, Box<dyn Error>> {
 	unsafe {
 	let tex = glc.create_texture()?;
 	let format = match channels {
@@ -236,8 +239,7 @@ pub fn texture(glc: &Context,
 		height as i32, 0, format, component_type, Some(data));
 	glc.generate_mipmap(glow::TEXTURE_2D);
 	glc.bind_texture(glow::TEXTURE_2D, None);
-	let tex_name = mem::transmute::<NativeTexture, u32>(tex.clone());
-	Ok((tex, tex_name))
+	Ok(tex)
 	}
 }
 
