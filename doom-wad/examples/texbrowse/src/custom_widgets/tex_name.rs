@@ -5,9 +5,10 @@ use lazy_static::lazy_static;
 const MIN_BASE_CHARS: usize = 7;
 const MAX_BASE_CHARS: usize = 10;
 
+#[derive(Debug, Clone)]
 pub struct TextureName<'a>(pub Cow<'a, str>);
-impl<'a> std::fmt::Display for TextureName<'a> {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<'a> TextureName<'a> {
+	pub fn short_name(&self) -> String {
 		lazy_static! {
 		static ref TEXNAME_NAME_R: Regex = Regex::new(r"/([^/]+)$").unwrap();
 		static ref TEXNAME_FOLDER_R: Regex = Regex::new(r"([^/]+)/").unwrap();
@@ -15,9 +16,9 @@ impl<'a> std::fmt::Display for TextureName<'a> {
 		let full_path = self.0.contains('/');
 		if !full_path {
 			if self.0.len() > 8 {
-				write!(f, "{}..", &self.0[0..8])
+				format!("{}..", &self.0[0..8])
 			} else {
-				write!(f, "{}", self.0)
+				format!("{}", self.0)
 			}
 		} else {
 			let text = TEXNAME_FOLDER_R.replace_all(&self.0, |caps: &Caps| {
@@ -43,7 +44,7 @@ impl<'a> std::fmt::Display for TextureName<'a> {
 					format!("/{}", cap)
 				}
 			});
-			write!(f, "{}", text)
+			format!("{}", text)
 		}
 	}
 }
@@ -56,27 +57,27 @@ mod tests {
 	fn texture_name_short() {
 		let tex_name = "STUD3_5".to_string();
 		let tex_name = TextureName(Cow::from(&tex_name));
-		assert_eq!(tex_name.to_string(), "STUD3_5".to_string())
+		assert_eq!(tex_name.short_name(), "STUD3_5".to_string())
 	}
 
 	#[test]
 	fn texture_name_long() {
 		let tex_name = "LONGABILLABONGA".to_string();
 		let tex_name = TextureName(Cow::from(&tex_name));
-		assert_eq!(tex_name.to_string(), "LONGABIL..".to_string())
+		assert_eq!(tex_name.short_name(), "LONGABIL..".to_string())
 	}
 
 	#[test]
 	fn texture_name_full_path() {
 		let tex_name = "textures/studs/stud3_5.png".to_string();
 		let tex_name = TextureName(Cow::from(&tex_name));
-		assert_eq!(tex_name.to_string(), "t./s./stud3_5.png".to_string())
+		assert_eq!(tex_name.short_name(), "t./s./stud3_5.png".to_string())
 	}
 
 	#[test]
 	fn texture_name_stupidly_long() {
 		let tex_name = "textures/studs/this_is_a_stupidly_and_pointlessly_long_texture_name_why_did_you_call_your_texture_this_stupidly_and_pointlessly_long_name_and_just_how_insane_do_you_have_to_be_to_do_something_like_this.png".to_string();
 		let tex_name = TextureName(Cow::from(&tex_name));
-		assert_eq!(tex_name.to_string(), "t./s./this_is..png".to_string())
+		assert_eq!(tex_name.short_name(), "t./s./this_is..png".to_string())
 	}
 }

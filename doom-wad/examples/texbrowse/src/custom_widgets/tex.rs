@@ -1,10 +1,32 @@
-pub(crate) struct TextureSquare {
+use std::borrow::Cow;
+use super::tex_name::TextureName;
+
+pub(crate) struct TextureSquare<'a> {
 	pub size: f32,
-	pub selected: bool,
-	pub tex: egui::Image,
+	tex: egui::Image,
+	selected: bool,
+	tex_name: TextureName<'a>,
+	short_name: String,
+	popup_id: egui::Id,
+}
+impl<'a> TextureSquare<'a> {
+	const POPUP_MAX_TEX_SIZE: f32 = 256.;
 }
 
-impl<'a> TextureSquare {
+impl<'a> TextureSquare<'a> {
+	pub(crate) fn new(size: Option<f32>, tex: egui::Image, name: impl Into<Cow<'a, str>>) -> Self {
+		let tex_name = TextureName(name.into());
+		let short_name = tex_name.short_name();
+		let popup_id = egui::Id::new(tex_name.0.as_ref());
+		TextureSquare {
+			size: size.unwrap_or(48.),
+			selected: false,
+			tex,
+			tex_name,
+			short_name,
+			popup_id,
+		}
+	}
 	pub(crate) fn show(&mut self, ui: &mut egui::Ui) -> egui::Response {
 		// A bit of extra vertical space for the text
 		let font = egui::FontId::default();
@@ -12,11 +34,26 @@ impl<'a> TextureSquare {
 		let desired_size = egui::vec2(self.size, self.size + font.size);
 		let (mut rect, mut response) = ui.allocate_exact_size(
 			desired_size, egui::Sense::click());
-		
+
 		let hovered = response.hovered();
 		if response.clicked() {
 			self.selected = true;
 			response.mark_changed();
+		}
+
+		if hovered {
+			egui::show_tooltip_at_pointer(ui.ctx(),
+			self.popup_id, |ui| {
+				let image_size = self.tex.size();
+				let image_size_factor = 1.0f32.min(
+					Self::POPUP_MAX_TEX_SIZE / image_size.max_elem());
+				let image_resize = image_size * image_size_factor;
+				ui.label(self.tex_name.0.as_ref());
+				let (rect, _) = ui.allocate_exact_size(image_resize,
+					egui::Sense {
+						click: false, drag: false, focusable: false });
+				self.tex.paint_at(ui, rect);
+			});
 		}
 
 		if ui.is_rect_visible(rect) {
@@ -33,7 +70,7 @@ impl<'a> TextureSquare {
 			// Texture name at bottom of rectangle
 			let text_pos = rect.center_bottom();
 			ui.painter().text(text_pos, egui::Align2::CENTER_BOTTOM,
-				"Tex", font, ui.visuals().text_color());
+				&self.short_name, font, ui.visuals().text_color());
 			// Zoom resize
 			let image_size = self.tex.size();
 			let image_size_factor = self.size / image_size.max_elem();
@@ -42,7 +79,6 @@ impl<'a> TextureSquare {
 			let image_rect = egui::Rect::from_center_size(
 				rect.center(), image_resize);
 			self.tex.paint_at(ui, image_rect);
-			// ui.painter().rect_filled(image_rect, 0., egui::Color32::BLACK);
 		}
 		response
 	}

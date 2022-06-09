@@ -185,23 +185,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 						ui.separator();
 						egui::ScrollArea::vertical()
 						.always_show_scroll(true).show(ui, |ui| {
-							let column_width = 48.;
 							ui.horizontal_wrapped(|ui| {
 								tex_names.iter().zip(tex_images.iter())
 								.cycle().take(100).for_each(|(&name, &tex)| {
-									let mut ts = TextureSquare {
-										size: column_width,
-										selected: false,
-										tex
-									};
+									let mut ts = TextureSquare::new(
+										None, tex, name
+									);
 									ts.show(ui);
 								});
 							});
 						});
 					});
-					/* egui::Window::new("texture info").show(ectx, |ui| {
-						ectx.texture_ui(ui);
-					}); */
 				});
 				egui_glow.paint(ctx.window());
 				if let Err(e) = ctx.swap_buffers() {
