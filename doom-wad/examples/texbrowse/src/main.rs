@@ -1,4 +1,5 @@
 use std::{error::Error, rc::Rc, fs::File, io::Read};
+use egui::Widget;
 use egui_glow::EguiGlow;
 use glutin::{
 	event_loop::ControlFlow,
@@ -62,6 +63,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		glc.cull_face(glow::BACK);
 	}
 	// STEP: Textures
+	// TODO: TextureBrowser struct
 	let tex_names = ["TALLASS", "WIDEASS", "PIVY3", "TINY"];
 	let tex_files = ["tallass.png", "wideass.png", "pivy3.png", "tiny.png"];
 	let tex_images = tex_files.iter().map(|fname| {
@@ -96,6 +98,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	}).collect::<VecResult<egui::Image>>()?;
 	let mut tex_name_filter = String::new();
 	let mut tex_full_path = false;
+	let mut selected_texture = "TINY";
 	el.run(move |event, _window, control_flow| {
 		match event {
 /* 			glutin::event::Event::NewEvents(e) => {
@@ -189,9 +192,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 								tex_names.iter().zip(tex_images.iter())
 								.cycle().take(100).for_each(|(&name, &tex)| {
 									let mut ts = TextureSquare::new(
-										None, tex, name
+										None, tex, name, &selected_texture
 									);
-									ts.show(ui);
+									if ts.ui(ui).clicked() {
+										selected_texture = name;
+									}
 								});
 							});
 						});
