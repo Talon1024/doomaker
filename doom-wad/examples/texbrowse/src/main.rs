@@ -1,4 +1,4 @@
-use std::{error::Error, rc::Rc, fs::File, io::Read};
+use std::{error::Error, rc::Rc, fs::File, ops::Range};
 use egui::Widget;
 use egui_glow::EguiGlow;
 use glutin::{
@@ -66,33 +66,62 @@ fn main() -> Result<(), Box<dyn Error>> {
 	// TODO: TextureBrowser struct
 	let tex_names = ["TALLASS", "WIDEASS", "PIVY3", "TINY"];
 	let tex_files = ["tallass.png", "wideass.png", "pivy3.png", "tiny.png"];
-	let tex_images = tex_files.iter().map(|fname| {
+	let tex_images = tex_files.iter().map(|&fname| {
 		let file = File::open(fname)?;
 		let mut decoder = Decoder::new(file);
 		decoder.set_transformations(Transformations::normalize_to_color8());
 		let mut reader = decoder.read_info()?;
-		let png::Info {width, height, color_type , bit_depth , ..} = *reader.info();
-		let channels = match color_type {
+		let png::Info {width, height, ..} = *reader.info();
+		let (color_type, bit_depth) = reader.output_color_type();
+		let mut channels = match color_type {
 			png::ColorType::Grayscale => 1,
 			png::ColorType::Rgb => 3,
 			png::ColorType::Indexed => 1,
 			png::ColorType::GrayscaleAlpha => 2,
 			png::ColorType::Rgba => 4,
 		};
-		let bytes_per_pixel = match bit_depth {
-			png::BitDepth::One => 1,
-			png::BitDepth::Two => 1,
-			png::BitDepth::Four => 1,
-			png::BitDepth::Eight => 1,
-			png::BitDepth::Sixteen => 2,
-		};
 		let data = {
 			let mut data = vec![0; reader.output_buffer_size()];
 			reader.next_frame(&mut data)?;
-			data
+			let png::Info {palette, trns, ..} = reader.info().clone();
+			if matches!(color_type, png::ColorType::Indexed) {
+				let palette = palette.unwrap();
+				// STEP: Expand to RGB or RGBA
+				channels = 3;
+				if let Some(_) = &trns {
+					channels = 4;
+				}
+				data.iter()
+				.flat_map(|&pal_index| {
+					let pal_index = pal_index as usize;
+					let rgb_range = (pal_index * 3)..(pal_index * 3 + 3);
+					let mut rgb = palette[rgb_range].to_owned();
+					if let Some(trns) = &trns {
+						let t = trns.get(pal_index).copied().unwrap_or(255);
+						rgb.push(t);
+					}
+					rgb
+				})
+				.collect()
+			} else {
+				data
+			}
 		};
+		let bytes_per_channel = (match bit_depth {
+			png::BitDepth::One => 1,
+			png::BitDepth::Two => 2,
+			png::BitDepth::Four => 4,
+			png::BitDepth::Eight => 8,
+			png::BitDepth::Sixteen => 16,
+		} / 8).max(1);
+		/* 
+		if fname == "pivy3.png" {
+			assert_eq!(channels, 4);
+			assert_eq!(bytes_per_channel, 1);
+		}
+		 */
 		let tex = renderer::texture(&glc, &data, width, height, channels,
-			bytes_per_pixel)?;
+			bytes_per_channel)?;
 		let txid = egui_glow.painter.register_native_texture(tex);
 		Ok(egui::Image::new(txid, (width as f32, height as f32)))
 	}).collect::<VecResult<egui::Image>>()?;
