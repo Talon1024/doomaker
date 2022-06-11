@@ -1,4 +1,4 @@
-use glam::{Vec3, Mat4};
+use glam::{Vec2, Vec3, Vec4, Mat4};
 use glow::{Context, HasContext, NativeTexture};
 use std::{
 	ops::Range,
@@ -17,15 +17,15 @@ pub struct Vertex3D {
 	pub position: Vec3,
 	pub colour: Vec3,
 	pub normal: Vec3,
-	pub fog_colour: Vec3,
-	pub fog_dist: f32,
+	pub fog: Vec4, // XYZ/RGB is colour, W/A is distance
+	pub uv: Vec2,
 }
 impl Vertex3D {
 	pub const ATTR_POSITION: u32 = 0;
 	pub const ATTR_COLOUR: u32 = 1;
 	pub const ATTR_NORMAL: u32 = 2;
-	pub const ATTR_FOG_COLOUR: u32 = 3;
-	pub const ATTR_FOG_DIST: u32 = 4;
+	pub const ATTR_FOG: u32 = 3;
+	pub const ATTR_UV: u32 = 4;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -166,16 +166,16 @@ impl Renderable for Data3D {
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_NORMAL);
 
 			glc.vertex_attrib_pointer_f32(
-				Vertex3D::ATTR_FOG_COLOUR, 3, glow::FLOAT, false,
-				stride, (addr_of!(vertex.fog_colour) as *const u8).offset_from(
+				Vertex3D::ATTR_FOG, 4, glow::FLOAT, false,
+				stride, (addr_of!(vertex.fog) as *const u8).offset_from(
 					addr_of!(vertex.position) as *const u8) as i32);
-			glc.enable_vertex_attrib_array(Vertex3D::ATTR_FOG_COLOUR);
+			glc.enable_vertex_attrib_array(Vertex3D::ATTR_FOG);
 
 			glc.vertex_attrib_pointer_f32(
-				Vertex3D::ATTR_FOG_DIST, 1, glow::FLOAT, false,
-				stride, (addr_of!(vertex.fog_dist) as *const u8).offset_from(
+				Vertex3D::ATTR_UV, 2, glow::FLOAT, false,
+				stride, (addr_of!(vertex.uv) as *const u8).offset_from(
 					addr_of!(vertex.position) as *const u8) as i32);
-			glc.enable_vertex_attrib_array(Vertex3D::ATTR_FOG_DIST);
+			glc.enable_vertex_attrib_array(Vertex3D::ATTR_UV);
 
 			// STEP: Unbind buffers
 			glc.bind_vertex_array(None);
@@ -214,7 +214,7 @@ impl Renderable for Data3D {
 
 pub fn texture(glc: &Context,
 	data: &[u8], width: u32, height: u32,
-	channels: u8, bytes_per_pixel: u8
+	channels: u8, bytes_per_channel: u8
 ) ->Result<NativeTexture, Box<dyn Error>> {
 	unsafe {
 	let tex = glc.create_texture()?;
@@ -225,7 +225,7 @@ pub fn texture(glc: &Context,
 		4 => Ok(glow::RGBA),
 		_ => Err("Invalid number of channels")
 	}?;
-	let component_type = match bytes_per_pixel {
+	let component_type = match bytes_per_channel {
 		1 => Ok(glow::UNSIGNED_BYTE),
 		2 => Ok(glow::UNSIGNED_SHORT),
 		_ => Err("Invalid bytes per pixel")
