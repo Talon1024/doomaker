@@ -73,39 +73,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 		let mut reader = decoder.read_info()?;
 		let png::Info {width, height, ..} = *reader.info();
 		let (color_type, bit_depth) = reader.output_color_type();
-		let mut channels = match color_type {
+		let channels = match color_type {
 			png::ColorType::Grayscale => 1,
 			png::ColorType::Rgb => 3,
 			png::ColorType::Indexed => 1,
 			png::ColorType::GrayscaleAlpha => 2,
 			png::ColorType::Rgba => 4,
-		};
-		let data = {
-			let mut data = vec![0; reader.output_buffer_size()];
-			reader.next_frame(&mut data)?;
-			let png::Info {palette, trns, ..} = reader.info().clone();
-			if matches!(color_type, png::ColorType::Indexed) {
-				let palette = palette.unwrap();
-				// STEP: Expand to RGB or RGBA
-				channels = 3;
-				if let Some(_) = &trns {
-					channels = 4;
-				}
-				data.iter()
-				.flat_map(|&pal_index| {
-					let pal_index = pal_index as usize;
-					let rgb_range = (pal_index * 3)..(pal_index * 3 + 3);
-					let mut rgb = palette[rgb_range].to_owned();
-					if let Some(trns) = &trns {
-						let t = trns.get(pal_index).copied().unwrap_or(255);
-						rgb.push(t);
-					}
-					rgb
-				})
-				.collect()
-			} else {
-				data
-			}
 		};
 		let bytes_per_channel = (match bit_depth {
 			png::BitDepth::One => 1,
@@ -114,12 +87,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 			png::BitDepth::Eight => 8,
 			png::BitDepth::Sixteen => 16,
 		} / 8).max(1);
-		/* 
-		if fname == "pivy3.png" {
-			assert_eq!(channels, 4);
-			assert_eq!(bytes_per_channel, 1);
-		}
-		 */
+		let data = {
+			let mut data = vec![0; reader.output_buffer_size()];
+			reader.next_frame(&mut data)?;
+			data
+		};
 		let tex = renderer::texture(&glc, &data, width, height, channels,
 			bytes_per_channel)?;
 		let txid = egui_glow.painter.register_native_texture(tex);
@@ -130,10 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut selected_texture = "TINY";
 	el.run(move |event, _window, control_flow| {
 		match event {
-/* 			glutin::event::Event::NewEvents(e) => {
-				// println!("new events {:?}", e);
-			},
- */			glutin::event::Event::WindowEvent { window_id: _window_id, event } => {
+			glutin::event::Event::WindowEvent { window_id: _window_id, event } => {
 				// println!("WindowEvent window_id {:?} event {:?}", window_id, event);
 				if !egui_glow.on_event(&event) {
 				match event {
