@@ -12,7 +12,7 @@ impl<'a> TextureName<'a> {
 	pub fn short_name(&self) -> String {
 		lazy_static! {
 		static ref TEXNAME_NAME_R: Regex = Regex::new(r"/([^/]+)$").unwrap();
-		static ref TEXNAME_FOLDER_R: Regex = Regex::new(r"([^/]+)/").unwrap();
+		static ref TEXNAME_FOLDER_R: Regex = Regex::new(r"([^/]{2,})/").unwrap();
 		static ref TEXNAME_FOLDERS_R: Regex = Regex::new(r"([^/]{1,2}/)").unwrap();
 		}
 		let full_path = self.0.contains('/');
@@ -65,6 +65,13 @@ impl<'a> TextureName<'a> {
 	}
 }
 
+impl<'a, T> From<T> for TextureName<'a>
+	where T: Into<Cow<'a, str>> {
+	fn from(v: T) -> Self {
+		TextureName(v.into())
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -102,5 +109,12 @@ mod tests {
 		let tex_name = "textures/studs/alpha/beta/crap/deck.png".to_string();
 		let tex_name = TextureName(Cow::from(&tex_name));
 		assert_eq!(tex_name.short_name(), "..c./deck.png".to_string())
+	}
+
+	#[test]
+	fn texture_name_subdirs2() {
+		let tex_name = "textures/studs/alpha/beta/c/deck.png".to_string();
+		let tex_name = TextureName(Cow::from(&tex_name));
+		assert_eq!(tex_name.short_name(), "..c/deck.png".to_string())
 	}
 }
