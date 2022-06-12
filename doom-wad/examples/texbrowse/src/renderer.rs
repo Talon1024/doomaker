@@ -28,6 +28,12 @@ impl Vertex3D {
 	pub const ATTR_UV: u32 = 4;
 }
 
+macro_rules! offset_of {
+	($b:expr, $a:expr) => {
+		(addr_of!($b) as *const u8).offset_from(addr_of!($a) as *const u8)
+	};
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Data3D {
 	pub vertices: Vec<Vertex3D>,
@@ -149,32 +155,27 @@ impl Renderable for Data3D {
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_POSITION, 3, glow::FLOAT, false,
-				stride, (addr_of!(vertex.position) as *const u8).offset_from(
-					addr_of!(vertex.position) as *const u8) as i32);
+				stride, offset_of!(vertex.position, vertex.position) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_POSITION);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_COLOUR, 3, glow::FLOAT, false,
-				stride, (addr_of!(vertex.colour) as *const u8).offset_from(
-					addr_of!(vertex.position) as *const u8) as i32);
+				stride, offset_of!(vertex.colour, vertex.position) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_COLOUR);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_NORMAL, 3, glow::FLOAT, false,
-				stride, (addr_of!(vertex.normal) as *const u8).offset_from(
-					addr_of!(vertex.position) as *const u8) as i32);
+				stride, offset_of!(vertex.normal, vertex.position) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_NORMAL);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_FOG, 4, glow::FLOAT, false,
-				stride, (addr_of!(vertex.fog) as *const u8).offset_from(
-					addr_of!(vertex.position) as *const u8) as i32);
+				stride, offset_of!(vertex.fog, vertex.position) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_FOG);
 
 			glc.vertex_attrib_pointer_f32(
 				Vertex3D::ATTR_UV, 2, glow::FLOAT, false,
-				stride, (addr_of!(vertex.uv) as *const u8).offset_from(
-					addr_of!(vertex.position) as *const u8) as i32);
+				stride, offset_of!(vertex.uv, vertex.position) as i32);
 			glc.enable_vertex_attrib_array(Vertex3D::ATTR_UV);
 
 			// STEP: Unbind buffers
