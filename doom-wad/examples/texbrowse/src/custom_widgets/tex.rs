@@ -74,8 +74,10 @@ impl<'a> egui::Widget for TextureSquare<'a> {
 				&self.short_name, font, ui.visuals().text_color());
 			// Zoom resize
 			let image_size = self.tex.size();
-			let image_size_factor = self.size / image_size.max_elem();
+			let image_size_factor = (self.size / image_size.max_elem()).min(1.);
 			let image_resize = image_size * image_size_factor;
+			// let shrink_rect_by = egui::Vec2::splat((self.size -
+			//	image_size_factor.min(1.) * image_size.max_elem()) / 2.);
 			*rect.bottom_mut() -= font_height;
 			let image_rect = egui::Rect::from_center_size(
 				rect.center(), image_resize);
