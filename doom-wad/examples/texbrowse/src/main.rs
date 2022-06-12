@@ -10,7 +10,7 @@ use png::{Decoder, Transformations};
 
 mod window;
 mod renderer;
-mod camera;
+// mod camera;
 mod custom_widgets;
 
 use renderer::{Data3D, Vertex3D, Renderable};
@@ -166,11 +166,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 						.resizable(true)
 						.min_width(60.).show_inside(ui, |ui| {
 							egui::ScrollArea::vertical().show(ui, |ui| {
+							ui.collapsing("TEXTUREX", |ui| {
 								ui.label("Booba");
 								ui.label("Feet");
 								ui.label("Manga");
 								ui.label("Lorian");
 								ui.label("Son of a gun!! Good grief.");
+							});
+							ui.collapsing("All", |ui| {
+								ui.label("Booba");
+								ui.label("Feet");
+								ui.label("Manga");
+								ui.label("Lorian");
+								ui.label("Son of a gun!! Good grief.");
+							});
 							});
 						});
 
