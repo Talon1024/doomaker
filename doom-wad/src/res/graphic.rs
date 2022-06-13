@@ -24,8 +24,8 @@ impl<'a> DoomPicture<'a> {
 			let mut reader = decoder.read_info().ok()?;
 			let mut data = vec![0; reader.output_buffer_size()];
 			reader.next_frame(&mut data).ok()?;
-			let png::Info {width, height, color_type, ..} = reader.info();
-			let width = *width; let height = *height;
+			let png::Info {width, height, ..} = *reader.info();
+			let (color_type, _bit_depth) = reader.output_color_type();
 			let format = match color_type {
 				png::ColorType::Rgb => Some(ImageFormat::RGB),
 				png::ColorType::Rgba => Some(ImageFormat::RGBA),
