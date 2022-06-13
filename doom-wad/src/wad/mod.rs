@@ -1,4 +1,4 @@
-pub mod util;
+pub mod lump_name;
 
 use std::{
 	io::*,
@@ -10,10 +10,7 @@ use std::{
 	fmt::{Display, Formatter}, collections::HashMap
 };
 use ahash::RandomState;
-use util::{lump_name, to_lump_name};
-
-/// The type used for WAD lump names
-pub type LumpName = String;
+use lump_name::LumpName;
 
 const IWAD_HEADER: &str = "IWAD";
 const PWAD_HEADER: &str = "PWAD";
@@ -113,8 +110,8 @@ impl DoomWad {
 		reader.read_exact(&mut num_buffer)?;
 		let size = u32::from_le_bytes(num_buffer) as usize;
 		reader.read_exact(&mut name_buffer)?;
-		let name = String::from_utf8(lump_name(&name_buffer))?;
-		return Ok(DoomWadDirEntry { name: name, pos: pos, size: size });
+		let name = LumpName::try_from(name_buffer.as_slice())?;
+		return Ok(DoomWadDirEntry { name, pos, size });
 	}
 
 	pub fn write(&self, filename: &str) -> Result<(), Box<dyn Error>> {
@@ -170,12 +167,12 @@ impl DoomWad {
 			current_pos += lump.data.len() as u64;
 		}
 		for dir_entry in directory.iter() {
-			let lump_name = to_lump_name(&dir_entry.name);
+			let lump_name = dir_entry.name;
 			num_buffer = (dir_entry.pos as u32).to_le_bytes();
 			writer.write(&num_buffer)?;
 			num_buffer = (dir_entry.size as u32).to_le_bytes();
 			writer.write(&num_buffer)?;
-			writer.write(&lump_name)?;
+			writer.write(lump_name.into())?;
 		}
 		Ok(())
 	}
@@ -273,10 +270,10 @@ impl<'a> DoomWad {
 		}
 	}
 	pub fn ns_patches(&'a self) -> Vec<&'a DoomWadLump> {
-		let patches_start = ["P_START", "PP_START"];
-		let subsect_start = ["P1_START", "P2_START", "P3_START"];
-		let patches_end = ["P_END", "PP_END"];
-		let subsect_end = ["P1_END", "P2_END", "P3_END"];
+		let patches_start = [b"P_START", b"PP_START"].map(LumpName::try_from);
+		let subsect_start = [b"P1_START", b"P2_START", b"P3_START"];
+		let patches_end = [b"P_END", b"PP_END"];
+		let subsect_end = [b"P1_END", b"P2_END", b"P3_END"];
 		self.namespace_lumps((&patches_start, &patches_end),
 			Some((&subsect_start, &subsect_end)))
 	}/* 
@@ -299,7 +296,7 @@ mod tests {
 	macro_rules! empty_lump {
 		($name:expr) => {
 			DoomWadLump {
-				name: LumpName::from($name),
+				name: LumpName::try_from($name).unwrap(),
 				data: vec![]
 			}
 		};

@@ -1,6 +1,6 @@
 // TEXTURE1, TEXTURE2, and PNAMES
-use crate::wad::{self, DoomWad, DoomWadLump, LumpName};
-use crate::wad::util::*;
+use crate::wad::{self, DoomWad, DoomWadLump};
+use crate::wad::lump_name::LumpName;
 use crate::res::{Image, ImageFormat, ToImage};
 use std::error::Error;
 use std::io::{Cursor, Read, Seek, SeekFrom};
@@ -29,7 +29,7 @@ pub struct TextureDefinitions<'a> {
 }
 
 fn read_pnames(pnames: &wad::DoomWadLump) ->
-	Result<Vec<String>, Box<dyn Error>>
+	Result<Vec<LumpName>, Box<dyn Error>>
 {
 	let mut num_buffer: [u8; 4] = [0; 4];
 	let mut name_buffer: [u8; 8] = [0; 8];
@@ -38,10 +38,10 @@ fn read_pnames(pnames: &wad::DoomWadLump) ->
 		pos.read_exact(&mut num_buffer)?;
 		i32::from_le_bytes(num_buffer) as usize
 	};
-	let mut names: Vec<String> = Vec::with_capacity(name_count);
+	let mut names: Vec<LumpName> = Vec::with_capacity(name_count);
 	(0..name_count).map(|_| -> Result<(), Box<dyn Error>> {
 		pos.read_exact(&mut name_buffer)?;
-		names.push(String::from_utf8(lump_name(&name_buffer))?);
+		names.push(LumpName::try_from(&name_buffer)?);
 		Ok(())
 	}).collect::<Result<(), Box<dyn Error>>>()?;
 	Ok(names)
@@ -73,7 +73,7 @@ pub fn read_texturex<'a>(list: &'a DoomWadLump, pnames: &DoomWadLump, wad: &'a D
 		pos.seek(SeekFrom::Start(offset))?;
 		// Name (8 bytes)
 		pos.read_exact(&mut name_buffer)?;
-		let name = String::from_utf8(lump_name(&name_buffer))?;
+		let name = LumpName::try_from(&name_buffer)?;
 		// Flags (4 bytes)
 		pos.read_exact(&mut num_buffer)?;
 		let flags = i32::from_le_bytes(num_buffer);

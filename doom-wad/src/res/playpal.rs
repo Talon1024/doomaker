@@ -3,6 +3,7 @@
 // RGBA samples
 
 use crate::wad::DoomWadLump;
+use crate::wad::lump_name::LumpName;
 use std::error::Error;
 use std::fmt;
 use crate::res::{Image, ToImage, ImageFormat, ImageDimension};
@@ -74,7 +75,7 @@ mod tests {
 	#[test]
 	fn imports_properly() {
 		let playpal = DoomWadLump {
-			name: String::from("PLAYPAL"),
+			name: LumpName::try_from("PLAYPAL").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/PLAYPAL.pal").as_slice()),
 		};
 		let palcol = PaletteCollection {lump: &playpal};
@@ -84,7 +85,7 @@ mod tests {
 	#[test]
 	fn can_get_palettes() -> Result<(), Box<dyn Error>> {
 		let playpal = DoomWadLump {
-			name: String::from("PLAYPAL"),
+			name: LumpName::try_from("PLAYPAL").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/PLAYPAL.pal").as_slice()),
 		};
 		let palcol = PaletteCollection {lump: &playpal};
@@ -99,7 +100,7 @@ mod tests {
 	#[should_panic]
 	fn bad_palette_index() -> () {
 		let playpal = DoomWadLump {
-			name: String::from("PLAYPAL"),
+			name: LumpName::try_from("PLAYPAL").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/PLAYPAL.pal").as_slice()),
 		};
 		let palcol = PaletteCollection {lump: &playpal};

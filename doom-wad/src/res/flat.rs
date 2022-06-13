@@ -1,5 +1,6 @@
 // Flats are 64x64 graphics stored as indexed samples in row-major order.
 use crate::wad::DoomWadLump;
+use crate::wad::lump_name::LumpName;
 use crate::res::{ToImage, Image, ImageFormat, ImageDimension};
 
 const MINIMUM_SIZE: usize = 64;
@@ -46,7 +47,7 @@ mod tests {
 	#[test]
 	fn converts_flats_properly() {
 		let flat_lump = DoomWadLump {
-			name: String::from(""),
+			name: LumpName::try_from("A").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/TLITE6_5.flt").as_slice())
 		};
 		let expected = Image {
@@ -73,7 +74,7 @@ mod tests {
 	// Heretic's F_SKY1 lump is only 4 bytes long
 	fn converts_heretic_sky() {
 		let flat_lump = DoomWadLump {
-			name: String::from("F_SKY1"),
+			name: LumpName::try_from("F_SKY1").unwrap(),
 			data: Vec::<u8>::from([83, 75, 89, 10])
 		};
 		let expected = Image {
@@ -100,7 +101,7 @@ mod tests {
 	// How about a flat with only 1.5 rows?
 	fn converts_incomplete_flat() {
 		let flat_lump = DoomWadLump {
-			name: String::from("INCOMPLE"),
+			name: LumpName::try_from("INCOMPLE").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/INCOMPLE.flt").as_slice())
 		};
 		let expected = Image {

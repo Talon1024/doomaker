@@ -1,4 +1,5 @@
 use crate::wad::DoomWadLump;
+use crate::wad::lump_name::LumpName;
 use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension};
 use std::io::{Read, Cursor, Seek, SeekFrom};
 use std::error::Error;
@@ -212,7 +213,7 @@ mod tests {
 	#[test]
 	fn converts_opaque_patches_correctly() {
 		let patch_lump = DoomWadLump {
-			name: String::from("MOSSBRK8"),
+			name: LumpName::try_from("MOSSBRK8").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/MOSSBRK8.lmp").as_slice())
 		};
 		let expected = Image {
@@ -240,7 +241,7 @@ mod tests {
 	#[test]
 	fn converts_transparent_patches_correctly() {
 		let patch_lump = DoomWadLump {
-			name: String::from("GRATE"),
+			name: LumpName::try_from("GRATE").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/GRATE.lmp").as_slice())
 		};
 		let expected = Image {
@@ -268,7 +269,7 @@ mod tests {
 	#[test]
 	fn converts_tall_patches_correctly() {
 		let patch_lump = DoomWadLump {
-			name: String::from("SHTGC0"),
+			name: LumpName::try_from("SHTGC0").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/SHTGC0.lmp").as_slice())
 		};
 		let expected = Image {
@@ -296,7 +297,7 @@ mod tests {
 	#[test]
 	fn converts_deepsea_tall_patches_correctly() {
 		let patch_lump = DoomWadLump {
-			name: String::from("CYBRE1"),
+			name: LumpName::try_from("CYBRE1").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/CYBRE1.lmp").as_slice())
 		};
 		let expected = Image {
@@ -324,7 +325,7 @@ mod tests {
 	#[test]
 	fn converts_tswgb0_correctly() {
 		let patch_lump = DoomWadLump {
-			name: String::from("TSWGB0"),
+			name: LumpName::try_from("TSWGB0").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/TSWGB0.lmp").as_slice())
 		};
 		let expected = Image {
