@@ -1,4 +1,3 @@
-use std::error::Error;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
@@ -26,7 +25,7 @@ impl TryFrom<&[u8]> for LumpName {
 	fn try_from(name: &[u8]) -> Result<Self, LumpNameConvertError> {
 		let mut lump_name = Self::default();
 		let slen = name.len().min(8);
-		let (mut left, _) = lump_name.0.split_at_mut(slen);
+		let (left, _) = lump_name.0.split_at_mut(slen);
 		left.copy_from_slice(&name[..slen]);
 		let mut nullhit = false;
 		if let Some(c) = lump_name.0.iter().copied()
@@ -45,7 +44,8 @@ impl TryFrom<&[u8]> for LumpName {
 				}}) {
 			return Err(LumpNameConvertError::InvalidASCII(c));
 		}
-		lump_name.0 = lump_name.0.map(|b| b & !32); // Capitalize
+		// Capitalize
+		lump_name.0 = lump_name.0.map(|b| b.to_ascii_uppercase());
 		Ok(lump_name)
 	}
 }
@@ -74,16 +74,11 @@ impl std::fmt::Display for LumpName {
 	}
 }
 
-impl From<LumpName> for &[u8] {
-	fn from(v: LumpName) -> Self {
-		v.0.as_slice()
-	}
-}
-
 #[cfg(test)]
 mod tests {
 
-use super::*;
+	use super::*;
+	use std::error::Error;
 
 	#[test]
 	fn lump_name_to_string() -> Result<(), Box<dyn Error>> {
@@ -101,6 +96,10 @@ use super::*;
 		let orig_name = LumpName::try_from([ // CRAP
 			0x43, 0x52, 0x41, 0x50, 0, 0, 0, 0].as_slice())?;
 		let lump_name = LumpName::try_from("Crap")?;
+		assert_eq!(lump_name, orig_name);
+
+		let lump_name = LumpName::try_from("METALT2")?;
+		let orig_name = LumpName(*b"METALT2\0");
 		assert_eq!(lump_name, orig_name);
 
 		let lump_name = LumpName::try_from("Superduper")?;

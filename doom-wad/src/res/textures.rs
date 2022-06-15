@@ -1,6 +1,5 @@
 // TEXTURE1, TEXTURE2, and PNAMES
-use crate::wad::{self, DoomWad, DoomWadLump};
-use crate::wad::lump_name::LumpName;
+use crate::wad::{self, DoomWad, DoomWadLump, LumpName};
 use crate::res::{Image, ImageFormat, ToImage};
 use std::error::Error;
 use std::io::{Cursor, Read, Seek, SeekFrom};

@@ -1,5 +1,4 @@
 use crate::wad::DoomWadLump;
-use crate::wad::lump_name::LumpName;
 use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension};
 use std::io::{Read, Cursor, Seek, SeekFrom};
 use std::error::Error;
@@ -209,6 +208,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::wad::LumpName;
 
 	#[test]
 	fn converts_opaque_patches_correctly() {

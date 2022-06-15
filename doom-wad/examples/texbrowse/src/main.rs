@@ -7,6 +7,7 @@ use glutin::{
 use glow::HasContext;
 use glam::f32::Vec3;
 use png::{Decoder, Transformations};
+use doomwad::wad::{DoomWadLump, LumpName};
 
 mod window;
 mod renderer;
@@ -64,6 +65,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 	}
 	// STEP: Textures
 	// TODO: TextureBrowser struct
+	let tex_lumps = [DoomWadLump {
+		name: LumpName::try_from("TALL")?,
+		data: vec![],
+	}, DoomWadLump {
+		name: LumpName::try_from("WIDE")?,
+		data: vec![],
+	}, DoomWadLump {
+		name: LumpName::try_from("PIVY3")?,
+		data: vec![],
+	}, DoomWadLump {
+		name: LumpName::try_from("TINY")?,
+		data: vec![],
+	}, DoomWadLump {
+		name: LumpName::try_from("TEXTURE1")?,
+		data: vec![],
+	}, DoomWadLump {
+		name: LumpName::try_from("PNAMES")?,
+		data: vec![],
+	}];
 	let tex_names = ["TALLASS", "WIDEASS", "PIVY3", "TINY"];
 	let tex_files = ["tallass.png", "wideass.png", "pivy3.png", "tiny.png"];
 	let tex_images = tex_files.iter().map(|&fname| {

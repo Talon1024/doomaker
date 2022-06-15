@@ -3,7 +3,6 @@
 // RGBA samples
 
 use crate::wad::DoomWadLump;
-use crate::wad::lump_name::LumpName;
 use std::error::Error;
 use std::fmt;
 use crate::res::{Image, ToImage, ImageFormat, ImageDimension};
@@ -71,6 +70,7 @@ impl<'a> ToImage for PaletteCollection<'a> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::wad::LumpName;
 
 	#[test]
 	fn imports_properly() {

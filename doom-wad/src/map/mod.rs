@@ -1,5 +1,5 @@
 //! Structures for the original Doom map format
-use crate::wad::{DoomWad, DoomWadLump};
+use crate::wad::{DoomWad, DoomWadLump, LumpName};
 use std::{mem, io::{Read, Cursor}, error::Error};
 mod lumps;
 #[cfg(feature="console")]
@@ -79,14 +79,15 @@ pub enum Format {
 
 #[derive(Clone)]
 pub struct Map<'a> {
-	pub name: String,
+	pub name: LumpName,
 	pub format: Format,
 	pub lumps: &'a [DoomWadLump],
 }
 
 impl<'a> Map<'a> {
 	pub fn vertices(&self) -> Result<Vec<Vertex>, Box<dyn Error>> {
-		let lump = self.lumps.iter().find(|lump| lump.name == "VERTEXES")
+		const LUMP_NAME: LumpName = LumpName(*b"VERTEXES");
+		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
 			.expect("All maps MUST have a VERTEXES lump!");
 		lump.data.chunks_exact(mem::size_of::<Vertex>()).map(|ch| {
 			let mut cur = Cursor::new(ch);
@@ -100,7 +101,8 @@ impl<'a> Map<'a> {
 	}
 
 	pub fn linedefs(&self) -> Result<Vec<Linedef>, Box<dyn Error>> {
-		let lump = self.lumps.iter().find(|lump| lump.name == "LINEDEFS")
+		const LUMP_NAME: LumpName = LumpName(*b"LINEDEFS");
+		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
 			.expect("All maps MUST have a LINEDEFS lump!");
 		lump.data.chunks_exact(mem::size_of::<Linedef>()).map(|ch| {
 			let mut cur = Cursor::new(ch);
@@ -132,7 +134,8 @@ impl<'a> Map<'a> {
 	}
 
 	pub fn sidedefs(&self) -> Result<Vec<Sidedef>, Box<dyn Error>> {
-		let lump = self.lumps.iter().find(|lump| lump.name == "SIDEDEFS")
+		const LUMP_NAME: LumpName = LumpName(*b"SIDEDEFS");
+		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
 			.expect("All maps MUST have a SIDEDEFS lump!");
 		lump.data.chunks_exact(mem::size_of::<Sidedef>()).map(|ch| {
 			let mut cur = Cursor::new(ch);
@@ -162,7 +165,8 @@ impl<'a> Map<'a> {
 	}
 
 	pub fn sectors(&self) -> Result<Vec<Sector>, Box<dyn Error>> {
-		let lump = self.lumps.iter().find(|lump| lump.name == "SECTORS")
+		const LUMP_NAME: LumpName = LumpName(*b"SECTORS\0");
+		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
 			.expect("All maps MUST have a SECTORS lump!");
 		lump.data.chunks_exact(mem::size_of::<Sector>()).map(|ch| {
 			let mut cur = Cursor::new(ch);
@@ -195,7 +199,8 @@ impl<'a> Map<'a> {
 	}
 
 	pub fn things(&self) -> Result<Vec<Thing>, Box<dyn Error>> {
-		let lump = self.lumps.iter().find(|lump| lump.name == "THINGS")
+		const LUMP_NAME: LumpName = LumpName(*b"THINGS\0\0");
+		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
 			.expect("All maps MUST have a THINGS lump!");
 		lump.data.chunks_exact(mem::size_of::<Thing>()).map(|ch| {
 			let mut cur = Cursor::new(ch);
@@ -243,17 +248,19 @@ pub fn open_map(lump: usize, wad: &DoomWad) -> Option<Map> {
 		}).unwrap_or(wad.lumps.len());
 		&wad.lumps[start..end]
 	};
-	let map_lump_names: Box<[&String]> = map_lump_slice.iter().map(|lump| &lump.name).collect();
+	let map_lump_names: Box<[&LumpName]> = map_lump_slice.iter()
+		.map(|lump| &lump.name).collect();
 	// Make sure all required lumps are present
-	if !map_lump_names.iter().all(|&ln| lumps::REQUIRED_LUMPS.iter().any(|&lln| ln == lln)) {
+	if !map_lump_names.iter().all(|&ln| lumps::REQUIRED_LUMPS.iter()
+		.any(|lln| ln == lln)) {
 		return None;
 	}
 	// Find map format
-	let format = if map_lump_names.iter().any(|&ln| ln == lumps::HEXEN_LUMPS) {
+	let format = if map_lump_names.iter().any(|&ln| ln == &lumps::HEXEN_LUMPS) {
 		Format::Hexen
-	} else if map_lump_names.iter().all(|&ln| lumps::D64_LUMPS.iter().any(|&lln| ln == lln)) {
+	} else if map_lump_names.iter().all(|&ln| lumps::D64_LUMPS.iter().any(|lln| ln == lln)) {
 		Format::Doom64
-	} else if map_lump_names.iter().all(|&ln| lumps::PSX_LUMPS.iter().any(|&lln| ln == lln)) {
+	} else if map_lump_names.iter().all(|&ln| lumps::PSX_LUMPS.iter().any(|lln| ln == lln)) {
 		Format::PSX
 	} else {
 		Format::Vanilla

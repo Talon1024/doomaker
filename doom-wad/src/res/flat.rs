@@ -1,6 +1,5 @@
 // Flats are 64x64 graphics stored as indexed samples in row-major order.
 use crate::wad::DoomWadLump;
-use crate::wad::lump_name::LumpName;
 use crate::res::{ToImage, Image, ImageFormat, ImageDimension};
 
 const MINIMUM_SIZE: usize = 64;
@@ -43,6 +42,7 @@ impl<'a> ToImage for FlatImage<'a> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::wad::LumpName;
 
 	#[test]
 	fn converts_flats_properly() {

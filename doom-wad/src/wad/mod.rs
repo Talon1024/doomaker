@@ -1,4 +1,4 @@
-pub mod lump_name;
+mod lump_name;
 
 use std::{
 	io::*,
@@ -10,7 +10,7 @@ use std::{
 	fmt::{Display, Formatter}, collections::HashMap
 };
 use ahash::RandomState;
-use lump_name::LumpName;
+pub use lump_name::LumpName;
 
 const IWAD_HEADER: &str = "IWAD";
 const PWAD_HEADER: &str = "PWAD";
@@ -102,7 +102,7 @@ impl DoomWad {
 		Ok(wad)
 	}
 
-	fn read_directory_entry(reader: &mut BufReader<Cursor<&[u8]>>) -> Result<DoomWadDirEntry, Box<dyn Error>> {
+	fn read_directory_entry(reader: &mut impl Read) -> Result<DoomWadDirEntry, Box<dyn Error>> {
 		let mut num_buffer: [u8; 4] = [0; 4];
 		let mut name_buffer: [u8; 8] = [0; 8];
 		reader.read_exact(&mut num_buffer)?;
@@ -159,7 +159,7 @@ impl DoomWad {
 		for lump in self.lumps.iter() {
 			// Lump data
 			directory.push(DoomWadDirEntry{
-				name: lump.name.clone(),
+				name: lump.name,
 				pos: current_pos,
 				size: lump.data.len()
 			});
@@ -172,7 +172,7 @@ impl DoomWad {
 			writer.write(&num_buffer)?;
 			num_buffer = (dir_entry.size as u32).to_le_bytes();
 			writer.write(&num_buffer)?;
-			writer.write(lump_name.into())?;
+			writer.write(&lump_name.0)?;
 		}
 		Ok(())
 	}
@@ -229,16 +229,17 @@ impl<'a> Namespaced<'a> for DoomWadCollection {
 	}
 }
  */
+pub type NamespaceBounds<'a> = (&'a [LumpName], &'a [LumpName]);
 impl<'a> DoomWad {
-	pub fn namespace_lumps(&'a self, ns: (&[&str], &[&str]), sub: Option<(&[&str], &[&str])>) -> Vec<&'a DoomWadLump> {
+	pub fn namespace_lumps(&'a self, ns: NamespaceBounds, sub: Option<NamespaceBounds>) -> Vec<&'a DoomWadLump> {
 		let ns_index = self.lumps.iter().position(
-			|lu| ns.0.iter().any(|n| n == &lu.name));
+			|lu| ns.0.iter().any(|&n| n == lu.name));
 		if ns_index.is_none() {
 			return vec![];
 		}
 		let ns_index = ns_index.unwrap() + 1;
 		let ns_endindex = self.lumps.iter().skip(ns_index).position(
-			|lu| ns.1.iter().any(|n| n == &lu.name));
+			|lu| ns.1.iter().any(|&n| n == lu.name));
 		if ns_endindex.is_none() {
 			return vec![];
 		}
@@ -249,7 +250,7 @@ impl<'a> DoomWad {
 			// subsection start marker
 			match ns_slice.iter().next() {
 				Some(lu) => {
-					sub.unwrap().0.iter().any(|&n| n == &lu.name)
+					sub.unwrap().0.iter().any(|&n| n == lu.name)
 				},
 				None => false,
 			}
@@ -259,7 +260,7 @@ impl<'a> DoomWad {
 			let sub = sub.unwrap();
 			let sub = sub.0.iter().chain(sub.1);
 			ns_slice.iter().filter_map(|lu| {
-				if sub.clone().any(|ln| ln == &lu.name) {
+				if sub.clone().any(|&ln| ln == lu.name) {
 					None
 				} else {
 					Some(lu)
@@ -270,10 +271,14 @@ impl<'a> DoomWad {
 		}
 	}
 	pub fn ns_patches(&'a self) -> Vec<&'a DoomWadLump> {
-		let patches_start = [b"P_START", b"PP_START"].map(LumpName::try_from);
-		let subsect_start = [b"P1_START", b"P2_START", b"P3_START"];
-		let patches_end = [b"P_END", b"PP_END"];
-		let subsect_end = [b"P1_END", b"P2_END", b"P3_END"];
+		let patches_start = [b"P_START\0", b"PP_START"]
+			.map(|fu| LumpName::try_from(fu.as_slice()).unwrap());
+		let subsect_start = [b"P1_START", b"P2_START", b"P3_START"]
+			.map(|fu| LumpName::try_from(fu.as_slice()).unwrap());
+		let patches_end = [b"P_END\0", b"PP_END"]
+			.map(|fu| LumpName::try_from(fu.as_slice()).unwrap());
+		let subsect_end = [b"P1_END", b"P2_END", b"P3_END"]
+			.map(|fu| LumpName::try_from(fu.as_slice()).unwrap());
 		self.namespace_lumps((&patches_start, &patches_end),
 			Some((&subsect_start, &subsect_end)))
 	}/* 

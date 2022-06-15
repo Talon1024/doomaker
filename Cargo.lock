@@ -1531,6 +1531,7 @@ dependencies = [
 name = "texbrowse"
 version = "0.1.0"
 dependencies = [
+ "doomwad",
  "egui",
  "egui_glow",
  "glam 0.20.5",
