@@ -14,13 +14,13 @@ impl<'a> TextureSquare<'a> {
 }
 
 impl<'a> TextureSquare<'a> {
-	pub(crate) fn new(size: Option<f32>, tex: egui::Image, name: impl Into<Cow<'a, str>>, current_tex: &str) -> Self {
+	pub(crate) fn new(size: Option<f32>, tex: egui::Image, name: impl Into<Cow<'a, str>>, selected: bool) -> Self {
 		let tex_name = TextureName(name.into());
 		let short_name = tex_name.short_name();
 		let popup_id = egui::Id::new(tex_name.0.as_ref());
 		TextureSquare {
 			size: size.unwrap_or(48.),
-			selected: tex_name.0 == current_tex,
+			selected,
 			tex,
 			tex_name,
 			short_name,

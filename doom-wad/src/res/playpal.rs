@@ -49,7 +49,7 @@ impl PaletteCollection<'_> {
 		}
 		let start: usize = index * BYTES_PER_PALETTE;
 		let end: usize = start + BYTES_PER_PALETTE;
-		Ok(Palette::try_from(&self.lump.data[start..end])?)
+		Palette::try_from(&self.lump.data[start..end]).map_err(Box::from)
 	}
 }
 

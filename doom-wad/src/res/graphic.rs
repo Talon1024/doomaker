@@ -3,8 +3,15 @@ use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension};
 use std::io::{Read, Cursor, Seek, SeekFrom};
 use std::error::Error;
 
+#[derive(Debug, Clone)]
 pub struct DoomPicture<'a> {
 	lump: &'a DoomWadLump
+}
+
+impl<'a> From<&'a DoomWadLump> for DoomPicture<'a> {
+	fn from(lump: &'a DoomWadLump) -> DoomPicture<'a> {
+		DoomPicture { lump: lump }
+	}
 }
 
 #[cfg(feature = "png")]

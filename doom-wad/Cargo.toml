@@ -9,6 +9,7 @@ edition = "2021"
 thiserror = "1.0"
 ahash = "0.7.6"
 png = {version = "0.17.5", optional = true}
+derive_deref = "1.1.1"
 
 [features]
 # Support for Doom console port map data structures

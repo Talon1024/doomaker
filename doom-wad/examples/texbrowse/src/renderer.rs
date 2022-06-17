@@ -58,7 +58,7 @@ pub trait Renderable {
 	fn draw(&self, glc: &Context, uds: Option<Self::UniformData>);
 }
 
-pub unsafe fn ptr_range_to_u8_slice<'a, T>(range: Range<*const T>) -> &'a [u8] {
+unsafe fn ptr_range_to_u8_slice<'a, T>(range: Range<*const T>) -> &'a [u8] {
 	let start = range.start as *const u8;
 	let end = range.end as *const u8;
 	let len = end.offset_from(start) as usize;

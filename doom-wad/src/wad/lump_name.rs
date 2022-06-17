@@ -1,12 +1,15 @@
+use std::error::Error;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-pub struct LumpName(pub [u8; 8]);
+pub struct LumpName(pub(crate) [u8; 8]);
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug, Clone)]
 pub enum LumpNameConvertError {
-	#[error("Invalid ASCII character")]
+	#[error("Invalid ASCII character `{0}`")]
 	InvalidASCII(u8),
+	#[error("Characters after first NULL")]
+	CharsAfterNull
 }
 /*
 impl From<&[u8]> for LumpName {
@@ -28,22 +31,20 @@ impl TryFrom<&[u8]> for LumpName {
 		let (left, _) = lump_name.0.split_at_mut(slen);
 		left.copy_from_slice(&name[..slen]);
 		let mut nullhit = false;
-		if let Some(c) = lump_name.0.iter().copied()
-			.find(|&c| {
-				if c == 0 {
-					nullhit = true;
-					false
-				} else if nullhit && c != 0 {
-					true
-				} else if c != 0 && c.is_ascii_control() {
-					true
-				} else if c > 0x7F {
-					true
-				} else {
-					false
-				}}) {
-			return Err(LumpNameConvertError::InvalidASCII(c));
-		}
+		lump_name.0.iter().copied().fold(Ok(()), |b, c| {
+			if c == 0 {
+				nullhit = true;
+				b.and(Ok(()))
+			} else if nullhit && c != 0 {
+				b.and(Err(LumpNameConvertError::CharsAfterNull))
+			} else if c != 0 && c.is_ascii_control() {
+				b.and(Err(LumpNameConvertError::InvalidASCII(c)))
+			} else if c > 0x7F {
+				b.and(Err(LumpNameConvertError::InvalidASCII(c)))
+			} else {
+				b.and(Ok(()))
+			}
+		})?;
 		// Capitalize
 		lump_name.0 = lump_name.0.map(|b| b.to_ascii_uppercase());
 		Ok(lump_name)
@@ -93,6 +94,7 @@ mod tests {
 
 	#[test]
 	fn string_to_lump_name() -> Result<(), Box<dyn Error>> {
+		use LumpNameConvertError::{self, *};
 		let orig_name = LumpName::try_from([ // CRAP
 			0x43, 0x52, 0x41, 0x50, 0, 0, 0, 0].as_slice())?;
 		let lump_name = LumpName::try_from("Crap")?;
@@ -113,7 +115,7 @@ mod tests {
 		assert_eq!(lump_name, orig_name);
 
 		let invalid_name = LumpName::try_from("😈's lair");
-		assert!(matches!(invalid_name, Err(_)));
+		assert!(matches!(invalid_name, Err(InvalidASCII(_))));
 
 		Ok(())
 	}

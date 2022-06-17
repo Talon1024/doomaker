@@ -407,6 +407,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_deref"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcdbcee2d9941369faba772587a565f4f534e42cb8d17e5295871de730163b2b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dispatch"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -430,6 +441,7 @@ name = "doomwad"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
+ "derive_deref",
  "png 0.17.5",
  "thiserror",
 ]

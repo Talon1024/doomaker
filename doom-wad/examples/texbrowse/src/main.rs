@@ -7,7 +7,7 @@ use glutin::{
 use glow::HasContext;
 use glam::f32::Vec3;
 use png::{Decoder, Transformations};
-use doomwad::wad::{DoomWadLump, LumpName};
+use doomwad::{wad::{DoomWadLump, LumpName, DoomWad, DoomWadCollection}, res::{read_texturex, PaletteCollection, ToImage, Image}};
 
 mod window;
 mod renderer;
@@ -25,6 +25,27 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let glc = Rc::from(glc);
 	let mut egui_glow = EguiGlow::new(ctx.window(), Rc::clone(&glc));
 	let _user_event = el.create_proxy();
+	let wads = DoomWadCollection(vec![DoomWad::load_sync("../../tests/data/3difytest.wad")?]);
+	let wad_lumps = wads.lump_map();
+	let wad_pal = wads.playpal(Some(&wad_lumps)).map(PaletteCollection::from);
+	let wad_textures = wads.textures(Some(&wad_lumps)).ok_or("No PNAMES!")?;
+	let textures = wad_textures.tex_map();
+	let mut tex_names = Vec::new();
+	let tex_images = textures.iter().map(|(&name, &tex)| {
+		tex_names.push(name.to_string());
+		let mut image = tex.to_image();
+		let Image {width, height, ..} = image;
+		image.to_rgb(wad_pal.as_ref().map(|pc| {pc.get(0).ok()}).flatten());
+		let channels = image.format.channels() as u8;
+		let bytes_per_channel = 1;
+		let tex = renderer::texture(&glc, &image.data, width as u32,
+			height as u32, channels, bytes_per_channel)?;
+		let txid = egui_glow.painter.register_native_texture(tex);
+		Ok(egui::Image::new(txid, (width as f32, height as f32)))
+	}).collect::<VecResult<egui::Image>>()?;
+	let mut tex_name_filter = String::new();
+	let mut tex_full_path = false;
+	let mut selected_index = 0;
 	// STEP: Set up things to render
 	let mut my_rect = Data3D {
 		vertices: vec![
@@ -63,63 +84,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 		glc.enable(glow::CULL_FACE);
 		glc.cull_face(glow::BACK);
 	}
-	// STEP: Textures
+	// STEP: Load WAD and textures
 	// TODO: TextureBrowser struct
-	let tex_lumps = [DoomWadLump {
-		name: LumpName::try_from("TALL")?,
-		data: vec![],
-	}, DoomWadLump {
-		name: LumpName::try_from("WIDE")?,
-		data: vec![],
-	}, DoomWadLump {
-		name: LumpName::try_from("PIVY3")?,
-		data: vec![],
-	}, DoomWadLump {
-		name: LumpName::try_from("TINY")?,
-		data: vec![],
-	}, DoomWadLump {
-		name: LumpName::try_from("TEXTURE1")?,
-		data: vec![],
-	}, DoomWadLump {
-		name: LumpName::try_from("PNAMES")?,
-		data: vec![],
-	}];
-	let tex_names = ["TALLASS", "WIDEASS", "PIVY3", "TINY"];
-	let tex_files = ["tallass.png", "wideass.png", "pivy3.png", "tiny.png"];
-	let tex_images = tex_files.iter().map(|&fname| {
-		let file = File::open(fname)?;
-		let mut decoder = Decoder::new(file);
-		decoder.set_transformations(Transformations::normalize_to_color8());
-		let mut reader = decoder.read_info()?;
-		let png::Info {width, height, ..} = *reader.info();
-		let (color_type, bit_depth) = reader.output_color_type();
-		let channels = match color_type {
-			png::ColorType::Grayscale => 1,
-			png::ColorType::Rgb => 3,
-			png::ColorType::Indexed => 1,
-			png::ColorType::GrayscaleAlpha => 2,
-			png::ColorType::Rgba => 4,
-		};
-		let bytes_per_channel = (match bit_depth {
-			png::BitDepth::One => 1,
-			png::BitDepth::Two => 2,
-			png::BitDepth::Four => 4,
-			png::BitDepth::Eight => 8,
-			png::BitDepth::Sixteen => 16,
-		} / 8).max(1);
-		let data = {
-			let mut data = vec![0; reader.output_buffer_size()];
-			reader.next_frame(&mut data)?;
-			data
-		};
-		let tex = renderer::texture(&glc, &data, width, height, channels,
-			bytes_per_channel)?;
-		let txid = egui_glow.painter.register_native_texture(tex);
-		Ok(egui::Image::new(txid, (width as f32, height as f32)))
-	}).collect::<VecResult<egui::Image>>()?;
-	let mut tex_name_filter = String::new();
-	let mut tex_full_path = false;
-	let mut selected_texture = "TINY";
 	el.run(move |event, _window, control_flow| {
 		match event {
 			glutin::event::Event::WindowEvent { window_id: _window_id, event } => {
@@ -175,6 +141,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 				my_rect.draw(&glc, None);
 				my_rect.update(&glc);
 				egui_glow.run(ctx.window(), |ectx| {
+					egui::TopBottomPanel::top("main menu").show(ectx, |ui| {
+						egui::menu::bar(ui, |ui| {
+							egui::menu::menu_button(ui, "File", |ui| {
+								ui.button("Open..");
+								if ui.button("Exit").clicked() {
+									*control_flow = ControlFlow::Exit;
+								}
+							});
+						});
+					});
 					egui::Window::new("Texture browser")
 					.default_width(500.)
 					.default_height(300.)
@@ -213,16 +189,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 							ui.checkbox(&mut tex_full_path, "Full path");
 						});
 						ui.separator();
-						egui::ScrollArea::vertical()
-						.always_show_scroll(true).show(ui, |ui| {
+						egui::ScrollArea::vertical().show(ui, |ui| {
 							ui.horizontal_wrapped(|ui| {
-								tex_names.iter().zip(tex_images.iter())
-								.cycle().take(100).for_each(|(&name, &tex)| {
+								(0..).zip(tex_names.iter()).zip(tex_images.iter())
+								.for_each(|((index, name), &tex)| {
 									let mut ts = TextureSquare::new(
-										None, tex, name, &selected_texture
+										None, tex, name, selected_index == index
 									);
 									if ts.ui(ui).clicked() {
-										selected_texture = name;
+										selected_index = index;
 									}
 								});
 							});
@@ -247,4 +222,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 			}, */
 		}
 	});
+}
+
+fn the_gui(ectx: &egui::Context) {
+	
 }

@@ -67,6 +67,7 @@ pub enum ImageError {
 
 pub type ImageDimension = usize;
 
+#[derive(Debug, Clone)]
 pub struct Image {
 	pub width: ImageDimension,
 	pub height: ImageDimension,
