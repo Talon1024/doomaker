@@ -3,7 +3,6 @@ mod lump_name;
 use std::{
 	io::*,
 	fs::{File, read},
-	ops::{Deref, DerefMut},
 	result::Result,
 	str::from_utf8,
 	error::Error,

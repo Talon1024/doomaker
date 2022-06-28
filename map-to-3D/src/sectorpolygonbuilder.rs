@@ -267,13 +267,19 @@ pub fn build_polygons(
 	};
 	// let edge_count = edges_used.len();
 	edges_used.insert(Edge::from(first_edge), true);
-	let mut polygons: Vec<SectorPolygon> = vec![SectorPolygon {
-		vertices: vec![first_edge.0, first_edge.1],
+	let mut polygons: Vec<SectorPolygon> = Vec::with_capacity(16);
+	polygons.push(SectorPolygon {
+		vertices: {
+			let mut v = Vec::with_capacity(64);
+			v.push(first_edge.0);
+			v.push(first_edge.1);
+			v
+		},
 		hole_of: None
-	}];
-	let mut bounding_boxes: Vec<BoundingBox> = vec![];
+	});
+	let mut bounding_boxes: Vec<BoundingBox> = Vec::with_capacity(16);
 	// Which polygons are holes, and which polygons are they holes of?
-	let mut incomplete_polygons: Vec<SectorPolygon> = Vec::new();
+	let mut incomplete_polygons: Vec<SectorPolygon> = Vec::with_capacity(8);
 	let mut clockwise = false;
 	loop {
 		let mut poly_iter = polygons.last().unwrap().vertices.iter().copied().rev();
@@ -355,7 +361,12 @@ pub fn build_polygons(
 					}
 				});
 				polygons.push(SectorPolygon{
-					vertices: vec![first_edge.0, first_edge.1],
+					vertices: {
+						let mut v = Vec::with_capacity(64);
+						v.push(first_edge.0);
+						v.push(first_edge.1);
+						v
+					},
 					hole_of: inside_polygon_index
 				});
 			} else {
