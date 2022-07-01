@@ -7,7 +7,7 @@ use glutin::{
 use glow::HasContext;
 use glam::f32::Vec3;
 use png::{Decoder, Transformations};
-use doomwad::{wad::{DoomWadLump, LumpName, DoomWad, DoomWadCollection}, res::{read_texturex, PaletteCollection, ToImage, Image}};
+use doom_wad::{wad::{DoomWadLump, LumpName, DoomWad, DoomWadCollection}, res::{read_texturex, PaletteCollection, ToImage, Image}};
 
 mod window;
 mod renderer;

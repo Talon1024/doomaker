@@ -4,7 +4,7 @@ use crate::{
 	data::{Vertex, Line, Side, Sector, Thing},
 	property::{Properties, PropertyValue}
 };
-use doomwad::map::{
+use doom_wad::map::{
 	Vertex as DVVertex,
 	Linedef as DVLine,
 	Sidedef as DVSide,

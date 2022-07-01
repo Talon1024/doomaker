@@ -74,7 +74,9 @@ fn angle_between(
 }
 
 mod angle {
-	use std::cmp::{PartialOrd, PartialEq, Ordering::{self, *}};
+	use std::cmp::Ordering::{self, *};
+	use derive_deref::*;
+	#[derive(Debug, Clone, Copy, Deref)]
 	pub(super) struct Angle(f32);
 	impl PartialEq for Angle {
 		fn eq(&self, other: &Self) -> bool {

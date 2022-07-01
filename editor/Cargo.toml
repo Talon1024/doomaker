@@ -10,7 +10,7 @@ ahash = "0.7.6"
 macroquad = "0.3.16"
 egui-macroquad = "0.11.0"
 egui = "0.18.0"
-doomwad = {path = "../doom-wad"}
+doom-wad = {path = "../doom-wad"}
 map-to-3D = {path = "../map-to-3D"}
 anyhow = "1.0.56"
 glam = "0.14.0"

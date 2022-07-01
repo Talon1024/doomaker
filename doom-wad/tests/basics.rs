@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use doomwad::wad::*;
+	use doom_wad::wad::*;
 	use std::error::Error;
 	use std::fs::File;
 	use std::io::Read;

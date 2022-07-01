@@ -433,11 +433,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "doom64-hash"
-version = "0.1.0"
-
-[[package]]
-name = "doomwad"
+name = "doom-wad"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
@@ -445,6 +441,10 @@ dependencies = [
  "png 0.17.5",
  "thiserror",
 ]
+
+[[package]]
+name = "doom64-hash"
+version = "0.1.0"
 
 [[package]]
 name = "downcast-rs"
@@ -467,7 +467,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
  "anyhow",
- "doomwad",
+ "doom-wad",
  "egui",
  "egui-macroquad",
  "glam 0.14.0",
@@ -876,6 +876,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
  "cfg-if 1.0.0",
+ "derive_deref",
  "earcutr",
  "glam 0.14.0",
  "micromath",
@@ -1543,7 +1544,7 @@ dependencies = [
 name = "texbrowse"
 version = "0.1.0"
 dependencies = [
- "doomwad",
+ "doom-wad",
  "egui",
  "egui_glow",
  "glam 0.20.5",
