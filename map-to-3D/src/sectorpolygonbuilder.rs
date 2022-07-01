@@ -7,7 +7,7 @@ use crate::edge::{Edge, EdgeVertexIndex};
 use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
-use crate::util::vec2_angle;
+use crate::util::{vec2_angle, Angle};
 
 #[cfg(test)]
 mod tests;
@@ -53,7 +53,7 @@ fn angle_between(
 	p2: Vec2,
 	center: Vec2,
 	clockwise: bool
-) -> f32 {
+) -> Angle {
 	#[cfg(micromath)]
 	use micromath::F32;
 	let ac = p1 - center;
@@ -62,41 +62,7 @@ fn angle_between(
 	let ang = ac.angle_between(bc) *
 		if clockwise {-1.} else {1.};
 
-	if ang < 0.0 {
-		// For ordering purposes
-		ang + std::f32::consts::PI * 2.0
-	} else if ang == -0.0 {
-		panic!("Angle is -0.0");
-		// std::f32::consts::PI
-	} else {
-		ang
-	}
-}
-
-mod angle {
-	use std::cmp::Ordering::{self, *};
-	use derive_deref::*;
-	#[derive(Debug, Clone, Copy, Deref)]
-	pub(super) struct Angle(f32);
-	impl PartialEq for Angle {
-		fn eq(&self, other: &Self) -> bool {
-			self.0 == other.0
-		}
-	}
-	impl PartialOrd for Angle {
-		fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-			let result = self.0.partial_cmp(&other.0);
-			if self.0 > 0. && other.0 > 0. {
-				result
-			} else if self.0 < 0. && other.0 > 0. {
-				Some(Greater)
-			} else if self.0 < 0. && other.0 < 0. {
-				result.map(Ordering::reverse)
-			} else /*if self.0 > 0. && other.0 < 0.*/ {
-				Some(Less)
-			}
-		}
-	}
+	Angle(ang)
 }
 
 /// A Sector Polygon
@@ -343,7 +309,7 @@ pub fn build_polygons(
 			}
 		};
 		if new_polygon {
-			if let Some(first_edge) = find_next_start_edge(false, &edges_used, vertices) {
+			if let Some(first_edge) = find_next_start_edge(clockwise, &edges_used, vertices) {
 				let edge = Edge::from(first_edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
