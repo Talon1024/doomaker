@@ -3,20 +3,24 @@ use std::f32::consts::*;
 
 macro_rules! assert_gt {
 	($left:expr, $right:expr) => {
-		if $left > $right {
-			()
-		} else {
-			panic!("left <= right (left: {:?}, right: {:?})", $left, $right)
+		match (&$left, &$right) {
+			(left_val, right_val) => {
+				if left_val <= right_val {
+					panic!("left <= right (left: {:?}, right: {:?})", $left, $right)
+				}
+			}
 		}
 	};
 }
 
 macro_rules! assert_lt {
 	($left:expr, $right:expr) => {
-		if $left < $right {
-			()
-		} else {
-			panic!("left >= right (left: {:?}, right: {:?})", $left, $right)
+		match (&$left, &$right) {
+			(left_val, right_val) => {
+				if left_val >= right_val {
+					panic!("left >= right (left: {:?}, right: {:?})", $left, $right)
+				}
+			}
 		}
 	};
 }

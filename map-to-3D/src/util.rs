@@ -10,13 +10,14 @@ mod angle {
 		fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 			// Assuming all angles are in radians
 			let result = self.0.partial_cmp(&other.0);
-			if self.0 > 0. && other.0 > 0. {
-				result
-			} else if self.0 <= 0. && other.0 > 0. {
-				Some(Greater)
-			} else if self.0 >= 0. && other.0 < 0. {
-				Some(Less)
-			} else {
+			let self_sign = self.0.signum();
+			let other_sign = other.0.signum();
+			if self_sign != other_sign {
+				result.map(Ordering::reverse)
+			}/* else if (self.0.abs() == PI && other.0.abs() == PI) ||
+				(self.0.abs() == 0. && other.0.abs() == 0.) {
+				Some(Equal)
+			} */ else {
 				result
 			}
 		}
@@ -29,14 +30,14 @@ mod angle {
 		#[test]
 		fn angle_sort() -> Result<(), Box<dyn Error>> {
 			let mut angles = Box::<[Angle]>::from([
-				Angle(-3.125),
 				Angle(3.125),
 				Angle(2.75),
 				Angle(-2.75),
 				Angle(-0.125),
-				Angle(0.125),
 				Angle(1.75),
 				Angle(-2.25),
+				Angle(0.125),
+				Angle(-3.125),
 			]);
 			let expected = Box::<[Angle]>::from([
 				Angle(0.125),
@@ -58,15 +59,15 @@ mod angle {
 }
 pub use angle::Angle;
 
-pub fn vec2_angle(vec: Vec2) -> Angle {
+pub fn vec2_angle(vec: Vec2) -> f32 {
 	#[cfg(micromath)]
 	use micromath::F32;
 
 	cfg_if::cfg_if! {
 		if #[cfg(micromath)] {
-			Angle(F32(vec.y).atan2(F32(vec.x)).0)
+			F32(vec.y).atan2(F32(vec.x)).0
 		} else {
-			Angle(vec.y.atan2(vec.x))
+			vec.y.atan2(vec.x)
 		}
 	}
 }
