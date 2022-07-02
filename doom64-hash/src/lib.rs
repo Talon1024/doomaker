@@ -1,5 +1,6 @@
 #![warn(clippy::all)]
 //! Doom 64 texture name hashing
+use std::num::Wrapping;
 // Doom 64 texture hash algorithm - C++
 /*
 hash_(1315423911)
@@ -22,14 +23,14 @@ hash_ &= 0xffff;
 /// let hash = hash(&name);
 /// assert_eq!(hash, 44097);
 /// ```
-pub fn hash(name: &str) -> u16 {
-    let mut hash: u32 = 1315423911;
-    name.bytes().take(8).for_each(|c| {
-        hash ^= hash.wrapping_shl(5)
-            .wrapping_add(c.to_ascii_uppercase() as u32)
-            .wrapping_add(hash.wrapping_shr(2));
+pub fn hash(name: impl AsRef<[u8]>) -> u16 {
+    let mut hash: Wrapping<u32> = Wrapping(1315423911);
+    name.as_ref().iter().take(8).for_each(|c| {
+        hash ^= (hash << 5) +
+            Wrapping(c.to_ascii_uppercase() as u32) +
+            (hash >> 2);
     });
-    (hash & 0xffff) as u16
+    (hash.0 & 0xffff) as u16
 }
 
 #[cfg(test)]
@@ -73,7 +74,7 @@ mod tests {
         |(&name, &ohash)| -> Result<(), String> {
             let myhash = hash(name);
             if myhash != ohash {
-                Err(String::from("Hash does not match"))
+                Err(format!("Hash {} does not match {}", myhash, ohash))
             } else {
                 Ok(())
             }
