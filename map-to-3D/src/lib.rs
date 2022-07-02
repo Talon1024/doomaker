@@ -12,4 +12,4 @@ pub mod sectorpolygonbuilder;
 pub mod edge;
 // pub mod wall;
 // pub mod sector;
-pub mod util;
+pub(crate) mod util;

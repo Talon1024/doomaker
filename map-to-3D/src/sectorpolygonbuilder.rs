@@ -7,7 +7,7 @@ use crate::edge::{Edge, EdgeVertexIndex};
 use crate::boundingbox::BoundingBox;
 use std::collections::{HashMap, HashSet};
 use ahash::RandomState;
-use crate::util::vec2_angle;
+use crate::util::{vec2_angle, Angle};
 
 #[cfg(test)]
 mod tests;
@@ -53,7 +53,7 @@ fn angle_between(
 	p2: Vec2,
 	center: Vec2,
 	clockwise: bool
-) -> f32 {
+) -> Angle {
 	#[cfg(micromath)]
 	use micromath::F32;
 	let ac = p1 - center;
@@ -62,41 +62,7 @@ fn angle_between(
 	let ang = ac.angle_between(bc) *
 		if clockwise {-1.} else {1.};
 
-	if ang < 0.0 {
-		// For ordering purposes
-		ang + std::f32::consts::PI * 2.0
-	} else if ang == -0.0 {
-		panic!("Angle is -0.0");
-		// std::f32::consts::PI
-	} else {
-		ang
-	}
-}
-
-mod angle {
-	use std::cmp::Ordering::{self, *};
-	use derive_deref::*;
-	#[derive(Debug, Clone, Copy, Deref)]
-	pub(super) struct Angle(f32);
-	impl PartialEq for Angle {
-		fn eq(&self, other: &Self) -> bool {
-			self.0 == other.0
-		}
-	}
-	impl PartialOrd for Angle {
-		fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-			let result = self.0.partial_cmp(&other.0);
-			if self.0 > 0. && other.0 > 0. {
-				result
-			} else if self.0 < 0. && other.0 > 0. {
-				Some(Greater)
-			} else if self.0 < 0. && other.0 < 0. {
-				result.map(Ordering::reverse)
-			} else /*if self.0 > 0. && other.0 < 0.*/ {
-				Some(Less)
-			}
-		}
-	}
+	Angle(ang)
 }
 
 /// A Sector Polygon
@@ -343,7 +309,8 @@ pub fn build_polygons(
 			}
 		};
 		if new_polygon {
-			if let Some(first_edge) = find_next_start_edge(false, &edges_used, vertices) {
+			if let Some(first_edge) =
+				find_next_start_edge(clockwise, &edges_used, vertices) {
 				let edge = Edge::from(first_edge);
 				edges_used.insert(edge, true);
 				let mut inside_polygon_index: Option<usize> = None;
@@ -353,7 +320,8 @@ pub fn build_polygons(
 					let va = vertices[edge.lo()];
 					let vb = vertices[edge.hi()];
 					let mid = (va + vb) / 2.;
-					if boundingbox.is_inside(mid) && edge_in_polygon(&edge, &polygon.vertices, vertices) {
+					if boundingbox.is_inside(mid) &&
+					edge_in_polygon(&edge, &polygon.vertices, vertices) {
 						clockwise = !clockwise;
 						if clockwise {
 							inside_polygon_index = Some(index);
@@ -388,7 +356,7 @@ fn find_next_start_edge(
 	let usable_edges: HashMap<&Edge, &bool> = edges.iter()
 		.filter(|(&_key, &val)| val == false)
 		.collect();
-	let rightmost_vertex = usable_edges.keys()
+	let rightmost_vertex_index = usable_edges.keys()
 		// Find usable vertices by destructuring the edges
 		.fold(HashSet::<EdgeVertexIndex, RandomState>::default(), |mut set, &edge| {
 			edge.iter().for_each(|vertex_index| {
@@ -397,14 +365,14 @@ fn find_next_start_edge(
 			set
 		// Convert indices to vertices
 		}).into_iter().map(|i| MapVertex {p: vertices[i], i}).max()?.i;
+	let rightmost_vertex = vertices[rightmost_vertex_index];
 	let other_vertex = usable_edges.keys()
-		.filter(|&key| key.contains(rightmost_vertex))
-		.map(|&edge| edge.other_unchecked(rightmost_vertex))
+		.filter(|&key| key.contains(rightmost_vertex_index))
+		.map(|&edge| edge.other_unchecked(rightmost_vertex_index))
 		.reduce(|current_index, other_index| {
 			// To ensure the interior angle is counterclockwise, pick the
 			// connected vertex with the lowest angle. Necessary for proper
 			// 3d-ification
-			let rightmost_vertex = vertices[rightmost_vertex];
 			let current_vertex = vertices[current_index];
 			let other_vertex = vertices[other_index];
 			let current_angle = vec2_angle(rightmost_vertex - current_vertex);
@@ -420,7 +388,7 @@ fn find_next_start_edge(
 			}
 			current_index
 		})?;
-	Some((other_vertex, rightmost_vertex))
+	Some((other_vertex, rightmost_vertex_index))
 }
 
 fn find_next_vertex(
