@@ -198,14 +198,12 @@ mod tests {
 
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
-		let image_indexed = image.indexed.as_ref().unwrap();
-		let expec_indexed = expected.indexed.as_ref().unwrap();
 
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.indexed, expected.indexed);
 		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
@@ -231,14 +229,11 @@ mod tests {
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
-		let image_indexed = image.indexed.as_ref().unwrap();
-		let expec_indexed = expected.indexed.as_ref().unwrap();
-
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.indexed, expected.indexed);
 		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
@@ -264,14 +259,11 @@ mod tests {
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
-		let image_indexed = image.indexed.as_ref().unwrap();
-		let expec_indexed = expected.indexed.as_ref().unwrap();
-
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.indexed, expected.indexed);
 		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
@@ -297,14 +289,11 @@ mod tests {
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
-		let image_indexed = image.indexed.as_ref().unwrap();
-		let expec_indexed = expected.indexed.as_ref().unwrap();
-
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.indexed, expected.indexed);
 		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
@@ -330,14 +319,11 @@ mod tests {
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
-		let image_indexed = image.indexed.as_ref().unwrap();
-		let expec_indexed = expected.indexed.as_ref().unwrap();
-
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.indexed, expected.indexed);
 		assert_eq!(image.truecolor, expected.truecolor);
 	}
 }

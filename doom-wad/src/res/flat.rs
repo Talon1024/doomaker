@@ -70,12 +70,9 @@ mod tests {
 		let flat_image = FlatImage {lump: &flat_lump};
 		let flat_image = flat_image.to_image();
 
-		let expe_indexed = expected.indexed.as_ref().unwrap();
-		let flat_indexed = flat_image.indexed.as_ref().unwrap();
-
 		assert_eq!(flat_image.width, expected.width);
 		assert_eq!(flat_image.height, expected.height);
-		assert_eq!(flat_indexed, expe_indexed);
+		assert_eq!(flat_image.indexed, expected.indexed);
 	}
 
 	#[test]
@@ -100,12 +97,9 @@ mod tests {
 		let flat_image = FlatImage {lump: &flat_lump};
 		let flat_image = flat_image.to_image();
 
-		let expe_indexed = expected.indexed.as_ref().unwrap();
-		let flat_indexed = flat_image.indexed.as_ref().unwrap();
-
 		assert_eq!(flat_image.width, expected.width);
 		assert_eq!(flat_image.height, expected.height);
-		assert_eq!(flat_indexed, expe_indexed);
+		assert_eq!(flat_image.indexed, expected.indexed);
 	}
 
 	#[test]
@@ -135,11 +129,8 @@ mod tests {
 		let flat_image = FlatImage {lump: &flat_lump};
 		let flat_image = flat_image.to_image();
 
-		let expe_indexed = expected.indexed.as_ref().unwrap();
-		let flat_indexed = flat_image.indexed.as_ref().unwrap();
-
 		assert_eq!(flat_image.width, expected.width);
 		assert_eq!(flat_image.height, expected.height);
-		assert_eq!(flat_indexed, expe_indexed);
+		assert_eq!(flat_image.indexed, expected.indexed);
 	}
 }
