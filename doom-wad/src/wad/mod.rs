@@ -17,23 +17,23 @@ use crate::res::{TextureDefinitionsLumps, read_texturex};
 const IWAD_HEADER: &str = "IWAD";
 const PWAD_HEADER: &str = "PWAD";
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DoomWadType {
 	IWAD,
 	PWAD,
 	Invalid,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DoomWadLump {
 	pub name: LumpName,
 	pub data: Vec<u8>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DoomWad {
 	pub wtype: DoomWadType,
 	pub lumps: Vec<DoomWadLump>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct DoomWadDirEntry {
 	name: LumpName,
 	pos: u64,
@@ -291,21 +291,55 @@ impl<'a> Namespaced<'a> for DoomWad {
 	}
 }
  */
+
+#[derive(Debug, Clone, Deref, DerefMut, PartialEq, Eq)]
+pub struct Namespace<'a>(pub(crate) Vec<&'a DoomWadLump>);
+impl<'a> Namespace<'a> {
+	pub fn lump_map(&'a self) -> LumpMap<'a> {
+		let mut lump_map = LumpMap::default();
+		self.0.iter().for_each(|lump| {
+			lump_map.insert(lump.name, lump);
+		});
+		lump_map
+	}
+	pub fn get(
+		&'a self,
+		lump_name: LumpName,
+		map: Option<&'a (dyn GetLump<'a>)>
+	) -> Option<&'a DoomWadLump> {
+		if let Some(map) = map {
+			map.get_lump(lump_name)
+		} else {
+			self.get_lump(lump_name)
+		}
+	}
+}
+impl<'a> GetLump<'a> for Namespace<'a> {
+	fn get_lump(&'a self, lump_name: LumpName) -> Option<&'a DoomWadLump> {
+		self.0.iter().find(|lu| {
+			lu.name == lump_name
+		}).copied()
+	}
+}
+
 pub type NamespaceBounds<'a> = (&'a [LumpName], &'a [LumpName]);
 impl<'a> DoomWad {
-	pub fn namespace_lumps(&'a self, ns: NamespaceBounds, sub: Option<NamespaceBounds>) -> Vec<&'a DoomWadLump> {
+	pub fn namespace_lumps(&'a self,
+		ns: NamespaceBounds,
+		sub: Option<NamespaceBounds>
+	) -> Namespace<'a> {
 		let ns_index = self.lumps.iter().position(
 			|lu| ns.0.iter().any(|&n| n == lu.name));
 		if ns_index.is_none() {
-			return vec![];
+			return Namespace(vec![]);
 		}
 		let ns_index = ns_index.unwrap() + 1;
 		let ns_endindex = self.lumps.iter().skip(ns_index).position(
 			|lu| ns.1.iter().any(|&n| n == lu.name));
 		if ns_endindex.is_none() {
-			return vec![];
+			return Namespace(vec![]);
 		}
-		let ns_endindex = ns_index + ns_endindex.unwrap() - 1;
+		let ns_endindex = ns_index + ns_endindex.unwrap();
 		let ns_slice = &self.lumps[ns_index..ns_endindex];
 		let has_subsections = sub.is_some() && {
 			// The first lump after a namespace start marker can be a
@@ -317,7 +351,7 @@ impl<'a> DoomWad {
 				None => false,
 			}
 		};
-		if has_subsections {
+		Namespace(if has_subsections {
 			// Should be a vector of all the subsection slices
 			let sub = sub.unwrap();
 			let sub = sub.0.iter().chain(sub.1);
@@ -330,9 +364,9 @@ impl<'a> DoomWad {
 			}).collect()
 		} else {
 			ns_slice.iter().map(|lu| lu).collect()
-		}
+		})
 	}
-	pub fn ns_patches(&'a self) -> Vec<&'a DoomWadLump> {
+	pub fn ns_patches(&'a self) -> Namespace<'a> {
 		let patches_start = [b"P_START\0", b"PP_START"]
 			.map(|fu| LumpName::try_from(fu.as_slice()).unwrap());
 		let subsect_start = [b"P1_START", b"P2_START", b"P3_START"]
@@ -384,13 +418,12 @@ mod tests {
 				empty_lump!("P_END"),
 			],
 		};
-		let expected: Vec<&DoomWadLump> = (1..7).map(|index| {
+		let expected = Namespace((1..7).map(|index| {
 			&wad.lumps[index]
-		}).collect();
+		}).collect());
 		let actual = wad.ns_patches();
-		expected.into_iter().zip(actual).for_each(|(exp, act)| {
-			assert_eq!(exp.name, act.name);
-		});
+		assert_eq!(expected.len(), actual.len());
+		assert_eq!(expected, actual);
 		Ok(())
 	}
 
@@ -415,13 +448,11 @@ mod tests {
 				empty_lump!("P_END"),
 			],
 		};
-		let expected_slice: Vec<&DoomWadLump> =
+		let expected_slice = Namespace(
 		(2..4).chain(6..8).chain(10..12).map(
-			|index| &wad.lumps[index]).collect();
+			|index| &wad.lumps[index]).collect());
 		let actual_slice = wad.ns_patches();
-		expected_slice.into_iter().zip(actual_slice).for_each(|(exp, act)| {
-			assert_eq!(exp.name, act.name);
-		});
+		assert_eq!(expected_slice, actual_slice);
 		Ok(())
 	}
 }
