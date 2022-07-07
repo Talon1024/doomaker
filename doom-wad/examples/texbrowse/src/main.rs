@@ -36,9 +36,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 		let mut image = tex.to_image();
 		let Image {width, height, ..} = image;
 		image.to_rgb(wad_pal.as_ref().map(|pc| {pc.get(0).ok()}).flatten());
-		let channels = image.format.channels() as u8;
+		let channels = 4;
 		let bytes_per_channel = 1;
-		let tex = renderer::texture(&glc, &image.data, width as u32,
+		let image_data = image.truecolor.as_ref().unwrap().as_flat_samples();
+		let tex = renderer::texture(&glc, image_data.samples, width as u32,
 			height as u32, channels, bytes_per_channel)?;
 		let txid = egui_glow.painter.register_native_texture(tex);
 		Ok(egui::Image::new(txid, (width as f32, height as f32)))

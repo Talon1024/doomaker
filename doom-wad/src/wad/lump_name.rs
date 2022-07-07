@@ -1,4 +1,3 @@
-use std::error::Error;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]

@@ -1,5 +1,5 @@
 use crate::wad::DoomWadLump;
-use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension};
+use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension, IndexedBuffer};
 use std::io::{Read, Cursor, Seek, SeekFrom};
 use std::error::Error;
 
@@ -13,45 +13,6 @@ impl<'a> From<&'a DoomWadLump> for DoomPicture<'a> {
 		DoomPicture { lump: lump }
 	}
 }
-
-#[cfg(feature = "png")]
-impl<'a> DoomPicture<'a> {
-	const PNG_HEADER: [u8; 8] = *b"\x89PNG\r\n\x1A\n";
-	fn read_png(&self) -> Option<Image> {
-		let mut png_head_buf: [u8; 8] = [0; 8];
-		let mut pos = Cursor::new(&self.lump.data);
-		if pos.read_exact(&mut png_head_buf).is_err() {
-			return None;
-		}
-		if png_head_buf == Self::PNG_HEADER {
-			pos.set_position(0);
-			let transform = png::Transformations::normalize_to_color8();
-			let mut decoder = png::Decoder::new(pos);
-			decoder.set_transformations(transform);
-			let mut reader = decoder.read_info().ok()?;
-			let mut data = vec![0; reader.output_buffer_size()];
-			reader.next_frame(&mut data).ok()?;
-			let png::Info {width, height, ..} = *reader.info();
-			let (color_type, _bit_depth) = reader.output_color_type();
-			let format = match color_type {
-				png::ColorType::Rgb => Some(ImageFormat::RGB),
-				png::ColorType::Rgba => Some(ImageFormat::RGBA),
-				_ => None
-			}?;
-			Some(Image {
-				width: width as usize,
-				height: height as usize,
-				data,
-				x: 0, // Requires handling unknown chunks like grAb. The `png`
-				y: 0, // crate currently does not support unknown chunks
-				format,
-			})
-		} else {
-			None
-		}
-	}
-}
-
 
 impl<'a> ToImage for DoomPicture<'a> {
 	fn to_image(&self) -> Image {
@@ -68,15 +29,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 		let mut pos = Cursor::new(&self.lump.data);
 
 		// In case the patch is bad
-		let bad_image = Image {
-			width: 0, height: 0, x: 0, y: 0,
-			format: ImageFormat::Indexed, data: Vec::new()
-		};
-
-		#[cfg(feature = "png")]
-		if let Some(image) = self.read_png() {
-			return image;
-		}
+		let bad_image = Image::default();
 
 		let width = {
 			if pos.read_exact(&mut short_buffer).is_err() {
@@ -200,12 +153,18 @@ impl<'a> ToImage for DoomPicture<'a> {
 				chunk[0] = index; chunk[1] = alpha;
 			});
 			Image {
-				width, height, data: pixels, format,
+				width, height, indexed: Some(IndexedBuffer {
+					buffer: pixels.into_boxed_slice(),
+					alpha: true,
+				}), truecolor: None,
 				x: x as i32, y: y as i32
 			}
 		} else {  // Fully opaque
 			Image {
-				width, height, data, format,
+				width, height, indexed: Some(IndexedBuffer {
+					buffer: data.into_boxed_slice(),
+					alpha: false,
+				}), truecolor: None,
 				x: x as i32, y: y as i32
 			}
 		}
@@ -214,6 +173,7 @@ impl<'a> ToImage for DoomPicture<'a> {
 
 #[cfg(test)]
 mod tests {
+
 	use super::*;
 	use crate::wad::LumpName;
 
@@ -228,21 +188,25 @@ mod tests {
 			height: 128,
 			x: 64,
 			y: 123,
-			data: Vec::from(include_bytes!("../../tests/data/MOSSBRK8.raw").as_slice()),
-			format: ImageFormat::Indexed
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from(include_bytes!(
+					"../../tests/data/MOSSBRK8.raw").as_slice()),
+				alpha: false
+			}),
+			truecolor: None,
 		};
 
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
+		let image_indexed = image.indexed.as_ref().unwrap();
+		let expec_indexed = expected.indexed.as_ref().unwrap();
 
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image.format, expected.format);
-		assert_eq!(image.data.len(), expected.data.len());
-
-		assert!(image.data.iter().eq(expected.data.iter()));
+		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
 	#[test]
@@ -256,21 +220,26 @@ mod tests {
 			height: 128,
 			x: 64,
 			y: 123,
-			data: Vec::from(include_bytes!("../../tests/data/GRATE.raw").as_slice()),
-			format: ImageFormat::IndexedAlpha
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from(include_bytes!(
+					"../../tests/data/GRATE.raw").as_slice()),
+				alpha: true,
+			}),
+			truecolor: None,
 		};
 
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
+		let image_indexed = image.indexed.as_ref().unwrap();
+		let expec_indexed = expected.indexed.as_ref().unwrap();
+
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image.format, expected.format);
-		assert_eq!(image.data.len(), expected.data.len());
-
-		assert!(image.data.iter().eq(expected.data.iter()));
+		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
 	#[test]
@@ -284,21 +253,26 @@ mod tests {
 			height: 146,
 			x: -27,
 			y: -22,
-			data: Vec::from(include_bytes!("../../tests/data/SHTGC0.raw").as_slice()),
-			format: ImageFormat::IndexedAlpha
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from(include_bytes!(
+					"../../tests/data/SHTGC0.raw").as_slice()),
+				alpha: true,
+			}),
+			truecolor: None,
 		};
 
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
+		let image_indexed = image.indexed.as_ref().unwrap();
+		let expec_indexed = expected.indexed.as_ref().unwrap();
+
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image.format, expected.format);
-		assert_eq!(image.data.len(), expected.data.len());
-
-		assert!(image.data.iter().eq(expected.data.iter()));
+		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
 	#[test]
@@ -312,21 +286,26 @@ mod tests {
 			height: 335,
 			x: 138,
 			y: 331,
-			data: Vec::from(include_bytes!("../../tests/data/CYBRE1.raw").as_slice()),
-			format: ImageFormat::IndexedAlpha
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from(include_bytes!(
+					"../../tests/data/CYBRE1.raw").as_slice()),
+				alpha: true,
+			}),
+			truecolor: None,
 		};
 
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
+		let image_indexed = image.indexed.as_ref().unwrap();
+		let expec_indexed = expected.indexed.as_ref().unwrap();
+
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image.format, expected.format);
-		assert_eq!(image.data.len(), expected.data.len());
-
-		assert!(image.data.iter().eq(expected.data.iter()));
+		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.truecolor, expected.truecolor);
 	}
 
 	#[test]
@@ -340,20 +319,25 @@ mod tests {
 			height: 333,
 			x: -249,
 			y: 155,
-			data: Vec::from(include_bytes!("../../tests/data/TSWGB0.raw").as_slice()),
-			format: ImageFormat::IndexedAlpha
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from(include_bytes!(
+					"../../tests/data/TSWGB0.raw").as_slice()),
+				alpha: true,
+			}),
+			truecolor: None
 		};
 
 		let picture = DoomPicture {lump: &patch_lump};
 		let image = picture.to_image();
 
+		let image_indexed = image.indexed.as_ref().unwrap();
+		let expec_indexed = expected.indexed.as_ref().unwrap();
+
 		assert_eq!(image.width, expected.width);
 		assert_eq!(image.height, expected.height);
 		assert_eq!(image.x, expected.x);
 		assert_eq!(image.y, expected.y);
-		assert_eq!(image.format, expected.format);
-		assert_eq!(image.data.len(), expected.data.len());
-
-		assert!(image.data.iter().eq(expected.data.iter()));
+		assert_eq!(image_indexed.buffer, expec_indexed.buffer);
+		assert_eq!(image.truecolor, expected.truecolor);
 	}
 }

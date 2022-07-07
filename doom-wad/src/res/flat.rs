@@ -1,6 +1,8 @@
 // Flats are 64x64 graphics stored as indexed samples in row-major order.
 use crate::wad::DoomWadLump;
-use crate::res::{ToImage, Image, ImageFormat, ImageDimension};
+use crate::res::{ToImage, Image, ImageDimension};
+
+use super::IndexedBuffer;
 
 const MINIMUM_SIZE: usize = 64;
 // const MINIMUM_BYTES: usize = 4096; // 64 * 64
@@ -33,8 +35,10 @@ impl<'a> ToImage for FlatImage<'a> {
 		let mut data = vec![0; buflen];
 		let _ = &data[..len].copy_from_slice(&self.lump.data);
 		Image {
-			width, height, data, x: 0, y: 0,
-			format: ImageFormat::Indexed
+			width, height, indexed: Some(IndexedBuffer {
+				buffer: data.into_boxed_slice(),
+				alpha: false,
+			}), truecolor: None, x: 0, y: 0,
 		}
 	}
 }
@@ -55,19 +59,23 @@ mod tests {
 			height: 64,
 			x: 0,
 			y: 0,
-			data: Vec::from(include_bytes!("../../tests/data/TLITE6_5.flt").as_slice()),
-			format: ImageFormat::Indexed
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from(include_bytes!(
+					"../../tests/data/TLITE6_5.flt").as_slice()),
+				alpha: false,
+			}),
+			truecolor: None
 		};
 
 		let flat_image = FlatImage {lump: &flat_lump};
 		let flat_image = flat_image.to_image();
 
+		let expe_indexed = expected.indexed.as_ref().unwrap();
+		let flat_indexed = flat_image.indexed.as_ref().unwrap();
+
 		assert_eq!(flat_image.width, expected.width);
 		assert_eq!(flat_image.height, expected.height);
-		assert_eq!(flat_image.format, expected.format);
-		assert_eq!(flat_image.data.len(), expected.data.len());
-
-		assert!(flat_lump.data.iter().eq(expected.data.iter()));
+		assert_eq!(flat_indexed, expe_indexed);
 	}
 
 	#[test]
@@ -82,19 +90,22 @@ mod tests {
 			height: 1,
 			x: 0,
 			y: 0,
-			data: Vec::<u8>::from([83, 75, 89, 10]),
-			format: ImageFormat::Indexed
+			indexed: Some(IndexedBuffer {
+				buffer: Box::from([83, 75, 89, 10]),
+				alpha: false,
+			}),
+			truecolor: None,
 		};
 
 		let flat_image = FlatImage {lump: &flat_lump};
 		let flat_image = flat_image.to_image();
 
+		let expe_indexed = expected.indexed.as_ref().unwrap();
+		let flat_indexed = flat_image.indexed.as_ref().unwrap();
+
 		assert_eq!(flat_image.width, expected.width);
 		assert_eq!(flat_image.height, expected.height);
-		assert_eq!(flat_image.format, expected.format);
-		assert_eq!(flat_image.data.len(), expected.data.len());
-
-		assert!(flat_lump.data.iter().eq(expected.data.iter()));
+		assert_eq!(flat_indexed, expe_indexed);
 	}
 
 	#[test]
@@ -109,23 +120,26 @@ mod tests {
 			height: 2,
 			x: 0,
 			y: 0,
-			data: {
-				let mut v = Vec::from(include_bytes!("../../tests/data/INCOMPLE.flt").as_slice());
-				let vl = v.len();
-				v.extend(vec![0; 64 * 2 - vl]); // v should be 128 bytes long at this point
-				v
-			},
-			format: ImageFormat::Indexed
+			indexed: Some(IndexedBuffer {
+				buffer: {
+					let mut v = Vec::from(include_bytes!("../../tests/data/INCOMPLE.flt").as_slice());
+					let vl = v.len();
+					v.extend(vec![0; 64 * 2 - vl]); // v should be 128 bytes long at this point
+					v.into_boxed_slice()
+				},
+				alpha: false,
+			}),
+			truecolor: None,
 		};
 
 		let flat_image = FlatImage {lump: &flat_lump};
 		let flat_image = flat_image.to_image();
 
+		let expe_indexed = expected.indexed.as_ref().unwrap();
+		let flat_indexed = flat_image.indexed.as_ref().unwrap();
+
 		assert_eq!(flat_image.width, expected.width);
 		assert_eq!(flat_image.height, expected.height);
-		assert_eq!(flat_image.format, expected.format);
-		assert_eq!(flat_image.data.len(), expected.data.len());
-
-		assert!(flat_image.data.iter().eq(expected.data.iter()));
+		assert_eq!(flat_indexed, expe_indexed);
 	}
 }

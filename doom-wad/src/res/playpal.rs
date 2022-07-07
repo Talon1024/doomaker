@@ -5,7 +5,8 @@
 use crate::wad::DoomWadLump;
 use std::error::Error;
 use std::fmt;
-use crate::res::{Image, ToImage, ImageFormat, ImageDimension};
+use crate::res::{Image, ToImage, ImageDimension};
+use image::RgbaImage;
 
 const BYTES_PER_PALETTE: usize = 768; // 256 colors * RGB channels
 
@@ -56,13 +57,15 @@ impl PaletteCollection<'_> {
 impl<'a> ToImage for PaletteCollection<'a> {
 	fn to_image(&self) -> Image {
 		let rows = self.count() as ImageDimension;
-		let rgb: Vec<u8> = self.lump.data.clone();
+		let rgba: Vec<u8> = self.lump.data.chunks_exact(3)
+		.flat_map(|ch| { [ch[0], ch[1], ch[2], 255] })
+		.collect();
 		Image {
 			width: 256,
 			height: rows,
-			data: rgb,
+			indexed: None,
+			truecolor: RgbaImage::from_vec(256, rows as u32, rgba),
 			x: 0, y: 0,
-			format: ImageFormat::RGB
 		}
 	}
 }
