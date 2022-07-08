@@ -256,6 +256,12 @@ impl<'a> DoomWadCollection {
 	}
 }
 
+impl<'a> Namespaced<'a> for DoomWadCollection {
+	fn namespace(&'a self, namespace: &str) -> Namespace<'a> {
+		let namespaces = self.0.iter().map(|wad| wad.namespace(namespace).0);
+		Namespace(namespaces.flatten().collect())
+	}
+}
 
 impl<'a> Namespaced<'a> for DoomWad {
 	fn namespace(&'a self, namespace: &str) -> Namespace<'a> {
