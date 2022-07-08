@@ -82,10 +82,10 @@ mod tests {
 
 	#[test]
 	fn lump_name_to_string() -> Result<(), Box<dyn Error>> {
-		let short_name = LumpName::try_from([0x43, 0x52, 0x41, 0x50, 0, 0, 0, 0].as_slice())?; // CRAP
+		let short_name = LumpName::try_from(b"CRAP\0\0\0\0".as_slice())?;
 		let crap = short_name.to_string();
 		assert_eq!(crap.len(), 4);
-		let long_name = LumpName::try_from([0x4E, 0x55, 0x54, 0x53, 0x43, 0x41, 0x53, 0x45].as_slice())?; // NUTSCASE
+		let long_name = LumpName::try_from(b"NUTSCASE".as_slice())?;
 		let nutcase = long_name.to_string();
 		assert_eq!(nutcase.len(), 8);
 		Ok(())
@@ -94,8 +94,7 @@ mod tests {
 	#[test]
 	fn string_to_lump_name() -> Result<(), Box<dyn Error>> {
 		use LumpNameConvertError::{self, *};
-		let orig_name = LumpName::try_from([ // CRAP
-			0x43, 0x52, 0x41, 0x50, 0, 0, 0, 0].as_slice())?;
+		let orig_name = LumpName::try_from(b"CRAP\0\0\0\0".as_slice())?;
 		let lump_name = LumpName::try_from("Crap")?;
 		assert_eq!(lump_name, orig_name);
 
@@ -104,13 +103,11 @@ mod tests {
 		assert_eq!(lump_name, orig_name);
 
 		let lump_name = LumpName::try_from("Superduper")?;
-		let orig_name = LumpName::try_from( // SUPERDUP
-			b"SUPERDUP".as_slice())?;
+		let orig_name = LumpName::try_from(b"SUPERDUP".as_slice())?;
 		assert_eq!(lump_name, orig_name);
 
 		let lump_name = LumpName::try_from("TRUCKING")?;
-		let orig_name = LumpName::try_from( // TRUCKING
-			b"TRUCKING".as_slice())?;
+		let orig_name = LumpName::try_from(b"TRUCKING".as_slice())?;
 		assert_eq!(lump_name, orig_name);
 
 		let invalid_name = LumpName::try_from("😈's lair");
@@ -133,7 +130,7 @@ pub fn lump_name(slice: &[u8]) -> Vec<u8> {
 pub fn str_to_lump_name(name: &str) -> [u8; 8] {
 	let mut lump_name: [u8; 8] = [0; 8];
 	let slen = name.len().min(8);
-	let (mut left, _) = lump_name.split_at_mut(slen);
+	let (left, _) = lump_name.split_at_mut(slen);
 	left.copy_from_slice(&name.as_bytes()[0..slen]);
 	lump_name
 }
