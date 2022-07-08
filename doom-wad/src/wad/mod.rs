@@ -181,7 +181,7 @@ impl DoomWad {
 }
 
 pub trait Namespaced<'a> {
-	fn namespace(&'a self, namespace: &str) -> Vec<&'a DoomWadLump>;
+	fn namespace(&'a self, namespace: &str) -> Namespace<'a>;
 }
 
 #[derive(Debug, Default, Deref, DerefMut)]
@@ -256,41 +256,47 @@ impl<'a> DoomWadCollection {
 	}
 }
 
-/* 
+
 impl<'a> Namespaced<'a> for DoomWad {
-	fn namespace(&'a self, namespace: &str) -> Vec<&'a DoomWadLump> {
-		let bounds: Option<NamespaceBounds> = match namespace {
+	fn namespace(&'a self, namespace: &str) -> Namespace<'a> {
+		let bounds = match namespace {
 			"patches" => Some((
-				&[LumpName(*b"P_START\0"), LumpName(*b"PP_START")],
-				&[LumpName(*b"P_END\0\0\0"), LumpName(*b"PP_END\0\0")])),
+				vec![LumpName(*b"P_START\0"), LumpName(*b"PP_START")],
+				vec![LumpName(*b"P_END\0\0\0"), LumpName(*b"PP_END\0\0")])),
 			"flats" => Some((
-				&[LumpName(*b"F_START\0"), LumpName(*b"FF_START")],
-				&[LumpName(*b"F_END\0\0\0"), LumpName(*b"FF_END\0\0")])),
+				vec![LumpName(*b"F_START\0"), LumpName(*b"FF_START")],
+				vec![LumpName(*b"F_END\0\0\0"), LumpName(*b"FF_END\0\0")])),
 			"sprites" => Some((
-				&[LumpName(*b"S_START\0")], &[LumpName(*b"S_END\0\0\0")])),
+				vec![LumpName(*b"S_START\0")],
+				vec![LumpName(*b"S_END\0\0\0")])),
 			_ => None,
 		};
-		let subsections: Option<NamespaceBounds> = match namespace {
+		let bounds = bounds.as_ref().map(|(start, end)| {
+			(start.as_slice(), end.as_slice())
+		});
+		let subsections = match namespace {
 			"patches" => Some((
-				&[LumpName(*b"P1_START"), LumpName(*b"P2_START"),
+				vec![LumpName(*b"P1_START"), LumpName(*b"P2_START"),
 					LumpName(*b"P3_START")],
-				&[LumpName(*b"P1_END\0\0"), LumpName(*b"P2_END\0\0"),
+				vec![LumpName(*b"P1_END\0\0"), LumpName(*b"P2_END\0\0"),
 					LumpName(*b"P3_END\0\0")])),
 			"flats" => Some((
-				&[LumpName(*b"F1_START"), LumpName(*b"F2_START"),
-				LumpName(*b"F3_START")],
-				&[LumpName(*b"F1_END\0\0"), LumpName(*b"F2_END\0\0"),
-				LumpName(*b"F3_END\0\0")])),
+				vec![LumpName(*b"F1_START"), LumpName(*b"F2_START"),
+					LumpName(*b"F3_START")],
+				vec![LumpName(*b"F1_END\0\0"), LumpName(*b"F2_END\0\0"),
+					LumpName(*b"F3_END\0\0")])),
 			_ => None
 		};
+		let subsections = subsections.as_ref().map(|(start, end)|{
+			(start.as_slice(), end.as_slice())
+		});
 		if let Some(bounds) = bounds {
 			self.namespace_lumps(bounds, subsections)
 		} else {
-			vec![]
+			Namespace(vec![])
 		}
 	}
 }
- */
 
 #[derive(Debug, Clone, Deref, DerefMut, PartialEq, Eq)]
 pub struct Namespace<'a>(pub(crate) Vec<&'a DoomWadLump>);
