@@ -28,10 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let wads = DoomWadCollection(vec![DoomWad::load_sync("../../tests/data/3difytest.wad")?]);
 	let wad_lumps = wads.lump_map();
 	let wad_pal = wads.playpal(Some(&wad_lumps)).map(PaletteCollection::from);
-	let wad_patches = wads.namespace("patches").map(|mut ns| {
-		ns.0.extend(wads.namespace("sprites").iter());
-		ns
-	}).ok_or("No patches!")?;
+	let wad_patches = wads.namespace("patches").ok_or("No patches!")?;
 	let wad_textures = wads.textures(Some(&wad_lumps), &wad_patches).ok_or("No PNAMES!")?;
 	let textures = wad_textures.tex_map();
 	let mut tex_names = Vec::new();
