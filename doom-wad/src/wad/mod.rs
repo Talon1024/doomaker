@@ -6,7 +6,7 @@ use std::{
 	result::Result,
 	str::from_utf8,
 	error::Error,
-	fmt::{Display, Formatter}, collections::HashMap, path::Path
+	fmt::{Display, Formatter}, collections::HashMap, path::Path,
 };
 use ahash::RandomState;
 pub use lump_name::{LumpName, LumpNameConvertError};
@@ -180,11 +180,12 @@ impl DoomWad {
 	}
 }
 
+pub type Namespaces<'a> = HashMap<String, Namespace<'a>, RandomState>;
 pub trait Namespaced<'a> {
-	fn namespace(&'a self, namespace: &str) -> Namespace<'a>;
+	fn namespace(&'a self, namespace: &str) -> Option<Namespace<'a>>;
 }
 
-#[derive(Debug, Default, Deref, DerefMut)]
+#[derive(Default, Debug, Deref, DerefMut)]
 pub struct DoomWadCollection(pub Vec<DoomWad>);
 
 pub trait GetLump<'a> {
@@ -243,7 +244,8 @@ impl<'a> DoomWadCollection {
 		self.get(playpal, map)
 	}
 	pub fn textures(
-		&'a self, map: Option<&'a (dyn GetLump<'a>)>
+		&'a self, map: Option<&'a (dyn GetLump<'a>)>,
+		patches: &'a Namespace<'a>
 	) -> Option<TextureDefinitionsLumps<'a>> {
 		let pnames = LumpName(*b"PNAMES\0\0");
 		let tex_lumps = [LumpName(*b"TEXTURE1"), LumpName(*b"TEXTURE2"),
@@ -251,20 +253,23 @@ impl<'a> DoomWadCollection {
 		let pnames = self.get(pnames, map)?;
 		Some(TextureDefinitionsLumps(tex_lumps.iter().filter_map(|&name| {
 			let lump = self.get(name, map)?;
-			read_texturex(lump, pnames, map.unwrap_or(self)).ok()
+			read_texturex(lump, pnames, patches).ok()
 		}).collect()))
 	}
 }
 
 impl<'a> Namespaced<'a> for DoomWadCollection {
-	fn namespace(&'a self, namespace: &str) -> Namespace<'a> {
-		let namespaces = self.0.iter().map(|wad| wad.namespace(namespace).0);
-		Namespace(namespaces.flatten().collect())
+	fn namespace(&'a self, namespace: &str) -> Option<Namespace<'a>> {
+		let ns = Namespace(self.0.iter().filter_map(|w| {
+			let ns = w.namespace(namespace)?;
+			Some(ns.0)
+		}).flatten().collect());
+		Some(ns)
 	}
 }
 
 impl<'a> Namespaced<'a> for DoomWad {
-	fn namespace(&'a self, namespace: &str) -> Namespace<'a> {
+	fn namespace(&'a self, namespace: &str) -> Option<Namespace<'a>> {
 		let bounds = match namespace {
 			"patches" => Some((
 				vec![LumpName(*b"P_START\0"), LumpName(*b"PP_START")],
@@ -275,6 +280,12 @@ impl<'a> Namespaced<'a> for DoomWad {
 			"sprites" => Some((
 				vec![LumpName(*b"S_START\0")],
 				vec![LumpName(*b"S_END\0\0\0")])),
+			"voices" => Some((
+				vec![LumpName(*b"V_START\0")],
+				vec![LumpName(*b"V_END\0\0\0")])),
+			"voxels" => Some((
+				vec![LumpName(*b"VX_START")],
+				vec![LumpName(*b"VX_END\0\0")])),
 			_ => None,
 		};
 		let bounds = bounds.as_ref().map(|(start, end)| {
@@ -297,15 +308,15 @@ impl<'a> Namespaced<'a> for DoomWad {
 			(start.as_slice(), end.as_slice())
 		});
 		if let Some(bounds) = bounds {
-			self.namespace_lumps(bounds, subsections)
+			Some(self.namespace_lumps(bounds, subsections))
 		} else {
-			Namespace(vec![])
+			None
 		}
 	}
 }
 
 #[derive(Debug, Clone, Deref, DerefMut, PartialEq, Eq)]
-pub struct Namespace<'a>(pub(crate) Vec<&'a DoomWadLump>);
+pub struct Namespace<'a>(pub Vec<&'a DoomWadLump>);
 impl<'a> Namespace<'a> {
 	pub fn lump_map(&'a self) -> LumpMap<'a> {
 		let mut lump_map = LumpMap::default();
@@ -324,6 +335,9 @@ impl<'a> Namespace<'a> {
 		} else {
 			self.get_lump(lump_name)
 		}
+	}
+	pub fn iter(&'a mut self) -> std::slice::Iter<&'a DoomWadLump> {
+		self.0.iter()
 	}
 }
 impl<'a> GetLump<'a> for Namespace<'a> {
