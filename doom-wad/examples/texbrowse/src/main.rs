@@ -21,7 +21,8 @@ type VecResult<T> = Result<Vec<T>, Box<dyn Error>>;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	// STEP: Set up window and context
-	let (glc, ctx, el) = window::init_window(Some([720., 500.]))?;
+	let (wid, hei) = (720, 500);
+	let (glc, ctx, el) = window::init_window(Some([wid as f32, hei as f32]))?;
 	let glc = Rc::from(glc);
 	let mut egui_glow = EguiGlow::new(ctx.window(), Rc::clone(&glc));
 	let _user_event = el.create_proxy();
@@ -79,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	my_rect.setup(&glc)?;
 	// STEP: Initial OpenGL calls
 	unsafe {
-		glc.viewport(0, 0, 550, 300);
+		glc.viewport(0, 0, wid, hei);
 		glc.clear_buffer_f32_slice(glow::DEPTH, 0, &[0.0f32]);
 		glc.clear_buffer_f32_slice(glow::COLOR, 0, &[0.0f32]);
 		glc.enable(glow::DEPTH_TEST);
