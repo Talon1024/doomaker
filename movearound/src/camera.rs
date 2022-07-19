@@ -37,10 +37,13 @@ impl Camera {
 		Mat4::perspective_lh(self.fovy, self.asra, self.near, self.far)
 	}
 
+	pub fn ori_quat(&self) -> Quat {
+		Quat::from_euler(EulerRot::XYZ,
+			self.ori.y, 0., self.ori.x)
+	}
+
 	pub fn view(&self) -> Mat4 {
-		let ori = Quat::from_euler(EulerRot::XYZ,
-			self.ori.y, 0., self.ori.x);
-		Mat4::from_rotation_translation(ori, self.pos)
+		Mat4::from_quat(self.ori_quat()) * Mat4::from_translation(self.pos)
 	}
 
 	pub fn rotate(&mut self, x: f32, y: f32) {

@@ -127,11 +127,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 							*control_flow = ControlFlow::Exit;
 						},
 						KeyboardInput { device_id: _, input, is_synthetic: _ } => {
-							if matches!(input.virtual_keycode, Some(VKC::Escape)) && pointer_lock {
-								pointer_lock = false;
-								// ctx.window() must be used because otherwise
-								// "borrowed value does not live long enough"
-								ctx.window().set_cursor_visible(true);
+							if pointer_lock {
+								match input.virtual_keycode {
+									Some(VKC::Escape) => {
+										pointer_lock = false;
+										// ctx.window() must be used because otherwise
+										// "borrowed value does not live long enough"
+										ctx.window().set_cursor_visible(true);
+									},
+									Some(VKC::W) => {
+										let direction =
+											camera.ori_quat().mul_vec3(Vec3::new(0., 1., 0.));
+										camera.pos += direction;
+									}
+									_ => (),
+								}
 							}
 						},
 						MouseInput { state, button, .. } => {
