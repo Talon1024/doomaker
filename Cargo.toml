@@ -5,5 +5,6 @@ members = [
     "map-to-3D",
     "doom64-hash",
     "editor",
-    "doom-wad/examples/texbrowse"
+    "doom-wad/examples/texbrowse",
+    "movearound"
 ]
