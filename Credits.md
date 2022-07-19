@@ -1,0 +1,1 @@
+Credit for the [background image in cube256.png](https://webbtelescope.org/contents/media/images/2022/031/01G77PKB8NKR7S8Z6HBXMYATGJ) goes to [NASA](https://www.nasa.gov) and the [Space Telescope Science Institute](https://www.stsci.edu/).

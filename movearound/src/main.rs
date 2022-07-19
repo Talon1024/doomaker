@@ -108,7 +108,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 	}
 	// STEP: Load WAD and textures
 	// TODO: TextureBrowser struct
-	// let mut debug_window_mtx_choice = MatrixChoice::default();
 	el.run(move |event, _, control_flow| {
 		match event {
 			glutin::event::Event::WindowEvent { window_id: _window_id, event } => {
@@ -130,6 +129,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 						KeyboardInput { device_id: _, input, is_synthetic: _ } => {
 							if matches!(input.virtual_keycode, Some(VKC::Escape)) && pointer_lock {
 								pointer_lock = false;
+								// ctx.window() must be used because otherwise
+								// "borrowed value does not live long enough"
+								ctx.window().set_cursor_visible(true);
 							}
 						},
 						MouseInput { state, button, .. } => {
@@ -137,6 +139,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 								(ElementState::Pressed, MouseButton::Left) => {
 									if !pointer_lock {
 										pointer_lock = true;
+										ctx.window().set_cursor_visible(false);
 									}
 								},
 								_ => ()
@@ -151,6 +154,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 				match event {
 					DeviceEvent::MouseMotion { delta: (x, y) } => {
 						if pointer_lock {
+							use glutin::dpi::{LogicalPosition, LogicalSize};
+
+							let winscale = ctx.window().scale_factor();
+							let winsize: LogicalSize<f64> = ctx.window().inner_size()
+								.to_logical(winscale);
+							let winsize = [winsize.width / 2., winsize.height / 2.];
+							if let Err(e) = ctx.window().set_cursor_position(LogicalPosition::<f64>::from(winsize)) {
+								eprintln!("{:?}", e);
+							}
 							camera.rotate(x as f32, y as f32);
 						}
 					},
