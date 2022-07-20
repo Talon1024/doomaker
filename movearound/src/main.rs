@@ -8,7 +8,6 @@ use egui_glow::EguiGlow;
 use glutin::event_loop::ControlFlow;
 use glow::HasContext;
 use glam::f32::{Vec2, Vec3};
-use debugs::quat_debug_window;
 
 mod window;
 mod renderer;
@@ -16,6 +15,8 @@ mod camera;
 mod util;
 mod debugs;
 
+use util::fov_x_to_y;
+use debugs::quat_debug_window;
 use renderer::{Data3D, Vertex3D, Renderable};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -88,7 +89,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut pointer_lock = false;
 	let asra = wid as f32 / hei as f32;
 	let mut camera = camera::Camera {
-		fovy: util::fov_x_to_y(100., asra).to_radians(),
+		fovy: fov_x_to_y(100., asra).to_radians(),
 		asra,
 		near: 0.125,
 		far: 10000.0,
@@ -131,7 +132,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 							*control_flow = ControlFlow::Exit;
 						},
 						KeyboardInput { device_id: _, input, is_synthetic: _ } => {
-							if pointer_lock {
+							use glutin::event::ElementState::Pressed;
+							if pointer_lock && matches!(input.state, Pressed) {
 								match input.virtual_keycode {
 									Some(VKC::Escape) => {
 										pointer_lock = false;
@@ -140,8 +142,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 										ctx.window().set_cursor_visible(true);
 									},
 									Some(VKC::W) => {
-										let direction =
-											camera.ori_quat().mul_vec3(Vec3::new(0., 1., 0.));
+										let direction = camera.direction();
 										camera.pos += direction;
 									},
 									Some(VKC::S) => {

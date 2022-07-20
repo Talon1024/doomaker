@@ -1,7 +1,7 @@
 use glam::{EulerRot, f32::{Vec2, Vec3, Mat4, Quat}};
 use glow::{Context, HasContext, NativeUniformLocation};
 use crate::renderer::UniformDataSource;
-use std::f32::consts::{PI, TAU};
+use std::f32::consts::{PI, TAU, FRAC_PI_2};
 
 #[derive(Debug, Clone, Default)]
 pub struct Camera {
@@ -38,12 +38,10 @@ impl Camera {
 	}
 
 	pub fn ori_quat(&self) -> Quat {
-		/*
 		// Original working code
-		Quat::from_rotation_x(PI + self.ori.y) *
-		Quat::from_rotation_z(self.ori.x)
-		*/
-		Quat::from_euler(EulerRot::XYZ, PI + self.ori.y, 0., self.ori.x)
+		// Quat::from_rotation_x(-self.ori.y) *
+		// Quat::from_rotation_z(-self.ori.x - FRAC_PI_2)
+		Quat::from_euler(EulerRot::XYZ, -self.ori.y, 0., -self.ori.x - FRAC_PI_2)
 	}
 
 	pub fn view(&self) -> Mat4 {
@@ -51,9 +49,19 @@ impl Camera {
 	}
 
 	pub fn rotate(&mut self, x: f32, y: f32) {
-		self.ori.x += (x * MOUSE_FACTOR) as f32;
+		self.ori.x -= (x * MOUSE_FACTOR) as f32;
 		self.ori.x = self.ori.x.rem_euclid(TAU);
-		self.ori.y += (y * MOUSE_FACTOR) as f32;
+		self.ori.y -= (y * MOUSE_FACTOR) as f32;
 		self.ori.y = self.ori.y.clamp(0., PI);
+	}
+
+	pub fn direction(&self) -> Vec3 {
+		let (th, ph) = (self.ori.x, self.ori.y);
+		let (tc, ts, pc, ps) = (th.cos(), th.sin(), ph.cos(), ph.sin());
+		Vec3::new(
+			tc * ps,
+			ts * ps,
+			pc
+		)
 	}
 }
