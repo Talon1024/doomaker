@@ -40,10 +40,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 			Vertex3D {position: Vec3::new(10., 10., 10.), uv: Vec2::new(1., 0.), ..Default::default()},
 
 			//-Z
-			Vertex3D {position: Vec3::new(-10., 10., -10.), uv: Vec2::new(0.6666666666, 0.5), ..Default::default()},
-			Vertex3D {position: Vec3::new(-10., -10., -10.), uv: Vec2::new(0.6666666666, 1.), ..Default::default()},
-			Vertex3D {position: Vec3::new(10., -10., -10.), uv: Vec2::new(1., 1.), ..Default::default()},
-			Vertex3D {position: Vec3::new(10., 10., -10.), uv: Vec2::new(1., 0.5), ..Default::default()},
+			Vertex3D {position: Vec3::new(10., 10., -10.), uv: Vec2::new(0.6666666666, 0.5), ..Default::default()},
+			Vertex3D {position: Vec3::new(10., -10., -10.), uv: Vec2::new(0.6666666666, 1.), ..Default::default()},
+			Vertex3D {position: Vec3::new(-10., -10., -10.), uv: Vec2::new(1., 1.), ..Default::default()},
+			Vertex3D {position: Vec3::new(-10., 10., -10.), uv: Vec2::new(1., 0.5), ..Default::default()},
 
 			//+Y
 			Vertex3D {position: Vec3::new(10., 10., 10.), uv: Vec2::new(0.3333333333, 0.), ..Default::default()},

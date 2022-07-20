@@ -1,7 +1,7 @@
-use glam::{EulerRot,f32::{Vec2, Vec3, Mat4, Quat}};
+use glam::{EulerRot, f32::{Vec2, Vec3, Mat4, Quat}};
 use glow::{Context, HasContext, NativeUniformLocation};
 use crate::renderer::UniformDataSource;
-use std::f32::consts::{PI, TAU, FRAC_PI_2};
+use std::f32::consts::{PI, TAU};
 
 #[derive(Debug, Clone, Default)]
 pub struct Camera {
@@ -38,8 +38,12 @@ impl Camera {
 	}
 
 	pub fn ori_quat(&self) -> Quat {
+		/*
+		// Original working code
 		Quat::from_rotation_x(PI + self.ori.y) *
 		Quat::from_rotation_z(self.ori.x)
+		*/
+		Quat::from_euler(EulerRot::XYZ, PI + self.ori.y, 0., self.ori.x)
 	}
 
 	pub fn view(&self) -> Mat4 {
