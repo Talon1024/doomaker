@@ -2,18 +2,19 @@ use std::{
 	error::Error,
 	rc::Rc,
 	fs::File,
+	f32::consts::FRAC_PI_2
 };
 use egui_glow::EguiGlow;
 use glutin::event_loop::ControlFlow;
 use glow::HasContext;
 use glam::f32::{Vec2, Vec3};
-// use matrix_debug::{MatrixChoice, matrix_debug_window};
+use debugs::quat_debug_window;
 
 mod window;
 mod renderer;
 mod camera;
 mod util;
-// mod matrix_debug;
+mod debugs;
 
 use renderer::{Data3D, Vertex3D, Renderable};
 
@@ -91,6 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		asra,
 		near: 0.0625,
 		far: 10000.0,
+		ori: Vec2::new(0., FRAC_PI_2),
 		uniloc: my_cube.program.and_then(|prog| {
 			unsafe { glc.get_uniform_location(prog, "u_projview") }
 		}),
@@ -139,7 +141,32 @@ fn main() -> Result<(), Box<dyn Error>> {
 										let direction =
 											camera.ori_quat().mul_vec3(Vec3::new(0., 1., 0.));
 										camera.pos += direction;
-									}
+									},
+									Some(VKC::S) => {
+										let direction =
+											camera.ori_quat().mul_vec3(Vec3::new(0., -1., 0.));
+										camera.pos += direction;
+									},
+									Some(VKC::A) => {
+										let direction =
+											camera.ori_quat().mul_vec3(Vec3::new(-1., 0., 0.));
+										camera.pos += direction;
+									},
+									Some(VKC::D) => {
+										let direction =
+											camera.ori_quat().mul_vec3(Vec3::new(1., 0., 0.));
+										camera.pos += direction;
+									},
+									Some(VKC::Q) => {
+										let direction =
+											camera.ori_quat().mul_vec3(Vec3::new(0., 0., 1.));
+										camera.pos += direction;
+									},
+									Some(VKC::Z) => {
+										let direction =
+											camera.ori_quat().mul_vec3(Vec3::new(0., 0., -1.));
+										camera.pos += direction;
+									},
 									_ => (),
 								}
 							}
@@ -206,6 +233,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 							});
 						});
 					});
+					quat_debug_window(&camera, ectx);
 					// matrix_debug_window(&camera, ectx, &mut debug_window_mtx_choice);
 				});
 				egui_glow.paint(ctx.window());

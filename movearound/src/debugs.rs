@@ -45,3 +45,15 @@ pub fn matrix_debug_window(camera: &Camera, ectx: &EContext, choice: &mut Matrix
 		});
 	});
 }
+
+pub fn quat_debug_window(camera: &Camera, ectx: &EContext) {
+	let ori = camera.ori_quat();
+	egui::Window::new("camquat").show(ectx, |ui| {
+		ui.horizontal(|ui| {
+			ui.label(format!("{:12.7}", ori.x));
+			ui.label(format!("{:12.7}", ori.y));
+			ui.label(format!("{:12.7}", ori.z));
+			ui.label(format!("{:12.7}", ori.w));
+		});
+	});
+}
