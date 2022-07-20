@@ -3,11 +3,36 @@ use glow::{Context, HasContext, NativeUniformLocation};
 use crate::renderer::UniformDataSource;
 use std::f32::consts::{PI, TAU, FRAC_PI_2};
 
+#[derive(Debug, Clone, Copy)]
+pub enum FieldOfView {
+	Horizontal(f32),
+	Vertical(f32),
+}
+
+impl Default for FieldOfView {
+	fn default() -> Self {
+		FieldOfView::Horizontal(FRAC_PI_2)
+	}
+}
+
+impl FieldOfView {
+	pub fn fov_y(&self, asra: f32) -> f32 {
+		match self {
+			FieldOfView::Horizontal(r) => {
+				*r / asra
+			},
+			FieldOfView::Vertical(r) => {
+				*r
+			}
+		}
+	}
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Camera {
 	pub pos: Vec3,
 	pub ori: Vec2,
-	pub fovy: f32,
+	pub fov: FieldOfView,
 	pub asra: f32,
 	pub near: f32,
 	pub far: f32,
@@ -29,12 +54,16 @@ impl UniformDataSource for Camera {
 }
 
 impl Camera {
+	pub fn fov_y(&self) -> f32 {
+		self.fov.fov_y(self.asra)
+	}
+
 	pub fn projection_view(&self) -> Mat4 {
 		self.projection() * self.view()
 	}
 
 	pub fn projection(&self) -> Mat4 {
-		Mat4::perspective_rh_gl(self.fovy, self.asra, self.near, self.far)
+		Mat4::perspective_rh_gl(self.fov_y(), self.asra, self.near, self.far)
 	}
 
 	pub fn ori_quat(&self) -> Quat {

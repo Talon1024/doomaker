@@ -12,10 +12,8 @@ use glam::f32::{Vec2, Vec3};
 mod window;
 mod renderer;
 mod camera;
-mod util;
 mod debugs;
 
-use util::fov_x_to_y;
 use debugs::quat_debug_window;
 use renderer::{Data3D, Vertex3D, Renderable};
 
@@ -89,7 +87,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut pointer_lock = false;
 	let asra = wid as f32 / hei as f32;
 	let mut camera = camera::Camera {
-		fovy: fov_x_to_y(100., asra).to_radians(),
+		fov: camera::FieldOfView::Horizontal(120f32.to_radians()),
 		asra,
 		near: 0.125,
 		far: 10000.0,
@@ -125,7 +123,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 							ctx.resize(size);
 							let asra = size.width as f32 / size.height as f32;
 							camera.asra = asra;
-							camera.fovy = util::fov_x_to_y(100., asra).to_radians();
 							unsafe{glc.viewport(0, 0, size.width as i32, size.height as i32);}
 						},
 						CloseRequested => {
