@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut camera = camera::Camera {
 		fovy: util::fov_x_to_y(100., asra).to_radians(),
 		asra,
-		near: 0.0625,
+		near: 0.125,
 		far: 10000.0,
 		ori: Vec2::new(0., FRAC_PI_2),
 		uniloc: my_cube.program.and_then(|prog| {
@@ -101,12 +101,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 	// STEP: Initial OpenGL calls
 	unsafe {
 		glc.viewport(0, 0, wid, hei);
-		glc.clear_buffer_f32_slice(glow::DEPTH, 0, &[0.0f32]);
-		glc.clear_buffer_f32_slice(glow::COLOR, 0, &[0.0f32]);
 		glc.enable(glow::DEPTH_TEST);
+		glc.depth_func(glow::LEQUAL);
+		glc.depth_mask(true);
 		glc.enable(glow::CULL_FACE);
 		glc.cull_face(glow::BACK);
 		glc.front_face(glow::CW);
+		glc.clear_buffer_f32_slice(glow::DEPTH, 0, &[0.0f32]);
+		glc.clear_buffer_f32_slice(glow::COLOR, 0, &[0.0f32]);
 	}
 	// STEP: Load WAD and textures
 	// TODO: TextureBrowser struct
