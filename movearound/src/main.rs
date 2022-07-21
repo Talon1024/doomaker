@@ -14,7 +14,7 @@ mod renderer;
 mod camera;
 mod debugs;
 
-use debugs::quat_debug_window;
+use debugs::vec2::debug_window;
 use renderer::{Data3D, Vertex3D, Renderable};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -139,34 +139,41 @@ fn main() -> Result<(), Box<dyn Error>> {
 										ctx.window().set_cursor_visible(true);
 									},
 									Some(VKC::W) => {
-										let direction = camera.direction();
+										let quat = camera.vrot_quat();
+										let direction = quat
+										.mul_vec3(Vec3::new(0., 1., 0.));
 										camera.pos += direction;
 									},
 									Some(VKC::S) => {
-										let direction =
-											camera.ori_quat().mul_vec3(Vec3::new(0., -1., 0.));
+										let quat = camera.vrot_quat();
+										let direction = quat
+										.mul_vec3(Vec3::new(0., -1., 0.));
 										camera.pos += direction;
 									},
 									Some(VKC::A) => {
-										let direction =
-											camera.ori_quat().mul_vec3(Vec3::new(-1., 0., 0.));
+										let quat = camera.vrot_quat();
+										let direction = quat
+										.mul_vec3(Vec3::new(-1., 0., 0.));
 										camera.pos += direction;
 									},
 									Some(VKC::D) => {
-										let direction =
-											camera.ori_quat().mul_vec3(Vec3::new(1., 0., 0.));
+										let quat = camera.vrot_quat();
+										let direction = quat
+										.mul_vec3(Vec3::new(1., 0., 0.));
 										camera.pos += direction;
-									},
+									},/* 
 									Some(VKC::Q) => {
-										let direction =
-											camera.ori_quat().mul_vec3(Vec3::new(0., 0., 1.));
+										let quat = camera.ori_quat();
+										let direction = Mat4::from_quat(quat)
+										.transform_vector3(Vec3::new(0., 0., 1.));
 										camera.pos += direction;
 									},
 									Some(VKC::Z) => {
-										let direction =
-											camera.ori_quat().mul_vec3(Vec3::new(0., 0., -1.));
+										let quat = camera.ori_quat();
+										let direction = Mat4::from_quat(quat)
+										.transform_vector3(Vec3::new(0., 0., -1.));
 										camera.pos += direction;
-									},
+									}, */
 									_ => (),
 								}
 							}
@@ -233,8 +240,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 							});
 						});
 					});
-					quat_debug_window(&camera, ectx);
-					// matrix_debug_window(&camera, ectx, &mut debug_window_mtx_choice);
+					debug_window(camera.ori, ectx);
 				});
 				egui_glow.paint(ctx.window());
 				if let Err(e) = ctx.swap_buffers() {

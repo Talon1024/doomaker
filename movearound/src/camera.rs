@@ -66,11 +66,21 @@ impl Camera {
 		Mat4::perspective_rh_gl(self.fov_y(), self.asra, self.near, self.far)
 	}
 
+	/// Quaternion for view transformation/orientation
 	pub fn ori_quat(&self) -> Quat {
 		// Original working code
 		// Quat::from_rotation_x(-self.ori.y) *
 		// Quat::from_rotation_z(-self.ori.x - FRAC_PI_2)
-		Quat::from_euler(EulerRot::XYZ, -self.ori.y, 0., -self.ori.x - FRAC_PI_2)
+		Quat::from_euler(EulerRot::XYZ, 
+				-self.ori.y, 0., 
+				-self.ori.x - FRAC_PI_2)
+	}
+
+	/// Quaternion for movement vector rotation
+	pub fn vrot_quat(&self) -> Quat {
+		Quat::from_euler(EulerRot::XYZ,
+			0., 0.,
+			self.ori.x + PI + FRAC_PI_2)
 	}
 
 	pub fn view(&self) -> Mat4 {
