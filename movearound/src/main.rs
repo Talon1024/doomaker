@@ -69,12 +69,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 			Vertex3D {position: Vec3::new(-10., -10., 10.), uv: Vec2::new(0.3333333333, 0.5), ..Default::default()},
 		],
 		Some(vec![
-			0, 1, 2, 0, 2, 3,
-			4, 5, 6, 4, 6, 7,
-			8, 9, 10, 8, 10, 11,
-			12, 13, 14, 12, 14, 15,
-			16, 17, 18, 16, 18, 19,
-			20, 21, 22, 20, 22, 23]),
+			0, 1, 2, 0, 2, 3, // Z+
+			4, 5, 6, 4, 6, 7, // Z-
+			8, 9, 10, 8, 10, 11, // Y+
+			12, 13, 14, 12, 14, 15, // Y-
+			16, 17, 18, 16, 18, 19, // X+
+			20, 21, 22, 20, 22, 23]), // X-
 		{
 			let mut file = File::open("cube256.png")?;
 			renderer::texture_png(&glc, &mut file).ok()
@@ -161,19 +161,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 										let direction = quat
 										.mul_vec3(Vec3::new(1., 0., 0.));
 										camera.pos += direction;
-									},/* 
+									},
 									Some(VKC::Q) => {
-										let quat = camera.ori_quat();
-										let direction = Mat4::from_quat(quat)
-										.transform_vector3(Vec3::new(0., 0., 1.));
+										let quat = camera.vrot_quat();
+										let direction = quat
+										.mul_vec3(Vec3::new(0., 0., -1.));
 										camera.pos += direction;
 									},
 									Some(VKC::Z) => {
-										let quat = camera.ori_quat();
-										let direction = Mat4::from_quat(quat)
-										.transform_vector3(Vec3::new(0., 0., -1.));
+										let quat = camera.vrot_quat();
+										let direction = quat
+										.mul_vec3(Vec3::new(0., 0., 1.));
 										camera.pos += direction;
-									}, */
+									},
 									_ => (),
 								}
 							}

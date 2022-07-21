@@ -78,9 +78,8 @@ impl Camera {
 
 	/// Quaternion for movement vector rotation
 	pub fn vrot_quat(&self) -> Quat {
-		Quat::from_euler(EulerRot::XYZ,
-			0., 0.,
-			self.ori.x + PI + FRAC_PI_2)
+		Quat::from_euler(EulerRot::ZYX,
+			self.ori.x + PI + FRAC_PI_2, 0., FRAC_PI_2 - self.ori.y)
 	}
 
 	pub fn view(&self) -> Mat4 {
