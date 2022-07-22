@@ -153,25 +153,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 									Some(VKC::A) => {
 										let quat = camera.vrot_quat();
 										let direction = quat
-										.mul_vec3(Vec3::new(-1., 0., 0.));
+										.mul_vec3(Vec3::new(1., 0., 0.));
 										camera.pos += direction;
 									},
 									Some(VKC::D) => {
 										let quat = camera.vrot_quat();
 										let direction = quat
-										.mul_vec3(Vec3::new(1., 0., 0.));
+										.mul_vec3(Vec3::new(-1., 0., 0.));
 										camera.pos += direction;
 									},
 									Some(VKC::Q) => {
 										let quat = camera.vrot_quat();
 										let direction = quat
-										.mul_vec3(Vec3::new(0., 0., -1.));
+										.mul_vec3(Vec3::new(0., 0., 1.));
 										camera.pos += direction;
 									},
 									Some(VKC::Z) => {
 										let quat = camera.vrot_quat();
 										let direction = quat
-										.mul_vec3(Vec3::new(0., 0., 1.));
+										.mul_vec3(Vec3::new(0., 0., -1.));
 										camera.pos += direction;
 									},
 									_ => (),
@@ -225,7 +225,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			glutin::event::Event::MainEventsCleared => {
 				unsafe {
 					glc.clear_color(0.125, 0.125, 0.125, 1.0);
-					glc.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+					glc.clear(glow::COLOR_BUFFER_BIT);
+					glc.clear_color(0., 0., 0., 0.);
+					glc.clear(glow::DEPTH_BUFFER_BIT);
 				}
 				my_cube.draw(&glc, &camera);
 				my_cube.update(&glc);
