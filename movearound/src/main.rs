@@ -106,8 +106,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 		glc.enable(glow::CULL_FACE);
 		glc.cull_face(glow::BACK);
 		glc.front_face(glow::CW);
-		glc.clear_buffer_f32_slice(glow::DEPTH, 0, &[0.0f32]);
-		glc.clear_buffer_f32_slice(glow::COLOR, 0, &[0.0f32]);
+		// glc.clear_buffer_f32_slice(glow::DEPTH, 0, &[0.0f32]);
+		// glc.clear_buffer_f32_slice(glow::COLOR, 0, &[0.0f32]);
 	}
 	// STEP: Load WAD and textures
 	// TODO: TextureBrowser struct
@@ -225,9 +225,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			glutin::event::Event::MainEventsCleared => {
 				unsafe {
 					glc.clear_color(0.125, 0.125, 0.125, 1.0);
-					glc.clear(glow::COLOR_BUFFER_BIT);
-					glc.clear_color(0., 0., 0., 0.);
-					glc.clear(glow::DEPTH_BUFFER_BIT);
+					glc.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+					glc.enable(glow::DEPTH_TEST);
+					glc.enable(glow::CULL_FACE);
 				}
 				my_cube.draw(&glc, &camera);
 				my_cube.update(&glc);
