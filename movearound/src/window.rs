@@ -1,6 +1,6 @@
 use std::error::Error;
 use glutin::{
-	event_loop::EventLoop,
+	event_loop::{EventLoop, EventLoopBuilder},
 	ContextBuilder,
 	ContextWrapper,
 	PossiblyCurrent,
@@ -11,12 +11,16 @@ use glutin::{
 };
 use glow::Context;
 
-pub fn init_window(size: Option<[f32; 2]>) -> Result<(Context, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()>), Box<dyn Error>> {
+pub fn init_window<ET>(size: Option<[f32; 2]>) -> Result<
+	(Context, ContextWrapper<PossiblyCurrent, Window>, EventLoop<ET>),
+	Box<dyn Error>
+> {
 	let win = WindowBuilder::new()
 		.with_inner_size(Logical(size.unwrap_or([550.0f32, 300.]).into()))
 		.with_title("App-o")
 		.with_visible(true);
-	let el = EventLoop::new();
+	let el = EventLoopBuilder::<ET>::with_user_event()
+		.build();
 	let ctx = ContextBuilder::new()
 		.with_gl(GlThenGles {
 			opengl_version: (3, 3),

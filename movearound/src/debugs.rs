@@ -1,4 +1,5 @@
 //! Egui matrix/vector debug windows
+#![allow(dead_code)]
 
 pub mod matrix {
 	use crate::camera::Camera;

@@ -1,6 +1,6 @@
 use std::{
 	error::Error,
-	rc::Rc,
+	sync::Arc,
 	fs::File,
 	f32::consts::FRAC_PI_2
 };
@@ -13,17 +13,24 @@ mod window;
 mod renderer;
 mod camera;
 mod debugs;
+mod input;
 
-use debugs::vec2::debug_window;
+use input::*;
 use renderer::{Data3D, Vertex3D, Renderable};
+
+pub(crate) struct App {
+	pub camera: camera::Camera,
+	pub mode: Mode,
+}
+
 
 fn main() -> Result<(), Box<dyn Error>> {
 	// STEP: Set up window and context
 	let (wid, hei) = (720, 500);
 	let (glc, ctx, el) = window::init_window(Some([wid as f32, hei as f32]))?;
-	let glc = Rc::from(glc);
-	let mut egui_glow = EguiGlow::new(ctx.window(), Rc::clone(&glc));
-	let _user_event = el.create_proxy();
+	let glc = Arc::from(glc);
+	let mut egui_glow = EguiGlow::new(&el, Arc::clone(&glc));
+	let user_event = el.create_proxy();
 
 	// STEP: Set up things to render
 	let mut my_cube = Data3D::new(
@@ -84,8 +91,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 		//..Default::default()
 	);
 	my_cube.setup(&glc)?;
-	let mut pointer_lock = false;
 	let asra = wid as f32 / hei as f32;
+
+	let mut app = App {
+		mode: Mode::View3D,
+		camera: camera::Camera {
+			fov: camera::FieldOfView::Horizontal(120f32.to_radians()),
+			asra,
+			near: 0.125,
+			far: 10000.0,
+			ori: Vec2::new(0., FRAC_PI_2),
+			uniloc: my_cube.program.and_then(|prog| {
+				unsafe { glc.get_uniform_location(prog, "u_projview") }
+			}),
+			..Default::default()
+		},
+		// ..Default::default()
+	};
+	let mut pointer_lock = false;
 	let mut camera = camera::Camera {
 		fov: camera::FieldOfView::Horizontal(120f32.to_radians()),
 		asra,
@@ -129,54 +152,56 @@ fn main() -> Result<(), Box<dyn Error>> {
 							*control_flow = ControlFlow::Exit;
 						},
 						KeyboardInput { device_id: _, input, is_synthetic: _ } => {
-							use glutin::event::ElementState::Pressed;
-							if pointer_lock && matches!(input.state, Pressed) {
-								match input.virtual_keycode {
-									Some(VKC::Escape) => {
-										pointer_lock = false;
-										// ctx.window() must be used because otherwise
-										// "borrowed value does not live long enough"
-										ctx.window().set_cursor_visible(true);
-									},
-									Some(VKC::W) => {
-										let quat = camera.vrot_quat();
-										let direction = quat
-										.mul_vec3(Vec3::new(0., 1., 0.));
-										camera.pos += direction;
-									},
-									Some(VKC::S) => {
-										let quat = camera.vrot_quat();
-										let direction = quat
-										.mul_vec3(Vec3::new(0., -1., 0.));
-										camera.pos += direction;
-									},
-									Some(VKC::A) => {
-										let quat = camera.vrot_quat();
-										let direction = quat
-										.mul_vec3(Vec3::new(1., 0., 0.));
-										camera.pos += direction;
-									},
-									Some(VKC::D) => {
-										let quat = camera.vrot_quat();
-										let direction = quat
-										.mul_vec3(Vec3::new(-1., 0., 0.));
-										camera.pos += direction;
-									},
-									Some(VKC::Q) => {
-										let quat = camera.vrot_quat();
-										let direction = quat
-										.mul_vec3(Vec3::new(0., 0., 1.));
-										camera.pos += direction;
-									},
-									Some(VKC::Z) => {
-										let quat = camera.vrot_quat();
-										let direction = quat
-										.mul_vec3(Vec3::new(0., 0., -1.));
-										camera.pos += direction;
-									},
-									_ => (),
-								}
-							}
+							use glutin::event::ElementState::*;
+							let state = match input.state {
+								Pressed => input::ActionState::Active,
+								Released => input::ActionState::Inactive,
+							};
+match input.virtual_keycode {
+	Some(VKC::Escape) => {
+		if let Err(e) = user_event.send_event(
+			Action {id: ActionId::ReleasePointer, state}) {
+			eprintln!("Could not send event for some reason! {}", e);
+		}
+	},
+	Some(VKC::W) => {
+		let quat = camera.vrot_quat();
+		let direction = quat
+		.mul_vec3(Vec3::new(0., 1., 0.));
+		camera.pos += direction;
+	},
+	Some(VKC::S) => {
+		let quat = camera.vrot_quat();
+		let direction = quat
+		.mul_vec3(Vec3::new(0., -1., 0.));
+		camera.pos += direction;
+	},
+	Some(VKC::A) => {
+		let quat = camera.vrot_quat();
+		let direction = quat
+		.mul_vec3(Vec3::new(1., 0., 0.));
+		camera.pos += direction;
+	},
+	Some(VKC::D) => {
+		let quat = camera.vrot_quat();
+		let direction = quat
+		.mul_vec3(Vec3::new(-1., 0., 0.));
+		camera.pos += direction;
+	},
+	Some(VKC::Q) => {
+		let quat = camera.vrot_quat();
+		let direction = quat
+		.mul_vec3(Vec3::new(0., 0., 1.));
+		camera.pos += direction;
+	},
+	Some(VKC::Z) => {
+		let quat = camera.vrot_quat();
+		let direction = quat
+		.mul_vec3(Vec3::new(0., 0., -1.));
+		camera.pos += direction;
+	},
+	_ => (),
+}
 						},
 						MouseInput { state, button, .. } => {
 							match (state, button) {
@@ -214,7 +239,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 				}
 			},
 			glutin::event::Event::UserEvent(e) => {
-				println!("user event {:?}", e);
+match e {
+	Action {id: ActionId::ReleasePointer, state: _} => {
+		pointer_lock = false;
+		// ctx.window() must be used because otherwise
+		// "borrowed value does not live long enough"
+		ctx.window().set_cursor_visible(true);
+	},
+	_ => (),
+}
 			},/* 
 			glutin::event::Event::Suspended => {
 				println!("suspended");
@@ -242,7 +275,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 							});
 						});
 					});
-					debug_window(camera.ori, ectx);
 				});
 				egui_glow.paint(ctx.window());
 				if let Err(e) = ctx.swap_buffers() {
