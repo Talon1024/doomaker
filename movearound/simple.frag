@@ -17,7 +17,7 @@ void main() {
     #else
     vec4 finalColour = colour * texture(u_tex, uv);
     #endif
-    vec4 fog = vec4(0.5, 0., 0.25, 16.); // test
+    // vec4 fog = vec4(0.5, 0., 0.25, 16.); // test
     if (fog.a > 0.) {
         float factor = min(1., transformed.z / fog.a);
         finalColour.rgb = mix(finalColour.rgb, fog.rgb, factor);
