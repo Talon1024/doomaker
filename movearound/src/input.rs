@@ -46,17 +46,10 @@ impl ActionId {
 		use ActionId::*;
 		use ActionType::*;
 		match self {
-			MoveForward => Hold,
-			MoveBackward => Hold,
-			MoveLeft => Hold,
-			MoveRight => Hold,
-			MoveUp => Hold,
-			MoveDown => Hold,
-			TurnUp => Hold,
-			TurnDown => Hold,
-			TurnLeft => Hold,
-			TurnRight => Hold,
-			_ => Immediate,
+			LockPointer => Immediate,
+			ReleasePointer => Immediate,
+			ChangeMode => Immediate,
+			_ => Hold,
 		}
 	}
 	pub(crate) fn perform<T>(&self, ctx: &ConWin<T>, app: &mut App)
