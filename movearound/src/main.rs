@@ -2,7 +2,6 @@ use std::{
 	error::Error,
 	sync::Arc,
 	fs::{File, OpenOptions},
-	io::{Read, Write},
 	f32::consts::FRAC_PI_2
 };
 use egui_glow::EguiGlow;

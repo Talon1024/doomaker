@@ -94,6 +94,8 @@ impl Camera {
 		self.ori.y = self.ori.y.clamp(0., PI);
 	}
 
+	// Direction is now calculated by rotating a vector with a quaternion
+	/* 
 	pub fn direction(&self) -> Vec3 {
 		let (th, ph) = (self.ori.x, self.ori.y);
 		let (tc, ts, pc, ps) = (th.cos(), th.sin(), ph.cos(), ph.sin());
@@ -103,4 +105,5 @@ impl Camera {
 			pc
 		)
 	}
+	 */
 }

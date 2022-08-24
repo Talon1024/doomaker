@@ -92,7 +92,7 @@ impl Action {
 	pub(crate) fn perform<T>(&self, ctx: &ConWin<T>, app: &mut App)
 	where T: ContextCurrentState {
 		use ActionId::*;
-		let mut camera = &mut app.camera;
+		let camera = &mut app.camera;
 		match app.mode {
 			Mode::Look3D => {
 				match self.id {
