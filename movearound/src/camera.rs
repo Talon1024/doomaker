@@ -3,6 +3,7 @@ use glow::{Context, HasContext, NativeUniformLocation};
 use crate::renderer::UniformDataSource;
 use std::f32::consts::{PI, TAU, FRAC_PI_2};
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum FieldOfView {
 	Horizontal(f32),

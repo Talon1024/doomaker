@@ -8,12 +8,14 @@ use glutin::{
 use std::collections::HashMap;
 use ahash::RandomState;
 use glam::Vec3;
+use serde::{Serialize, Deserialize};
 
 use crate::App;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Mode {
 	/// 3D view, allows selecting and editing independent of view direction
+	#[default]
 	View3D,
 	/// 3D view, allows moving camera around
 	Look3D,
@@ -21,7 +23,7 @@ pub enum Mode {
 	View2D,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ActionId {
 	MoveForward,
 	MoveBackward,
@@ -36,6 +38,26 @@ pub enum ActionId {
 	LockPointer,
 	ReleasePointer,
 	ChangeMode/*(Mode)*/,
+}
+
+impl ActionId {
+	pub fn get_type(&self) -> ActionType {
+		use ActionId::*;
+		use ActionType::*;
+		match self {
+			MoveForward => Hold,
+			MoveBackward => Hold,
+			MoveLeft => Hold,
+			MoveRight => Hold,
+			MoveUp => Hold,
+			MoveDown => Hold,
+			TurnUp => Hold,
+			TurnDown => Hold,
+			TurnLeft => Hold,
+			TurnRight => Hold,
+			_ => Immediate,
+		}
+	}
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -131,4 +153,4 @@ impl Action {
 	}
 }
 
-pub type Configuration = HashMap<VKC, ActionId, RandomState>;
+pub type KeyboardBindings = HashMap<VKC, ActionId, RandomState>;

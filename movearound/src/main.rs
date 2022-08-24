@@ -1,13 +1,18 @@
 use std::{
 	error::Error,
 	sync::Arc,
-	fs::File,
+	fs::{File, OpenOptions},
+	io::{Read, Write},
 	f32::consts::FRAC_PI_2
 };
 use egui_glow::EguiGlow;
-use glutin::event_loop::ControlFlow;
+use glutin::{
+	event_loop::ControlFlow,
+	event::VirtualKeyCode as VKC
+};
 use glow::HasContext;
 use glam::f32::{Vec2, Vec3};
+use serde::{Serialize, Deserialize};
 
 mod window;
 mod renderer;
@@ -18,11 +23,31 @@ mod input;
 use input::*;
 use renderer::{Data3D, Vertex3D, Renderable};
 
+#[derive(Debug, Clone, Default)]
 pub(crate) struct App {
 	pub camera: camera::Camera,
 	pub mode: Mode,
+	pub preferences: Preferences,
 }
 
+static CONFIG_FILENAME: &str = "config.yml";
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct Preferences {
+	pub keybinds: KeyboardBindings,
+}
+
+impl Preferences {
+	fn load() -> Result<Self, Box<dyn Error>> {
+		let file = File::open(CONFIG_FILENAME)?;
+		serde_yaml::from_reader(file).map_err(|e| e.into())
+	}
+	fn save(&self) -> Result<(), Box<dyn Error>> {
+		let file = OpenOptions::new().write(true).create(true)
+		.open(CONFIG_FILENAME)?;
+		serde_yaml::to_writer(file, self).map_err(|e| e.into())
+	}
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
 	// STEP: Set up window and context
@@ -93,7 +118,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	my_cube.setup(&glc)?;
 	let asra = wid as f32 / hei as f32;
 
-	let mut app = App {
+	let mut app = Box::new(App {
 		mode: Mode::View3D,
 		camera: camera::Camera {
 			fov: camera::FieldOfView::Horizontal(120f32.to_radians()),
@@ -106,20 +131,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 			}),
 			..Default::default()
 		},
-		// ..Default::default()
-	};
-	let mut pointer_lock = false;
-	let mut camera = camera::Camera {
-		fov: camera::FieldOfView::Horizontal(120f32.to_radians()),
-		asra,
-		near: 0.125,
-		far: 10000.0,
-		ori: Vec2::new(0., FRAC_PI_2),
-		uniloc: my_cube.program.and_then(|prog| {
-			unsafe { glc.get_uniform_location(prog, "u_projview") }
+		preferences: Preferences::load()
+		.unwrap_or_else(|e| {
+			eprintln!("Could not load preferences for some reason:\n\
+			{:?}\n\
+			Using hard-coded defaults...", e);
+			let mut preferences = Preferences::default();
+			preferences.keybinds.insert(VKC::W, ActionId::MoveForward);
+			preferences.keybinds.insert(VKC::S, ActionId::MoveBackward);
+			preferences.keybinds.insert(VKC::Escape, ActionId::ReleasePointer);
+			preferences
 		}),
 		..Default::default()
-	};
+	});
 	// STEP: Initial OpenGL calls
 	unsafe {
 		glc.viewport(0, 0, wid, hei);
@@ -139,13 +163,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 			glutin::event::Event::WindowEvent { window_id: _window_id, event } => {
 				// println!("WindowEvent window_id {:?} event {:?}", window_id, event);
 				use glutin::event::WindowEvent::*;
-				use glutin::event::{ElementState, MouseButton, VirtualKeyCode as VKC};
+				use glutin::event::{ElementState, MouseButton};
 				if !egui_glow.on_event(&event) {
 					match event {
 						Resized(size) => {
 							ctx.resize(size);
 							let asra = size.width as f32 / size.height as f32;
-							camera.asra = asra;
+							app.camera.asra = asra;
 							unsafe{glc.viewport(0, 0, size.width as i32, size.height as i32);}
 						},
 						CloseRequested => {
@@ -157,58 +181,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 								Pressed => input::ActionState::Active,
 								Released => input::ActionState::Inactive,
 							};
-match input.virtual_keycode {
-	Some(VKC::Escape) => {
-		if let Err(e) = user_event.send_event(
-			Action {id: ActionId::ReleasePointer, state}) {
-			eprintln!("Could not send event for some reason! {}", e);
-		}
-	},
-	Some(VKC::W) => {
-		let quat = camera.vrot_quat();
-		let direction = quat
-		.mul_vec3(Vec3::new(0., 1., 0.));
-		camera.pos += direction;
-	},
-	Some(VKC::S) => {
-		let quat = camera.vrot_quat();
-		let direction = quat
-		.mul_vec3(Vec3::new(0., -1., 0.));
-		camera.pos += direction;
-	},
-	Some(VKC::A) => {
-		let quat = camera.vrot_quat();
-		let direction = quat
-		.mul_vec3(Vec3::new(1., 0., 0.));
-		camera.pos += direction;
-	},
-	Some(VKC::D) => {
-		let quat = camera.vrot_quat();
-		let direction = quat
-		.mul_vec3(Vec3::new(-1., 0., 0.));
-		camera.pos += direction;
-	},
-	Some(VKC::Q) => {
-		let quat = camera.vrot_quat();
-		let direction = quat
-		.mul_vec3(Vec3::new(0., 0., 1.));
-		camera.pos += direction;
-	},
-	Some(VKC::Z) => {
-		let quat = camera.vrot_quat();
-		let direction = quat
-		.mul_vec3(Vec3::new(0., 0., -1.));
-		camera.pos += direction;
-	},
-	_ => (),
-}
+							let action_id = input.virtual_keycode.and_then(
+								|vkc| app.preferences.keybinds.get(&vkc));
+							if let Some(id) = action_id {
+								if let Err(e) = user_event.send_event(Action {
+									id: *id,
+									state,
+								}) {
+									eprintln!("{:?}", e);
+								}
+							}
 						},
 						MouseInput { state, button, .. } => {
-							match (state, button) {
-								(ElementState::Pressed, MouseButton::Left) => {
-									if !pointer_lock {
-										pointer_lock = true;
-										ctx.window().set_cursor_visible(false);
+							match (state, button, app.mode) {
+								(ElementState::Pressed, MouseButton::Left, Mode::View3D) => {
+									if let Err(e) = user_event.send_event(Action {
+										id: ActionId::LockPointer,
+										state: ActionState::Active,
+									}) {
+										eprintln!("{:?}", e);
 									}
 								},
 								_ => ()
@@ -222,9 +213,9 @@ match input.virtual_keycode {
 				use glutin::event::DeviceEvent;
 				match event {
 					DeviceEvent::MouseMotion { delta: (x, y) } => {
-						if pointer_lock {
+						if let Mode::Look3D = app.mode {
+							// Set cursor position
 							use glutin::dpi::{LogicalPosition, LogicalSize};
-
 							let winscale = ctx.window().scale_factor();
 							let winsize: LogicalSize<f64> = ctx.window().inner_size()
 								.to_logical(winscale);
@@ -232,22 +223,15 @@ match input.virtual_keycode {
 							if let Err(e) = ctx.window().set_cursor_position(LogicalPosition::<f64>::from(winsize)) {
 								eprintln!("{:?}", e);
 							}
-							camera.rotate(x as f32, y as f32);
+							// Rotate camera based on mouse movement
+							app.camera.rotate(x as f32, y as f32);
 						}
 					},
 					_ => ()
 				}
 			},
 			glutin::event::Event::UserEvent(e) => {
-match e {
-	Action {id: ActionId::ReleasePointer, state: _} => {
-		pointer_lock = false;
-		// ctx.window() must be used because otherwise
-		// "borrowed value does not live long enough"
-		ctx.window().set_cursor_visible(true);
-	},
-	_ => (),
-}
+				e.perform(&ctx, &mut app);
 			},/* 
 			glutin::event::Event::Suspended => {
 				println!("suspended");
@@ -262,7 +246,7 @@ match e {
 					glc.enable(glow::DEPTH_TEST);
 					glc.enable(glow::CULL_FACE);
 				}
-				my_cube.draw(&glc, &camera);
+				my_cube.draw(&glc, &app.camera);
 				my_cube.update(&glc);
 				egui_glow.run(ctx.window(), |ectx| {
 					egui::TopBottomPanel::top("main menu").show(ectx, |ui| {
@@ -279,6 +263,12 @@ match e {
 				egui_glow.paint(ctx.window());
 				if let Err(e) = ctx.swap_buffers() {
 					eprintln!("Swap buffer error: {:?}", e);
+				}
+			},
+			glutin::event::Event::LoopDestroyed => {
+				if let Err(e) = app.preferences.save() {
+					eprintln!("Could not save preferences for some reason:\n\
+					{:?}", e)
 				}
 			},
 			_ => (),
