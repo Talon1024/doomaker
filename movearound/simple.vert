@@ -9,6 +9,7 @@ layout(location = 2) in vec3 a_normal;
 layout(location = 3) in vec4 a_fog;
 layout(location = 4) in vec2 a_uv;
 out vec4 position;
+out vec4 transformed;
 out vec4 colour;
 out vec4 normal;
 out vec4 fog;
@@ -20,5 +21,6 @@ void main() {
     normal = vec4(a_normal, 1.);
     fog = a_fog;
     uv = a_uv;
-    gl_Position = u_projview * u_model * position;
+    transformed = u_projview * u_model * position;
+    gl_Position = transformed;
 }

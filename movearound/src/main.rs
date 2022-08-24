@@ -2,7 +2,8 @@ use std::{
 	error::Error,
 	sync::Arc,
 	fs::{File, OpenOptions},
-	f32::consts::FRAC_PI_2
+	f32::consts::FRAC_PI_2,
+	collections::HashSet,
 };
 use egui_glow::EguiGlow;
 use glutin::{
@@ -12,6 +13,7 @@ use glutin::{
 use glow::HasContext;
 use glam::f32::{Vec2, Vec3};
 use serde::{Serialize, Deserialize};
+use ahash::RandomState;
 
 mod window;
 mod renderer;
@@ -26,6 +28,7 @@ use renderer::{Data3D, Vertex3D, Renderable};
 pub(crate) struct App {
 	pub camera: camera::Camera,
 	pub mode: Mode,
+	pub input_state: HashSet<ActionId, RandomState>,
 	pub preferences: Preferences,
 }
 
@@ -137,7 +140,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 			Using hard-coded defaults...", e);
 			let mut preferences = Preferences::default();
 			preferences.keybinds.insert(VKC::W, ActionId::MoveForward);
+			preferences.keybinds.insert(VKC::A, ActionId::MoveLeft);
 			preferences.keybinds.insert(VKC::S, ActionId::MoveBackward);
+			preferences.keybinds.insert(VKC::D, ActionId::MoveRight);
+			preferences.keybinds.insert(VKC::Q, ActionId::MoveUp);
+			preferences.keybinds.insert(VKC::Z, ActionId::MoveDown);
 			preferences.keybinds.insert(VKC::Escape, ActionId::ReleasePointer);
 			preferences
 		}),
@@ -230,7 +237,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				}
 			},
 			glutin::event::Event::UserEvent(e) => {
-				e.perform(&ctx, &mut app);
+				e.handle(&ctx, &mut app);
 			},/* 
 			glutin::event::Event::Suspended => {
 				println!("suspended");
@@ -239,6 +246,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 				println!("resumed");
 			}, */
 			glutin::event::Event::MainEventsCleared => {
+				let inputs = app.input_state.clone();
+				inputs.iter().for_each(|&aid| aid.perform(&ctx, &mut app));
 				unsafe {
 					glc.clear_color(0.125, 0.125, 0.125, 1.0);
 					glc.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);

@@ -41,6 +41,7 @@ pub enum ActionId {
 }
 
 impl ActionId {
+	// Action type is closely coupled to Action ID
 	pub fn get_type(&self) -> ActionType {
 		use ActionId::*;
 		use ActionType::*;
@@ -58,44 +59,13 @@ impl ActionId {
 			_ => Immediate,
 		}
 	}
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ActionType {
-	/// An action that is performed from when the button is pressed until the
-	/// button is released. Examples: Move and turn in 3D view, pan in 2D view
-	Hold,
-	/// An action that is performed immediately upon pressing the button.
-	/// Examples: Add thing, select thing
-	Immediate,
-	/* 
-	/// An action that is performed from when the button is pressed until the
-	/// button (or another) is pressed again. Examples: Begin drawing line,
-	/// begin tilting plane
-	Toggle { other: Option<ActionId> }
-	 */
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ActionState {
-	Active,
-	Inactive
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Action {
-	pub id: ActionId,
-	pub state: ActionState,
-}
-
-impl Action {
 	pub(crate) fn perform<T>(&self, ctx: &ConWin<T>, app: &mut App)
 	where T: ContextCurrentState {
 		use ActionId::*;
 		let camera = &mut app.camera;
 		match app.mode {
 			Mode::Look3D => {
-				match self.id {
+				match self {
 					MoveForward => {
 						let quat = camera.vrot_quat();
 						let direction = quat
@@ -140,7 +110,7 @@ impl Action {
 				}
 			},
 			Mode::View3D => {
-				match self.id {
+				match self {
 					LockPointer => {
 						ctx.window().set_cursor_visible(false);
 						app.mode = Mode::Look3D;
@@ -149,6 +119,52 @@ impl Action {
 				}
 			}
 			_ => ()
+		}
+	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ActionType {
+	/// An action that is performed from when the button is pressed until the
+	/// button is released. Examples: Move and turn in 3D view, pan in 2D view
+	Hold,
+	/// An action that is performed immediately upon pressing the button.
+	/// Examples: Add thing, select thing
+	Immediate,
+	/* 
+	/// An action that is performed from when the button is pressed until the
+	/// button (or another) is pressed again. Examples: Begin drawing line,
+	/// begin tilting plane
+	Toggle { other: Option<ActionId> }
+	 */
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ActionState {
+	Active,
+	Inactive
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Action {
+	pub id: ActionId,
+	pub state: ActionState,
+}
+
+impl Action {
+	pub(crate) fn handle<T>(&self, ctx: &ConWin<T>, app: &mut App)
+	where T: ContextCurrentState {
+		let action_type = self.id.get_type();
+		match action_type {
+			ActionType::Hold => {
+				match self.state {
+				ActionState::Active => {app.input_state.insert(self.id);},
+				ActionState::Inactive => {app.input_state.remove(&self.id);},
+				}
+			},
+			ActionType::Immediate => {
+				self.id.perform(ctx, app);
+			},
 		}
 	}
 }

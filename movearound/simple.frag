@@ -3,6 +3,7 @@
 uniform sampler2D u_tex;
 
 in vec4 position;
+in vec4 transformed;
 in vec4 colour;
 in vec4 normal;
 in vec4 fog;
@@ -16,8 +17,9 @@ void main() {
     #else
     vec4 finalColour = colour * texture(u_tex, uv);
     #endif
+    vec4 fog = vec4(0.5, 0., 0.25, 16.); // test
     if (fog.a > 0.) {
-        float factor = min(1., position.z / fog.a);
+        float factor = min(1., transformed.z / fog.a);
         finalColour.rgb = mix(finalColour.rgb, fog.rgb, factor);
     }
     gl_FragColor = finalColour;
