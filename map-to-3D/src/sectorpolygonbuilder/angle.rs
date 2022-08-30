@@ -8,8 +8,8 @@ impl PartialOrd for Angle {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 		// Assuming all angles are in radians
 		let result = self.0.partial_cmp(&other.0);
-		let self_sign = self.0.signum();
-		let other_sign = other.0.signum();
+		let self_sign = self.0.is_sign_negative();
+		let other_sign = other.0.is_sign_negative();
 		if self_sign != other_sign {
 			result.map(Ordering::reverse)
 		}/* else if (self.0.abs() == PI && other.0.abs() == PI) ||
