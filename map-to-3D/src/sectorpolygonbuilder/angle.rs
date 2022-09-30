@@ -1,4 +1,4 @@
-use std::cmp::Ordering::{self, *};
+use std::cmp::Ordering;
 use derive_deref::*;
 
 #[repr(transparent)]

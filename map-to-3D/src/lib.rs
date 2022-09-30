@@ -13,3 +13,4 @@ pub mod edge;
 // pub mod wall;
 // pub mod sector;
 pub(crate) mod util;
+pub mod segment;
