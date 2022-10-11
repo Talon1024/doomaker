@@ -1,23 +1,33 @@
 //! Line segments and intersection calculation
 use glam::Vec2;
+use ahash::RandomState;
+use std::collections::HashSet;
+use fixed::types::I32F32;
 
 // A line segment
 #[derive(Debug, Clone, Copy)]
 pub struct Segment(pub Vec2, pub Vec2);
 
-pub enum SegmentIntersection {
-	Normal(Vec2),
-	Collinear([Option<Vec2>; 2])
-}
-
 impl Segment {
 	pub fn intersection(&self, other: Segment) -> Option<Vec2> {
 		// Thanks to https://replit.com/@thehappycheese/linetools#LineTools/line_tools.py
 		// and his YouTube video: https://youtu.be/5FkOO1Wwb8w
+		{ // If any of the four points are equal, the segments are connected.
+			let mut points = HashSet::<[I32F32; 2], RandomState>::default();
+			points.insert([I32F32::saturating_from_num(self.0.x), I32F32::saturating_from_num(self.0.y)]);
+			points.insert([I32F32::saturating_from_num(self.1.x), I32F32::saturating_from_num(self.1.y)]);
+			points.insert([I32F32::saturating_from_num(other.0.x), I32F32::saturating_from_num(other.0.y)]);
+			points.insert([I32F32::saturating_from_num(other.1.x), I32F32::saturating_from_num(other.1.y)]);
+			if points.len() < 4 {
+				// I don't think a connection counts as an intersection
+				return None;
+			}
+		}
 		let ab = self.1 - self.0;
 		let cd = other.1 - other.0;
 		let ab_cross_cd = ab.perp_dot(cd);
 		if ab_cross_cd == 0. { // Lines are parallel
+			// TODO: Check for collinear segments
 			None
 		} else {
 			let ac = other.0 - self.0;
@@ -32,11 +42,26 @@ impl Segment {
 	}
 }
 
+pub enum Intersection {
+	Normal(Vec2),
+	Collinear
+}
+
+impl Intersection {
+	pub fn split(&self, a: Segment, b: Segment) -> Vec<Segment> {
+		match self {
+			Intersection::Normal(_v) => (),
+			Intersection::Collinear => (),
+		}
+		vec![]
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
 	#[test]
-	fn intersection_a() {
+	fn intersection_simplea() {
 		use glam::const_vec2;
 		let pa = Segment(Vec2::new(2., 2.), Vec2::new(-2., -2.));
 		let pb = Segment(Vec2::new(-2., 2.), Vec2::new(2., -2.));
@@ -50,7 +75,7 @@ mod tests {
 	}
 
 	#[test]
-	fn intersection_b() {
+	fn intersection_simpleb() {
 		use glam::const_vec2;
 		let pa = Segment(Vec2::new(4., 4.), Vec2::new(0., 0.));
 		let pb = Segment(Vec2::new(0., 4.), Vec2::new(4., 0.));
@@ -64,7 +89,7 @@ mod tests {
 	}
 
 	#[test]
-	fn intersection_c() {
+	fn intersection_complex() {
 		use glam::const_vec2;
 		let pa = Segment(Vec2::new(7., 1.), Vec2::new(9., 2.));
 		let pb = Segment(Vec2::new(7., 3.), Vec2::new(9., 1.));
@@ -78,7 +103,7 @@ mod tests {
 	}
 
 	#[test]
-	fn intersection_d() {
+	fn intersection_none() {
 		// No intersection
 		let pa = Segment(Vec2::new(-2., -2.), Vec2::new(1., 3.));
 		let pb = Segment(Vec2::new(1., 1.), Vec2::new(4., -2.));
@@ -87,10 +112,28 @@ mod tests {
 	}
 
 	#[test]
-	fn intersection_e() {
+	fn intersection_parallel() {
 		// Parallel segments
 		let pa = Segment(Vec2::new(0., 1.), Vec2::new(4., -2.));
 		let pb = Segment(Vec2::new(-3., -2.), Vec2::new(1., -5.));
+		let intersection_point = pa.intersection(pb);
+		assert!(intersection_point.is_none());
+	}
+
+	#[test]
+	fn intersection_collinear() {
+		// Collinear segments
+		let pa = Segment(Vec2::new(0., 1.), Vec2::new(4., -2.));
+		let pb = Segment(Vec2::new(-3., -2.), Vec2::new(1., -5.));
+		let intersection_point = pa.intersection(pb);
+		assert!(intersection_point.is_none());
+	}
+
+	#[test]
+	fn intersection_connected() {
+		// Connected segments
+		let pa = Segment(Vec2::new(3., 6.), Vec2::new(4., 2.));
+		let pb = Segment(Vec2::new(4., 2.), Vec2::new(8., -1.));
 		let intersection_point = pa.intersection(pb);
 		assert!(intersection_point.is_none());
 	}
