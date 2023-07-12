@@ -1,20 +1,23 @@
 use crate::wad::DoomWadLump;
 use crate::res::{self, ToImage, Image, ImageFormat, ImageDimension, IndexedBuffer};
-use std::io::{Read, Cursor, Seek, SeekFrom};
-use std::error::Error;
+use std::{
+	error::Error,
+	io::{Read, Cursor, Seek, SeekFrom},
+	sync::Arc,
+};
 
 #[derive(Debug, Clone)]
-pub struct DoomPicture<'a> {
-	lump: &'a DoomWadLump
+pub struct DoomPicture {
+	lump: Arc<DoomWadLump>
 }
 
-impl<'a> From<&'a DoomWadLump> for DoomPicture<'a> {
-	fn from(lump: &'a DoomWadLump) -> DoomPicture<'a> {
-		DoomPicture { lump: lump }
+impl From<Arc<DoomWadLump>> for DoomPicture {
+	fn from(lump: Arc<DoomWadLump>) -> DoomPicture {
+		DoomPicture { lump: Arc::clone(&lump) }
 	}
 }
 
-impl<'a> ToImage for DoomPicture<'a> {
+impl ToImage for DoomPicture {
 	fn to_image(&self) -> Image {
 
 		// TODO: Format detection and processing
@@ -179,10 +182,10 @@ mod tests {
 
 	#[test]
 	fn converts_opaque_patches_correctly() {
-		let patch_lump = DoomWadLump {
+		let patch_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("MOSSBRK8").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/MOSSBRK8.lmp").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 128,
 			height: 128,
@@ -196,7 +199,7 @@ mod tests {
 			truecolor: None,
 		};
 
-		let picture = DoomPicture {lump: &patch_lump};
+		let picture = DoomPicture {lump: Arc::clone(&patch_lump)};
 		let image = picture.to_image();
 
 		assert_eq!(image.width, expected.width);
@@ -209,10 +212,10 @@ mod tests {
 
 	#[test]
 	fn converts_transparent_patches_correctly() {
-		let patch_lump = DoomWadLump {
+		let patch_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("GRATE").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/GRATE.lmp").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 128,
 			height: 128,
@@ -226,7 +229,7 @@ mod tests {
 			truecolor: None,
 		};
 
-		let picture = DoomPicture {lump: &patch_lump};
+		let picture = DoomPicture {lump: Arc::clone(&patch_lump)};
 		let image = picture.to_image();
 
 		assert_eq!(image.width, expected.width);
@@ -239,10 +242,10 @@ mod tests {
 
 	#[test]
 	fn converts_tall_patches_correctly() {
-		let patch_lump = DoomWadLump {
+		let patch_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("SHTGC0").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/SHTGC0.lmp").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 98,
 			height: 146,
@@ -256,7 +259,7 @@ mod tests {
 			truecolor: None,
 		};
 
-		let picture = DoomPicture {lump: &patch_lump};
+		let picture = DoomPicture {lump: Arc::clone(&patch_lump)};
 		let image = picture.to_image();
 
 		assert_eq!(image.width, expected.width);
@@ -269,10 +272,10 @@ mod tests {
 
 	#[test]
 	fn converts_deepsea_tall_patches_correctly() {
-		let patch_lump = DoomWadLump {
+		let patch_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("CYBRE1").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/CYBRE1.lmp").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 277,
 			height: 335,
@@ -286,7 +289,7 @@ mod tests {
 			truecolor: None,
 		};
 
-		let picture = DoomPicture {lump: &patch_lump};
+		let picture = DoomPicture {lump: Arc::clone(&patch_lump)};
 		let image = picture.to_image();
 
 		assert_eq!(image.width, expected.width);
@@ -299,10 +302,10 @@ mod tests {
 
 	#[test]
 	fn converts_tswgb0_correctly() {
-		let patch_lump = DoomWadLump {
+		let patch_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("TSWGB0").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/TSWGB0.lmp").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 179,
 			height: 333,
@@ -316,7 +319,7 @@ mod tests {
 			truecolor: None
 		};
 
-		let picture = DoomPicture {lump: &patch_lump};
+		let picture = DoomPicture {lump: Arc::clone(&patch_lump)};
 		let image = picture.to_image();
 
 		assert_eq!(image.width, expected.width);

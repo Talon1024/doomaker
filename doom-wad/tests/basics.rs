@@ -7,7 +7,7 @@ mod tests {
 
 	#[test]
 	fn can_load_wad() -> Result<(), Box<dyn Error>> {
-		let wad = DoomWad::load("tests/data/3difytest.wad")?;
+		let wad = DoomWad::load_sync("tests/data/3difytest.wad")?;
 		assert!(matches!(wad.wtype, DoomWadType::PWAD));
 		assert_ne!(wad.lumps.len(), 0);
 /* 

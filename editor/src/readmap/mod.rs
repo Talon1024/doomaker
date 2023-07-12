@@ -10,7 +10,7 @@ use doom_wad::map::{
 	Sidedef as DVSide,
 	Sector as DVSector,
 	Thing as DVThing,
-	linedef_flags::*
+	LinedefFlags,
 };
 
 impl From<DVVertex> for Vertex {
@@ -34,31 +34,31 @@ impl From<DVLine> for Line {
 			line.set_property("tag", Some(PropertyValue::UnsignedInteger(v.tag as u32)));
 		}
 		// Flags
-		if (v.flags & LF_BLOCK_PLAYERS) != 0 {
+		if !(v.flags & LinedefFlags::BLOCK_PLAYERS).is_empty() {
 			line.set_property("blocking", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_BLOCK_MONSTERS) != 0 {
+		if !(v.flags & LinedefFlags::BLOCK_MONSTERS).is_empty() {
 			line.set_property("blockmonsters", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_TWO_SIDED) != 0 {
+		if !(v.flags & LinedefFlags::TWO_SIDED).is_empty() {
 			line.set_property("twosided", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_UPPER_UNPEGGED) != 0 {
+		if !(v.flags & LinedefFlags::UPPER_UNPEGGED).is_empty() {
 			line.set_property("dontpegtop", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_LOWER_UNPEGGED) != 0 {
+		if !(v.flags & LinedefFlags::LOWER_UNPEGGED).is_empty() {
 			line.set_property("dontpegbottom", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_AUTOMAP_SOLID) != 0 {
+		if !(v.flags & LinedefFlags::AUTOMAP_SOLID).is_empty() {
 			line.set_property("secret", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_BLOCK_SOUND) != 0 {
+		if !(v.flags & LinedefFlags::BLOCK_SOUND).is_empty() {
 			line.set_property("blocksound", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_AUTOMAP_HIDDEN) != 0 {
+		if !(v.flags & LinedefFlags::AUTOMAP_HIDDEN).is_empty() {
 			line.set_property("dontdraw", Some(PropertyValue::Boolean(true)));
 		}
-		if (v.flags & LF_AUTOMAP_SHOWN) != 0 {
+		if !(v.flags & LinedefFlags::AUTOMAP_SHOWN).is_empty() {
 			line.set_property("mapped", Some(PropertyValue::Boolean(true)));
 		}
 		line

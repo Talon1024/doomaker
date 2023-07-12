@@ -1,17 +1,18 @@
 // Flats are 64x64 graphics stored as indexed samples in row-major order.
 use crate::wad::DoomWadLump;
 use crate::res::{ToImage, Image, ImageDimension};
+use std::sync::Arc;
 
 use super::IndexedBuffer;
 
 const MINIMUM_SIZE: usize = 64;
 // const MINIMUM_BYTES: usize = 4096; // 64 * 64
 
-pub struct FlatImage<'a> {
-	lump: &'a DoomWadLump
+pub struct FlatImage {
+	lump: Arc<DoomWadLump>
 }
 
-impl<'a> FlatImage<'a> {
+impl FlatImage {
 	pub fn height(&self) -> ImageDimension {
 		let l = self.lump.data.len();
 		let mut h = l / MINIMUM_SIZE;
@@ -25,7 +26,7 @@ impl<'a> FlatImage<'a> {
 	}
 }
 
-impl<'a> ToImage for FlatImage<'a> {
+impl ToImage for FlatImage {
 	fn to_image(&self) -> Image {
 		let height = self.height();
 		let width = self.width();
@@ -50,10 +51,10 @@ mod tests {
 
 	#[test]
 	fn converts_flats_properly() {
-		let flat_lump = DoomWadLump {
+		let flat_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("A").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/TLITE6_5.flt").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 64,
 			height: 64,
@@ -67,7 +68,7 @@ mod tests {
 			truecolor: None
 		};
 
-		let flat_image = FlatImage {lump: &flat_lump};
+		let flat_image = FlatImage {lump: flat_lump};
 		let flat_image = flat_image.to_image();
 
 		assert_eq!(flat_image.width, expected.width);
@@ -78,10 +79,10 @@ mod tests {
 	#[test]
 	// Heretic's F_SKY1 lump is only 4 bytes long
 	fn converts_heretic_sky() {
-		let flat_lump = DoomWadLump {
+		let flat_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("F_SKY1").unwrap(),
 			data: Vec::<u8>::from([83, 75, 89, 10])
-		};
+		});
 		let expected = Image {
 			width: 4,
 			height: 1,
@@ -94,7 +95,7 @@ mod tests {
 			truecolor: None,
 		};
 
-		let flat_image = FlatImage {lump: &flat_lump};
+		let flat_image = FlatImage {lump: flat_lump};
 		let flat_image = flat_image.to_image();
 
 		assert_eq!(flat_image.width, expected.width);
@@ -105,10 +106,10 @@ mod tests {
 	#[test]
 	// How about a flat with only 1.5 rows?
 	fn converts_incomplete_flat() {
-		let flat_lump = DoomWadLump {
+		let flat_lump = Arc::new(DoomWadLump {
 			name: LumpName::try_from("INCOMPLE").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/INCOMPLE.flt").as_slice())
-		};
+		});
 		let expected = Image {
 			width: 64,
 			height: 2,
@@ -126,7 +127,7 @@ mod tests {
 			truecolor: None,
 		};
 
-		let flat_image = FlatImage {lump: &flat_lump};
+		let flat_image = FlatImage {lump: flat_lump};
 		let flat_image = flat_image.to_image();
 
 		assert_eq!(flat_image.width, expected.width);

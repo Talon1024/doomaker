@@ -1,4 +1,4 @@
-use std::{error::Error, rc::Rc, fs::File, ops::Range};
+use std::{error::Error, rc::Rc, fs::File, ops::Range, sync::Arc};
 use egui::Widget;
 use egui_glow::EguiGlow;
 use glutin::{
@@ -33,7 +33,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let wad_textures = wads.textures(Some(&wad_lumps), &wad_patches).ok_or("No PNAMES!")?;
 	let textures = wad_textures.tex_map();
 	let mut tex_names = Vec::new();
-	let tex_images = textures.iter().map(|(&name, &tex)| {
+	let tex_images = textures.iter().map(|(name, tex)| {
+		let tex = Arc::clone(&tex);
 		tex_names.push(name.to_string());
 		let mut image = tex.to_image();
 		let Image {width, height, ..} = image;

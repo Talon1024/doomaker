@@ -5,6 +5,7 @@
 use crate::wad::DoomWadLump;
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 use crate::res::{Image, ToImage, ImageDimension};
 use image::RgbaImage;
 
@@ -12,14 +13,14 @@ const BYTES_PER_PALETTE: usize = 768; // 256 colors * RGB channels
 
 type Palette = [u8; BYTES_PER_PALETTE];
 // book/ch10-03-lifetime-syntax.html#lifetime-annotations-in-struct-definitions
-pub struct PaletteCollection<'a> {
-	lump: &'a DoomWadLump
+pub struct PaletteCollection {
+	lump: Arc<DoomWadLump>,
 }
 
 // rust-by-example/scope/lifetime/trait.html
-impl<'a> From<&'a DoomWadLump> for PaletteCollection<'a> {
-	fn from(lump: &'a DoomWadLump) -> PaletteCollection<'a> {
-		PaletteCollection { lump: lump }
+impl From<Arc<DoomWadLump>> for PaletteCollection {
+	fn from(lump: Arc<DoomWadLump>) -> PaletteCollection {
+		PaletteCollection { lump: Arc::clone(&lump) }
 	}
 }
 
@@ -39,7 +40,7 @@ impl fmt::Display for PaletteError {
 }
 impl Error for PaletteError {}
 
-impl PaletteCollection<'_> {
+impl PaletteCollection {
 	pub fn count(&self) -> usize {
 		self.lump.data.len() / BYTES_PER_PALETTE
 	}
@@ -54,7 +55,7 @@ impl PaletteCollection<'_> {
 	}
 }
 
-impl<'a> ToImage for PaletteCollection<'a> {
+impl ToImage for PaletteCollection {
 	fn to_image(&self) -> Image {
 		let rows = self.count() as ImageDimension;
 		let rgba: Vec<u8> = self.lump.data.chunks_exact(3)
@@ -77,21 +78,21 @@ mod tests {
 
 	#[test]
 	fn imports_properly() {
-		let playpal = DoomWadLump {
+		let playpal = Arc::new(DoomWadLump {
 			name: LumpName::try_from("PLAYPAL").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/PLAYPAL.pal").as_slice()),
-		};
-		let palcol = PaletteCollection {lump: &playpal};
+		});
+		let palcol = PaletteCollection {lump: playpal};
 		assert_eq!(palcol.count(), 14);
 	}
 
 	#[test]
 	fn can_get_palettes() -> Result<(), Box<dyn Error>> {
-		let playpal = DoomWadLump {
+		let playpal = Arc::new(DoomWadLump {
 			name: LumpName::try_from("PLAYPAL").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/PLAYPAL.pal").as_slice()),
-		};
-		let palcol = PaletteCollection {lump: &playpal};
+		});
+		let palcol = PaletteCollection {lump: playpal};
 
 		palcol.get(0)?;
 		palcol.get(1)?;
@@ -102,11 +103,11 @@ mod tests {
 	#[test]
 	#[should_panic]
 	fn bad_palette_index() -> () {
-		let playpal = DoomWadLump {
+		let playpal = Arc::new(DoomWadLump {
 			name: LumpName::try_from("PLAYPAL").unwrap(),
 			data: Vec::from(include_bytes!("../../tests/data/PLAYPAL.pal").as_slice()),
-		};
-		let palcol = PaletteCollection {lump: &playpal};
+		});
+		let palcol = PaletteCollection {lump: playpal};
 
 		// The palette collection has only 14 palettes, starting at 0. This
 		// tries (and fails) to get palette #15.

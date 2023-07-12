@@ -1,50 +1,54 @@
 // TEXTURE1, TEXTURE2, and PNAMES
 use crate::wad::{self, DoomWadLump, LumpName, GetLump};
 use crate::res::{Image, ImageFormat, ToImage};
-use std::{collections::HashMap, error::Error};
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::{
+	collections::HashMap,
+	error::Error,
+	io::{Cursor, Read, Seek, SeekFrom},
+	sync::Arc,
+};
 use ahash::RandomState;
 use derive_deref::*;
 use super::DoomPicture;
 
 #[derive(Debug, Clone)]
-pub struct TexturePatch<'a> {
+pub struct TexturePatch {
 	patch: LumpName,
 	x: i16, // X and Y offsets
 	y: i16,
 	flags: i32,
-	lump: Option<DoomPicture<'a>>,
+	lump: Option<DoomPicture>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Texture<'a> {
+pub struct Texture {
 	name: LumpName,
 	flags: i32,
 	width: u16,
 	height: u16,
-	patches: Vec<TexturePatch<'a>>,
+	patches: Vec<TexturePatch>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TextureDefinitions<'a> {
-	textures: Vec<Texture<'a>>,
+pub struct TextureDefinitions {
+	textures: Vec<Arc<Texture>>,
 }
 
-impl<'a> TextureDefinitions<'a> {
-	pub fn tex_map(&'a self) -> TextureDefinitionsMap<'a> {
+impl TextureDefinitions {
+	pub fn tex_map(&self) -> TextureDefinitionsMap {
 		let mut map = TextureDefinitionsMap::default();
 		self.textures.iter().for_each(|t| {
-			map.insert(t.name, &t);
+			map.insert(t.name, Arc::clone(t));
 		});
 		map
 	}
 }
 
 #[derive(Default, Deref, Debug)]
-pub struct TextureDefinitionsLumps<'a>(pub(crate) Vec<TextureDefinitions<'a>>);
+pub struct TextureDefinitionsLumps(pub(crate) Vec<TextureDefinitions>);
 
-impl<'a> TextureDefinitionsLumps<'a> {
-	pub fn tex_map(&'a self) -> TextureDefinitionsMap<'a> {
+impl TextureDefinitionsLumps {
+	pub fn tex_map(&self) -> TextureDefinitionsMap {
 		self.0.iter().map(TextureDefinitions::tex_map).reduce(|mut a, b| {
 			a.extend(b); a
 		}).unwrap_or_default()
@@ -54,8 +58,8 @@ impl<'a> TextureDefinitionsLumps<'a> {
 // https://users.rust-lang.org/t/hashmap-of-a-vector-of-objects/29220
 // My solution is to add a method to the referred type which creates a HashMap
 // of references to the data in the referree.
-pub type TextureDefinitionsMap<'a> =
-	HashMap<LumpName, &'a Texture<'a>, RandomState>;
+pub type TextureDefinitionsMap =
+	HashMap<LumpName, Arc<Texture>, RandomState>;
 
 fn read_pnames(pnames: &wad::DoomWadLump) ->
 	Result<Vec<LumpName>, Box<dyn Error>>
@@ -74,8 +78,8 @@ fn read_pnames(pnames: &wad::DoomWadLump) ->
 }
 
 pub fn read_texturex<'a>(
-	list: &'a DoomWadLump, pnames: &'a DoomWadLump, wad: &'a (dyn GetLump<'a>)) ->
-	Result<TextureDefinitions<'a>, Box<dyn Error>>
+	list: &Arc<DoomWadLump>, pnames: &Arc<DoomWadLump>, wad: &dyn GetLump) ->
+	Result<TextureDefinitions, Box<dyn Error>>
 {
 	let patches = read_pnames(pnames)?;
 	let mut pos = Cursor::new(&list.data);
@@ -109,7 +113,7 @@ pub fn read_texturex<'a>(
 		pos.seek(SeekFrom::Current(4))?; // skip columndirectory
 		pos.read_exact(&mut short_buffer)?; // patchcount
 		let patch_count = u16::from_le_bytes(short_buffer);
-		defs.textures.push(Texture {
+		defs.textures.push(Arc::new(Texture {
 			name: name.clone(),
 			flags: flags,
 			width: width,
@@ -133,13 +137,13 @@ pub fn read_texturex<'a>(
 					lump: wad.get_lump(patch_name).map(DoomPicture::from)
 				})
 			}).collect::<Result<Vec<TexturePatch>, Box<dyn Error>>>()?
-		});
+		}));
 		Ok(())
 	})?;
 	Ok(defs)
 }
 
-impl<'a> ToImage for Texture<'a> {
+impl ToImage for Texture {
 	fn to_image(&self) -> Image {
 		let mut image = Image::new(self.width as usize, self.height as usize, ImageFormat::IndexedAlpha);
 		self.patches.iter().for_each(|pa| {
@@ -171,17 +175,17 @@ mod tests {
 		let pnames_name = LumpName(*b"PNAMES\0\0");
 		let wad = DoomWad {
 			wtype: DoomWadType::PWAD,
-			lumps: vec![DoomWadLump {
+			lumps: vec![Arc::new(DoomWadLump {
 				name: texture1_name,
 				data: Vec::from(*include_bytes!("../../tests/data/TEXTURE1.lmp"))
-			}, DoomWadLump {
+			}), Arc::new(DoomWadLump {
 				name: pnames_name,
 				data: Vec::from(*include_bytes!("../../tests/data/PNAMES.lmp"))
-			}]
+			})]
 		};
 		let texture_lump = wad.get_lump(texture1_name).ok_or("No TEXTURE1!")?;
 		let pnames_lump = wad.get_lump(pnames_name).ok_or("No PNAMES!")?;
-		let texdefs = read_texturex(texture_lump, pnames_lump, &wad)?;
+		let texdefs = read_texturex(&texture_lump, &pnames_lump, &wad)?;
 		assert_eq!(texdefs.textures.len(), 4);
 		assert_eq!(texdefs.textures[0].name, LumpName(*b"S3DUMMY\0"));
 		Ok(())
