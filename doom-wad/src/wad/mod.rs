@@ -184,9 +184,9 @@ impl DoomWad {
 	}
 }
 
-pub type Namespaces<'a> = HashMap<String, Namespace, RandomState>;
-pub trait Namespaced<'a> {
-	fn namespace(&'a self, namespace: &str) -> Option<Namespace>;
+pub type Namespaces = HashMap<String, Namespace, RandomState>;
+pub trait Namespaced {
+	fn namespace(&self, namespace: &str) -> Option<Namespace>;
 }
 
 #[derive(Default, Debug, Deref, DerefMut)]
@@ -264,8 +264,8 @@ impl DoomWadCollection {
 	}
 }
 
-impl<'a> Namespaced<'a> for DoomWadCollection {
-	fn namespace(&'a self, namespace: &str) -> Option<Namespace> {
+impl Namespaced for DoomWadCollection {
+	fn namespace(&self, namespace: &str) -> Option<Namespace> {
 		let ns = Namespace(self.0.iter().filter_map(|w| {
 			let ns = w.namespace(namespace)?;
 			Some(ns.0)
@@ -274,8 +274,8 @@ impl<'a> Namespaced<'a> for DoomWadCollection {
 	}
 }
 
-impl<'a> Namespaced<'a> for DoomWad {
-	fn namespace(&'a self, namespace: &str) -> Option<Namespace> {
+impl Namespaced for DoomWad {
+	fn namespace(&self, namespace: &str) -> Option<Namespace> {
 		let bounds = match namespace {
 			"patches" => Some((
 				vec![LumpName(*b"P_START\0"), LumpName(*b"PP_START")],
