@@ -223,7 +223,7 @@ impl GetLump for LumpMap {
 }
 
 impl DoomWadCollection {
-	pub fn lump_map(& self) -> LumpMap {
+	pub fn lump_map(&self) -> LumpMap {
 		let mut lump_map = LumpMap::default();
 		self.0.iter().for_each(|wad| {
 			wad.lumps.iter().for_each(|lump| {
@@ -256,9 +256,15 @@ impl DoomWadCollection {
 		let pnames = LumpName(*b"PNAMES\0\0");
 		let tex_lumps = [LumpName(*b"TEXTURE1"), LumpName(*b"TEXTURE2"),
 			LumpName(*b"TEXTURE3")];
-		let pnames = self.get(pnames, map)?;
+		let lump_map = match map {
+			Some(_) => Default::default(), // This is only for appeasing the
+			// borrow checker, and it's not used otherwise.
+			None => self.lump_map(), // Fill out the lump map if map is None
+		};
+		let map = map.unwrap_or(&lump_map);
+		let pnames = self.get(pnames, Some(map))?;
 		Some(TextureDefinitionsLumps(tex_lumps.iter().filter_map(|&name| {
-			let lump = self.get(name, map)?;
+			let lump = self.get(name, Some(map))?;
 			read_texturex(&lump, &pnames, patches).ok()
 		}).collect()))
 	}

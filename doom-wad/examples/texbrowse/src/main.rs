@@ -1,4 +1,4 @@
-use std::{error::Error, rc::Rc, fs::File, ops::Range, sync::Arc};
+use std::{error::Error, rc::Rc, sync::Arc, fs::File, ops::Range};
 use egui::Widget;
 use egui_glow::EguiGlow;
 use glutin::{
@@ -47,6 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		let txid = egui_glow.painter.register_native_texture(tex);
 		Ok(egui::Image::new(txid, (width as f32, height as f32)))
 	}).collect::<VecResult<egui::Image>>()?;
+	let tex_names = tex_names;
 	let mut tex_name_filter = String::new();
 	let mut tex_full_path = false;
 	let mut selected_index = 0;
@@ -197,7 +198,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 							ui.horizontal_wrapped(|ui| {
 								(0..).zip(tex_names.iter()).zip(tex_images.iter())
 								.for_each(|((index, name), &tex)| {
-									let mut ts = TextureSquare::new(
+									let ts = TextureSquare::new(
 										None, tex, name, selected_index == index
 									);
 									if ts.ui(ui).clicked() {

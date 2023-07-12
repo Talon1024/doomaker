@@ -6,27 +6,74 @@ use std::{
 	error::Error,
 	io::{Cursor, Read, Seek, SeekFrom},
 	sync::Arc,
+	num::NonZeroU8,
+	ops::Deref
 };
 use ahash::RandomState;
 use derive_deref::*;
 use super::DoomPicture;
+use bitflags::bitflags;
+
+bitflags!{
+	#[derive(Debug, Clone, Copy)]
+	pub struct PatchFlags: i32 {}
+}
 
 #[derive(Debug, Clone)]
 pub struct TexturePatch {
 	patch: LumpName,
 	x: i16, // X and Y offsets
 	y: i16,
-	flags: i32,
+	flags: PatchFlags,
 	lump: Option<DoomPicture>,
+}
+
+bitflags!{
+	/// Texture flags for a TEXTUREx texture (ZDoom and derivatives only)
+	/// See https://zdoom.org/wiki/TEXTUREx for more info
+	#[derive(Debug, Clone, Copy)]
+	pub struct TextureFlags: u16 {
+		const WORLDPANNING = 0x8000;
+	}
 }
 
 #[derive(Debug, Clone)]
 pub struct Texture {
 	name: LumpName,
-	flags: i32,
+	flags: TextureFlags,
+	scalex: TextureScale,
+	scaley: TextureScale,
 	width: u16,
 	height: u16,
 	patches: Vec<TexturePatch>,
+}
+
+/// Texture scale for a TEXTUREx texture (ZDoom and derivatives only)
+/// See https://zdoom.org/wiki/TEXTUREx
+#[derive(Debug, Clone, Copy)]
+pub struct TextureScale(NonZeroU8);
+
+impl From<Option<NonZeroU8>> for TextureScale {
+    fn from(value: Option<NonZeroU8>) -> Self {
+        TextureScale(value.unwrap_or(NonZeroU8::new(8).unwrap()))
+    }
+}
+
+impl TextureScale {
+	pub fn to_float(&self) -> f32 {
+		(self.0.get() as f32) / 8.
+	}
+	pub fn new(v: u8) -> Self {
+		Self::from(NonZeroU8::new(v))
+	}
+}
+
+impl Deref for TextureScale {
+    type Target = NonZeroU8;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -61,6 +108,8 @@ impl TextureDefinitionsLumps {
 pub type TextureDefinitionsMap =
 	HashMap<LumpName, Arc<Texture>, RandomState>;
 
+// The reference is not held for long, since this function is private, and
+// returns an owned value
 fn read_pnames(pnames: &wad::DoomWadLump) ->
 	Result<Vec<LumpName>, Box<dyn Error>>
 {
@@ -104,8 +153,13 @@ pub fn read_texturex<'a>(
 		pos.read_exact(&mut name_buffer)?; // name
 		let name = LumpName::try_from(&name_buffer)?;
 		// Flags (4 bytes)
-		pos.read_exact(&mut num_buffer)?; // masked
-		let flags = i32::from_le_bytes(num_buffer);
+		pos.read_exact(&mut short_buffer)?; // masked
+		let flags = TextureFlags::from_bits_retain(
+			u16::from_le_bytes(short_buffer));
+		pos.read_exact(&mut num_buffer[0..1])?;
+		let scalex = TextureScale::new(num_buffer[0]);
+		pos.read_exact(&mut num_buffer[0..1])?;
+		let scaley = TextureScale::new(num_buffer[0]);
 		pos.read_exact(&mut short_buffer)?; // width
 		let width = u16::from_le_bytes(short_buffer);
 		pos.read_exact(&mut short_buffer)?; // height
@@ -115,9 +169,11 @@ pub fn read_texturex<'a>(
 		let patch_count = u16::from_le_bytes(short_buffer);
 		defs.textures.push(Arc::new(Texture {
 			name: name.clone(),
-			flags: flags,
-			width: width,
-			height: height,
+			flags,
+			scalex,
+			scaley,
+			width,
+			height,
 			patches: (0..patch_count).map(|_| -> Result<TexturePatch, Box<dyn Error>> {
 				pos.read_exact(&mut short_buffer)?;
 				let x = i16::from_le_bytes(short_buffer);
@@ -125,15 +181,17 @@ pub fn read_texturex<'a>(
 				let y = i16::from_le_bytes(short_buffer);
 				pos.read_exact(&mut short_buffer)?;
 				let pindex = u16::from_le_bytes(short_buffer);
-				let patch_name = patches[pindex as usize];
+				let patch_name = patches.get(pindex as usize).copied()
+					.ok_or(String::from("Invalid patch index!"))?;
 				pos.read_exact(&mut num_buffer)?;
 				// Two unused 16-bit integers
-				let flags = i32::from_le_bytes(num_buffer);
+				let flags = PatchFlags::from_bits_retain(
+					i32::from_le_bytes(num_buffer));
 				Ok(TexturePatch {
 					patch: patch_name,
-					x: x,
-					y: y, 
-					flags: flags,
+					x,
+					y, 
+					flags,
 					lump: wad.get_lump(patch_name).map(DoomPicture::from)
 				})
 			}).collect::<Result<Vec<TexturePatch>, Box<dyn Error>>>()?
