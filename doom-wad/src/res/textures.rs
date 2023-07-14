@@ -60,8 +60,11 @@ impl From<Option<NonZeroU8>> for TextureScale {
 }
 
 impl TextureScale {
-	pub fn to_float(&self) -> f32 {
+	pub fn to_dim_scale(&self) -> f32 {
 		8. / (self.0.get() as f32)
+	}
+	pub fn to_uv_scale(&self) -> f32 {
+		(self.0.get() as f32) / 8.
 	}
 	pub fn new(v: u8) -> Self {
 		Self::from(NonZeroU8::new(v))
