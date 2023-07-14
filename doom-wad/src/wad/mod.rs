@@ -11,7 +11,6 @@ use std::{
 use ahash::RandomState;
 pub use lump_name::{LumpName, LumpNameConvertError};
 use derive_deref::*;
-use futures::executor;
 
 use crate::res::{TextureDefinitionsLumps, read_texturex};
 
@@ -52,13 +51,6 @@ impl Display for InvalidWadError {
 impl Error for InvalidWadError{}
 
 impl DoomWad {
-	// All wasm i/o must be async
-	#[cfg(not(target_family = "wasm"))]
-	pub fn load_sync(filename: &(impl AsRef<Path> + ?Sized)) -> Result<DoomWad, Box<dyn Error>> {
-		let file = read(filename)?;
-		executor::block_on(DoomWad::read_from(&file))
-	}
-
 	pub async fn load(filename: &(impl AsRef<Path> + ?Sized)) -> Result<DoomWad, Box<dyn Error>> {
 		let file = read(filename)?;
 		DoomWad::read_from(&file).await
@@ -122,16 +114,6 @@ impl DoomWad {
 		// TODO: Make asynchronous
 		let mut data: Vec<u8> = Vec::<u8>::new();
 		self.write_to(&mut data).await?;
-		let mut file = File::create(filename)?;
-		file.write_all(&data[..])?;
-		Ok(())
-	}
-
-	// All wasm i/o must be async
-	#[cfg(not(target_family = "wasm"))]
-	pub fn write_sync(&self, filename: &(impl AsRef<Path> + ?Sized)) -> Result<(), Box<dyn Error>> {
-		let mut data: Vec<u8> = Vec::<u8>::new();
-		executor::block_on(self.write_to(&mut data))?;
 		let mut file = File::create(filename)?;
 		file.write_all(&data[..])?;
 		Ok(())

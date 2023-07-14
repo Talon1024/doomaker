@@ -8,6 +8,7 @@ use glow::HasContext;
 use glam::f32::Vec3;
 use png::{Decoder, Transformations};
 use doom_wad::{wad::{Namespaced, DoomWad, DoomWadCollection}, res::{read_texturex, PaletteCollection, ToImage, Image}};
+use futures::executor;
 
 mod window;
 mod renderer;
@@ -26,7 +27,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let glc = Rc::from(glc);
 	let mut egui_glow = EguiGlow::new(ctx.window(), Rc::clone(&glc));
 	let _user_event = el.create_proxy();
-	let wads = DoomWadCollection(vec![DoomWad::load_sync("../../tests/data/3difytest.wad")?]);
+	let wads = DoomWadCollection(vec![{
+		executor::block_on(
+			DoomWad::load("../../tests/data/3difytest.wad")
+		)?
+	}]);
 	let wad_lumps = wads.lump_map();
 	let wad_pal = wads.playpal(Some(&wad_lumps)).map(PaletteCollection::from);
 	let wad_patches = wads.namespace("patches").ok_or("No patches!")?;

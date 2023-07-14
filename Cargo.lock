@@ -2540,6 +2540,7 @@ dependencies = [
  "doom-wad",
  "egui 0.18.1",
  "egui_glow 0.18.1",
+ "futures",
  "glam 0.20.5",
  "glow",
  "glutin 0.28.0",

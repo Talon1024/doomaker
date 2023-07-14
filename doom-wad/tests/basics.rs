@@ -4,10 +4,11 @@ mod tests {
 	use std::error::Error;
 	use std::fs::File;
 	use std::io::Read;
+	use futures::executor;
 
 	#[test]
 	fn can_load_wad() -> Result<(), Box<dyn Error>> {
-		let wad = DoomWad::load_sync("tests/data/3difytest.wad")?;
+		let wad = executor::block_on(DoomWad::load("tests/data/3difytest.wad"))?;
 		assert!(matches!(wad.wtype, DoomWadType::PWAD));
 		assert_ne!(wad.lumps.len(), 0);
 /* 
@@ -309,8 +310,8 @@ mod tests {
 
 	#[test]
 	fn can_write_wad() -> Result<(), Box<dyn Error>> {
-		let wad = DoomWad::load_sync("tests/data/3difytest.wad")?;
-		wad.write_sync("tests/data/another.wad")?;
+		let wad = executor::block_on(DoomWad::load("tests/data/3difytest.wad"))?;
+		executor::block_on(wad.write("tests/data/another.wad"))?;
 
 		let wad_file = File::open("tests/data/3difytest.wad")?;
 		let out_wad_file = File::open("tests/data/another.wad")?;
