@@ -1,13 +1,14 @@
-use std::{error::Error, rc::Rc, sync::Arc, fs::File, ops::Range};
+use std::{error::Error, rc::Rc, sync::Arc};
 use egui::Widget;
 use egui_glow::EguiGlow;
-use glutin::{
-	event_loop::ControlFlow,
-};
+use glutin::event_loop::ControlFlow;
 use glow::HasContext;
 use glam::f32::Vec3;
-use png::{Decoder, Transformations};
-use doom_wad::{wad::{Namespaced, DoomWad, DoomWadCollection}, res::{read_texturex, PaletteCollection, ToImage, Image}};
+
+use doom_wad::{
+	wad::{Namespaced, DoomWad, DoomWadCollection},
+	res::{PaletteCollection, ToImage, Image}
+};
 use futures::executor;
 
 mod window;
@@ -106,28 +107,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 						ctx.resize(size);
 						unsafe{glc.viewport(0, 0, size.width as i32, size.height as i32);}
 					},
-					glutin::event::WindowEvent::Moved(_) => (),
 					glutin::event::WindowEvent::CloseRequested => {
 						*control_flow = ControlFlow::Exit;
 					},
-					glutin::event::WindowEvent::Destroyed => (),
-					glutin::event::WindowEvent::DroppedFile(_) => (),
-					glutin::event::WindowEvent::HoveredFile(_) => (),
-					glutin::event::WindowEvent::HoveredFileCancelled => (),
-					glutin::event::WindowEvent::ReceivedCharacter(_) => (),
-					glutin::event::WindowEvent::Focused(_) => (),
-					glutin::event::WindowEvent::KeyboardInput { device_id, input, is_synthetic } => (),
-					glutin::event::WindowEvent::ModifiersChanged(_) => (),
-					glutin::event::WindowEvent::CursorMoved { device_id, position, modifiers } => (),
-					glutin::event::WindowEvent::CursorEntered { device_id } => (),
-					glutin::event::WindowEvent::CursorLeft { device_id } => (),
-					glutin::event::WindowEvent::MouseWheel { device_id, delta, phase, modifiers } => (),
-					glutin::event::WindowEvent::MouseInput { device_id, state, button, modifiers } => (),
-					glutin::event::WindowEvent::TouchpadPressure { device_id, pressure, stage } => (),
-					glutin::event::WindowEvent::AxisMotion { device_id, axis, value } => (),
-					glutin::event::WindowEvent::Touch(_) => (),
-					glutin::event::WindowEvent::ScaleFactorChanged { scale_factor, new_inner_size } => (),
-					glutin::event::WindowEvent::ThemeChanged(_) => (),
+					_ => (),
 				}
 			}
 			},
@@ -154,7 +137,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 					egui::TopBottomPanel::top("main menu").show(ectx, |ui| {
 						egui::menu::bar(ui, |ui| {
 							egui::menu::menu_button(ui, "File", |ui| {
-								ui.button("Open..");
+								let _ = ui.button("Open..");
 								if ui.button("Exit").clicked() {
 									*control_flow = ControlFlow::Exit;
 								}
@@ -232,8 +215,4 @@ fn main() -> Result<(), Box<dyn Error>> {
 			}, */
 		}
 	});
-}
-
-fn the_gui(ectx: &egui::Context) {
-	
 }
