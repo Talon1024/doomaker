@@ -28,6 +28,7 @@ pub struct DoomWadLump {
 	pub name: LumpName,
 	pub data: Vec<u8>,
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DoomWad {
 	pub wtype: DoomWadType,

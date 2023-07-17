@@ -49,9 +49,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.8.1"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "464b3811b747f8f7ebc8849c9c728c39f6ac98a055edad93baf9eb330e3f8f9d"
+checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
 dependencies = [
  "cfg-if 1.0.0",
  "getrandom",
@@ -636,7 +636,7 @@ dependencies = [
 name = "doom-wad"
 version = "0.1.0"
 dependencies = [
- "ahash 0.7.6",
+ "ahash 0.8.3",
  "bitflags 2.3.3",
  "derive_deref",
  "futures",
@@ -710,7 +710,7 @@ version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc9fcd393c3daaaf5909008a1d948319d538b79c51871e4df0993260260a94e4"
 dependencies = [
- "ahash 0.8.1",
+ "ahash 0.8.3",
  "epaint 0.19.0",
  "nohash-hasher",
  "tracing",
@@ -845,7 +845,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ba04741be7f6602b1a1b28f1082cce45948a7032961c52814f8946b28493300"
 dependencies = [
  "ab_glyph",
- "ahash 0.8.1",
+ "ahash 0.8.3",
  "atomic_refcell",
  "bytemuck",
  "emath 0.19.0",
@@ -1552,7 +1552,7 @@ dependencies = [
 name = "map-to-3D"
 version = "0.1.0"
 dependencies = [
- "ahash 0.8.1",
+ "ahash 0.8.3",
  "cfg-if 1.0.0",
  "derive_deref",
  "earcutr",
@@ -1667,7 +1667,7 @@ dependencies = [
 name = "movearound"
 version = "0.1.0"
 dependencies = [
- "ahash 0.8.1",
+ "ahash 0.8.3",
  "egui 0.19.0",
  "egui_glow 0.19.0",
  "glam 0.21.3",

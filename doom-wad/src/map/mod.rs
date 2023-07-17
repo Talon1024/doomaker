@@ -246,10 +246,13 @@ impl Map {
 /// which uses the output from this function
 /// 
 /// If the map does not have all required lumps, returns None
-pub fn open_map(lump: usize, wad: &DoomWad) -> Option<Map> {
+pub fn open_map(lump: usize, wad: &DoomWad, force: bool) -> Option<Map> {
 	// The lump must have all of the required lumps following it, and it must
 	// NOT BE one of the lumps that makes up a Doom map.
 	let map_head_lump = &wad.lumps[lump];
+	if !force && !is_map(map_head_lump.name) {
+		return None;
+	}
 	if lumps::ALL_LUMPS.iter().any(|&n| map_head_lump.name == n) {
 		return None;
 	}
@@ -283,4 +286,19 @@ pub fn open_map(lump: usize, wad: &DoomWad) -> Option<Map> {
 		format,
 		lumps: map_lump_slice
 	})
+}
+
+pub fn is_map(name: LumpName) -> bool {
+	const MAP: [u8; 3] = [b'M', b'A', b'P'];
+	if &name.0[0..3] == &MAP {
+		// MAPxx (Doom II, Hexen, Strife, Doom 64)
+		let mapnum = &name.as_str()[3..];
+		mapnum.len() > 0 && mapnum.chars().all(|c| c.is_ascii_digit())
+	} else if name.0[0] == b'E' && name.0[2] == b'M' {
+		// ExMx (Doom, Heretic)
+		let (episode, mapnum) = (name.0[1], name.0[3]);
+		episode.is_ascii_digit() && mapnum.is_ascii_digit()
+	} else {
+		false
+	}
 }

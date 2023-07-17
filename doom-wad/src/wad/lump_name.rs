@@ -1,7 +1,21 @@
 use thiserror::Error;
+use std::str;
 
+// TODO: use std::ascii::Char when it gets stabilized
+// https://doc.rust-lang.org/std/ascii/enum.Char.html
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct LumpName(pub(crate) [u8; 8]);
+
+impl LumpName {
+	fn zero_pos(&self) -> usize {
+		self.0.iter().position(|&b| b == 0).unwrap_or(self.0.len())
+	}
+	pub fn as_str(&self) -> &str {
+		// LumpName should be ASCII
+		let zero_pos = self.zero_pos();
+		str::from_utf8(&self.0[..zero_pos]).unwrap()
+	}
+}
 
 #[derive(Error, Debug, Clone)]
 pub enum LumpNameConvertError {
