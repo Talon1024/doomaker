@@ -5,15 +5,15 @@ mod tests {
 	use futures::executor;
 
 	#[derive(Debug)]
-	struct MapNameMismatchError(LumpName, LumpName);
+	struct MapNotFoundError(LumpName);
 
-	impl Display for MapNameMismatchError {
+	impl Display for MapNotFoundError {
 		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-			write!(f, "Map name mismatch! {} != {}", self.0.as_str(), self.1.as_str())
+			write!(f, "Map {} not found!", self.0.as_str())
 		}
 	}
 
-	impl Error for MapNameMismatchError {}
+	impl Error for MapNotFoundError {}
 
 	#[test]
 	fn can_find_all_maps() -> Result<(), Box<dyn Error>> {
@@ -51,12 +51,13 @@ mod tests {
 			LumpName::try_from("MAP24").unwrap(),
 		];
 
-		actual_maps.iter().copied()
-			.zip(expected_maps.iter().copied())
-			.map(|(a, b)| {
-				match std::cmp::PartialEq::eq(&a, &b) {
+		assert_eq!(expected_maps.len(), actual_maps.len());
+
+		expected_maps.iter().copied()
+			.map(|map_name| {
+				match actual_maps.contains(&map_name) {
 					true => Ok(()),
-					false => Err(Box::from(MapNameMismatchError(a, b))),
+					false => Err(Box::from(MapNotFoundError(map_name))),
 				}
 			})
 			.collect()
