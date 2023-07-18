@@ -7,6 +7,4 @@ key_value_pair   = { identifier ~ "=" ~ any_data ~ ";" }
 udmf_object_type = { ("thing" | "linedef" | "sidedef" | "sector" | "vertex") }
 data_block       = { udmf_object_type ~ "{" ~ key_value_pair+ ~ "}" }
 
-generic_item = { data_block }
-
-udmf_map = { SOI ~ namespace ~ generic_item* }
+udmf_map = { SOI ~ namespace ~ data_block+ }

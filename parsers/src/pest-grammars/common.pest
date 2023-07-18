@@ -18,7 +18,7 @@ text_character = @{ &(!("\r" | "\n" | "\"" | NEWLINE) | "\\\"") ~ ANY }
 basic_number = @{ ASCII_DIGIT+ }
 exponent     = @{ ("e" | "E") ~ ("-" | "+"?) ~ basic_number }
 integer      = @{ "-"? ~ basic_number }
-decimal      = @{ "-"? ~ basic_number ~ "." ~ basic_number? ~ exponent? }
+decimal      = @{ "-"? ~ basic_number ~ "." ~ (basic_number ~ exponent?)? }
 
 // Booleans
 boolean = @{ ("true" | "false") }
