@@ -35,7 +35,7 @@ decimal_with_prefix = @{ "-"? ~ basic_number ~ "." ~ basic_number? ~ exponent? ~
 decimal             =  { decimal_with_prefix | decimal_integer | decimal_fraction }
 
 // Booleans
-boolean = @{ ("true" | "false") }
+boolean = @{ "true" | "false" }
 
 // Any data type
 any_data = { text_piece | decimal | integer | boolean }
