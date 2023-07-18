@@ -1,0 +1,27 @@
+// Line comments (// to end of line)
+not_newline  = @{ !NEWLINE ~ ANY }
+line_comment = @{ "//" ~ not_newline* ~ NEWLINE }
+// Block comments (/* to first */, not nestable)
+not_end_block = _{ !"*/" ~ ANY }
+block_comment = _{ "/*" ~ not_end_block* ~ "*/" }
+// All comments
+COMMENT = _{ line_comment | block_comment }
+
+// Common
+WHITESPACE = _{ (" " | "\t" | NEWLINE) }
+
+// Strings
+text_piece     = @{ "\"" ~ text_character* ~ "\"" }
+text_character = @{ &(!("\r" | "\n" | "\"" | NEWLINE) | "\\\"") ~ ANY }
+
+// Numbers
+basic_number = @{ ASCII_DIGIT+ }
+exponent     = @{ ("e" | "E") ~ ("-" | "+"?) ~ basic_number }
+integer      = @{ "-"? ~ basic_number }
+decimal      = @{ "-"? ~ basic_number ~ "." ~ basic_number? ~ exponent? }
+
+// Booleans
+boolean = @{ ("true" | "false") }
+
+// Any data type
+any_data = { text_piece | decimal | integer | boolean }
