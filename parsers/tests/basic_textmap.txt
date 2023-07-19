@@ -1,0 +1,92 @@
+namespace = "zdoom";
+thing // 0
+{
+x = -0.000;
+y = -0.000;
+type = 1;
+angle = 90;
+flags = 7;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+dm = true;
+coop = true;
+floatbobphase = 0;
+pitch = 0;
+renderstyle = "";
+roll = 0;
+score = 0;
+}
+
+vertex // 0
+{
+x = -128.000;
+y = -64.000;
+}
+
+vertex // 1
+{
+x = -0.000;
+y = 128.000;
+}
+
+vertex // 2
+{
+x = 128.000;
+y = -64.000;
+}
+
+linedef // 0
+{
+v1 = 0;
+v2 = 1;
+sidefront = 0;
+special = 243;
+blocking = true;
+playeruse = true;
+}
+
+linedef // 1
+{
+v1 = 2;
+v2 = 0;
+sidefront = 2;
+blocking = true;
+}
+
+linedef // 2
+{
+v1 = 1;
+v2 = 2;
+sidefront = 1;
+blocking = true;
+}
+
+sidedef // 0
+{
+sector = 0;
+texturemiddle = "A-BROCK2";
+}
+
+sidedef // 1
+{
+sector = 0;
+texturemiddle = "STONE2";
+}
+
+sidedef // 2
+{
+sector = 0;
+texturemiddle = "STONE2";
+}
+
+sector // 0
+{
+texturefloor = "MFLR8_1";
+textureceiling = "MFLR8_1";
+heightceiling = 128;
+}
+

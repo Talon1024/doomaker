@@ -24,7 +24,7 @@ int_suffix  = @{ ("l" | "L" | "u" | "U"){1, 2} }
 integer_dec = @{ "-"? ~ basic_number ~ int_suffix? }
 integer_oct = @{ "-"? ~ "0" ~ basic_number ~ int_suffix? }
 integer_hex = @{ "-"? ~ "0x" ~ basic_number ~ int_suffix? }
-integer     =  { integer_hex | integer_oct | integer_dec }
+integer     = @{ integer_hex | integer_oct | integer_dec }
 
 // Floats/decimals
 // See https://github.com/ZDoom/gzdoom/blob/d2ac72129df5dbf93b185b54ac259436cd71a440/src/common/engine/sc_man_scanner.re#L237
@@ -32,7 +32,7 @@ float_suffix        = @{ "f" | "F" }
 decimal_fraction    = @{ "-"? ~ "." ~ basic_number ~ exponent? ~ float_suffix? }
 decimal_integer     = @{ "-"? ~ basic_number ~ exponent ~ float_suffix? }
 decimal_with_prefix = @{ "-"? ~ basic_number ~ "." ~ basic_number? ~ exponent? ~ float_suffix? }
-decimal             =  { decimal_with_prefix | decimal_integer | decimal_fraction }
+decimal             = @{ decimal_with_prefix | decimal_integer | decimal_fraction }
 
 // Booleans
 boolean = @{ "true" | "false" }
