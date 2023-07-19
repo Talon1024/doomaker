@@ -9,7 +9,7 @@ pub mod parser {
 
 /// Input types, used to parse the tokens into UDMF data
 pub mod input {
-    use std::{collections::HashMap, str::FromStr, error::Error};
+    use std::{collections::HashMap, str::FromStr, error::Error, fmt::Display};
     use ahash::RandomState;
     use pest::Parser;
     use thiserror::Error;
@@ -149,7 +149,24 @@ pub mod input {
         }
     }
 
+    macro_rules! impl_display_for_udmf_datum {
+        // I copied this expression from the Rust standard library
+        ($($t: ty)*) => {$(
+            impl Display for $t {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    if !self.is_default() {
+                        write!(f, "{}", self.0)
+                    } else {
+                        Ok(())
+                    }
+                }
+            }
+        )*};
+    }
+
     impl OptionalUDMFData for SidedefTexture {}
+
+    impl_display_for_udmf_datum!{ SidedefIndex SidedefTexture LightLevel }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub struct SidedefIndex(pub i32);
@@ -187,6 +204,8 @@ pub mod input {
         }
     }
 
+    impl OptionalUDMFData for MultiplicativeColour {}
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
     // Default can just be derived here, since the numbers for additive colours
     // are supposed to be 0 by default
@@ -196,7 +215,9 @@ pub mod input {
         pub b: u8,
     }
 
-    macro_rules! impl_from_str_for_colour {
+    impl OptionalUDMFData for AdditiveColour {}
+
+    macro_rules! impls_for_colour {
         ($($t: ty)*) => {$(
             impl FromStr for $t {
                 type Err = <u32 as FromStr>::Err;
@@ -222,9 +243,21 @@ pub mod input {
                     })
                 }
             }
+            impl Display for $t {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    if !self.is_default() {
+                        let combined: u32 = ((self.r as u32) << 16)
+                            | ((self.g as u32) << 8)
+                            | self.b as u32;
+                        write!(f, "{combined}")
+                    } else {
+                        Ok(())
+                    }
+                }
+            }
         )*};
     }
-    impl_from_str_for_colour! { MultiplicativeColour AdditiveColour }
+    impls_for_colour! { MultiplicativeColour AdditiveColour }
 
     trait UDMFOutput {
         const UDMF_OBJECT_TYPE: UDMFObjectType;
