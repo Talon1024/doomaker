@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr, error::Error};
 use ahash::RandomState;
-use pest::Parser;
+use pest::{Parser, iterators::Pair};
 use thiserror::Error;
 use parse_display::Display;
 
@@ -343,6 +343,42 @@ impl FromStr for UDMFMap {
             UDMFError::TextMapParseError { orig_error }
         })?;
 
+        fn parse_text_piece(text: &str, value: &mut String) {
+            // Remove quotation marks
+            let text = &text[1..text.len()-1];
+            value.push_str(text);
+        }
+
+        fn parse_integer(text: &str, value: &mut String) {
+            let text = text.trim_end_matches(['u', 'U', 'l', 'L']);
+            value.push_str(text);
+        }
+
+        fn parse_decimal(text: &str, value: &mut String) {
+            let text = text.trim_end_matches(['f', 'F']);
+            value.push_str(text);
+        }
+
+        fn parse_any_data(token: Pair<'_, Rule>, value: &mut String) {
+            let token = token.into_inner().next().unwrap();
+            let text = token.as_str();
+            match token.as_rule() {
+                Rule::text_piece => {
+                    parse_text_piece(text, value);
+                }
+                Rule::decimal => {
+                    parse_decimal(text, value);
+                }
+                Rule::integer => {
+                    parse_integer(text, value);
+                }
+                Rule::boolean => {
+                    value.push_str(token.as_str());
+                }
+                unknown => unreachable!("Rule: {unknown:?}"),
+            }
+        }
+
         let mut map = UDMFMap::default();
         root.try_for_each(|token| {
             match token.as_rule() {
@@ -350,7 +386,8 @@ impl FromStr for UDMFMap {
                     let token = token.into_inner().next().unwrap();
                     match token.as_rule() {
                         Rule::text_piece => {
-                            map.namespace.push_str(token.as_str());
+                            let text = token.as_str();
+                            parse_text_piece(text, &mut map.namespace);
                         },
                         unknown => unreachable!("Rule: {unknown:?}"),
                     }
@@ -382,7 +419,7 @@ impl FromStr for UDMFMap {
                                             key.push_str(token.as_str());
                                         },
                                         Rule::any_data => {
-                                            value.push_str(token.as_str());
+                                            parse_any_data(token, &mut value);
                                         },
                                         unknown => unreachable!("Rule: {unknown:?}"),
                                     }

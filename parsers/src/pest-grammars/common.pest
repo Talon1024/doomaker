@@ -11,8 +11,8 @@ COMMENT = _{ line_comment | block_comment }
 WHITESPACE = _{ (" " | "\t" | NEWLINE) }
 
 // Strings
-text_piece     = @{ "\"" ~ text_character* ~ "\"" }
-text_character = @{ &(!("\r" | "\n" | "\"" | NEWLINE) | "\\\"") ~ ANY }
+text_piece = @{ "\"" ~ text_chars ~ "\"" }
+text_chars = @{ (!("\"" | NEWLINE) ~ ("\\\"" | ANY))* }
 
 // Numbers
 basic_number = @{ ASCII_DIGIT+ }

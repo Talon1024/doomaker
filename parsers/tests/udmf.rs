@@ -13,6 +13,7 @@ mod tests {
 			.read_to_string(&mut udmf_text)?;
 		let udmf_text = udmf_text;
 		let _udmf_map = UDMFMap::from_str(&udmf_text)?;
+		assert_eq!(_udmf_map.namespace, "zdoom");
 		Ok(())
 	}
 }
