@@ -1,5 +1,4 @@
 // UDMF
-identifier = @{ (ASCII_ALPHANUMERIC | "_")+ }
 namespace  =  { "namespace" ~ "=" ~ text_piece ~ ";" }
 
 // Data blocks

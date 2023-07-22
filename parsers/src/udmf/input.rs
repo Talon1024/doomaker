@@ -344,9 +344,11 @@ impl FromStr for UDMFMap {
         })?;
 
         fn parse_text_piece(text: &str, value: &mut String) {
-            // Remove quotation marks
+            // Remove quotation marks at start/end
             let text = &text[1..text.len()-1];
-            value.push_str(text);
+            // Un-escape characters within the string
+            let text = text.replace("\\n", "\n");
+            value.push_str(text.as_str());
         }
 
         fn parse_integer(text: &str, value: &mut String) {

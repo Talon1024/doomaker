@@ -14,6 +14,10 @@ WHITESPACE = _{ (" " | "\t" | NEWLINE) }
 text_piece = @{ "\"" ~ text_chars ~ "\"" }
 text_chars = @{ (!("\"" | NEWLINE) ~ ("\\\"" | ANY))* }
 
+// Names (single-quoted strings)
+name_piece = @{ "'" ~ name_chars ~ "'" }
+name_chars = @{ (!("'" | NEWLINE) ~ ("\\'" | ANY))* }
+
 // Numbers
 basic_number = @{ ASCII_DIGIT+ }
 exponent     = @{ ("e" | "E") ~ ("-" | "+"?) ~ basic_number }
@@ -39,3 +43,5 @@ boolean = @{ "true" | "false" }
 
 // Any data type
 any_data = { text_piece | decimal | integer | boolean }
+
+identifier = @{ (ASCII_ALPHANUMERIC | "_")+ }
