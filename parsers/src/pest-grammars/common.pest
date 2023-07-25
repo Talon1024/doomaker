@@ -20,6 +20,7 @@ name_chars = @{ (!("'" | NEWLINE) ~ ("\\'" | ANY))* }
 
 // Numbers
 basic_number = @{ ASCII_DIGIT+ }
+hex_number   = @{ (ASCII_DIGIT | 'a'..'f' | 'A'..'F')+ }
 exponent     = @{ ("e" | "E") ~ ("-" | "+"?) ~ basic_number }
 
 // Integers
@@ -27,7 +28,7 @@ exponent     = @{ ("e" | "E") ~ ("-" | "+"?) ~ basic_number }
 int_suffix  = @{ ("l" | "L" | "u" | "U"){1, 2} }
 integer_dec = @{ "-"? ~ basic_number ~ int_suffix? }
 integer_oct = @{ "-"? ~ "0" ~ basic_number ~ int_suffix? }
-integer_hex = @{ "-"? ~ "0x" ~ basic_number ~ int_suffix? }
+integer_hex = @{ "-"? ~ "0x" ~ hex_number ~ int_suffix? }
 integer     = @{ integer_hex | integer_oct | integer_dec }
 
 // Floats/decimals
