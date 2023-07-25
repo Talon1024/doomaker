@@ -7,6 +7,7 @@ use std::{
     error::Error,
     sync::Arc,
     mem,
+	num::NonZeroUsize,
     io::{Cursor, Read, Result as IOResult},
 };
 use bitflags::bitflags;
@@ -180,18 +181,21 @@ pub enum Format {
 	Doom64,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Map {
 	pub name: LumpName,
 	pub format: Format,
-	pub lumps: Vec<Arc<DoomWadLump>>,
+	bsp: bool,
+	things: Arc<DoomWadLump>,
+	linedefs: Arc<DoomWadLump>,
+	sidedefs: Arc<DoomWadLump>,
+	vertexes: Arc<DoomWadLump>,
+	sectors: Arc<DoomWadLump>,
 }
 
 impl Map {
 	pub fn vertices(&self) -> Result<Vec<Vertex>, Box<dyn Error>> {
-		const LUMP_NAME: LumpName = LumpName(*b"VERTEXES");
-		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
-			.expect("All maps MUST have a VERTEXES lump!");
+		let lump = &self.vertexes;
 		let mut cursor = Cursor::new(&lump.data);
 		lump.data.chunks_exact(mem::size_of::<Vertex>()).map(|_| {
 			Vertex::read(&mut cursor).map_err(Box::from)
@@ -199,9 +203,7 @@ impl Map {
 	}
 
 	pub fn linedefs(&self) -> Result<Vec<Linedef>, Box<dyn Error>> {
-		const LUMP_NAME: LumpName = LumpName(*b"LINEDEFS");
-		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
-			.expect("All maps MUST have a LINEDEFS lump!");
+		let lump = &self.linedefs;
 		let mut cursor = Cursor::new(&lump.data);
 		lump.data.chunks_exact(mem::size_of::<Linedef>()).map(|_| {
 			Linedef::read(&mut cursor).map_err(Box::from)
@@ -209,9 +211,7 @@ impl Map {
 	}
 
 	pub fn sidedefs(&self) -> Result<Vec<Sidedef>, Box<dyn Error>> {
-		const LUMP_NAME: LumpName = LumpName(*b"SIDEDEFS");
-		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
-			.expect("All maps MUST have a SIDEDEFS lump!");
+		let lump = &self.sidedefs;
 		let mut cursor = Cursor::new(&lump.data);
 		lump.data.chunks_exact(mem::size_of::<Sidedef>()).map(|_| {
 			Sidedef::read(&mut cursor).map_err(Box::from)
@@ -219,9 +219,7 @@ impl Map {
 	}
 
 	pub fn sectors(&self) -> Result<Vec<Sector>, Box<dyn Error>> {
-		const LUMP_NAME: LumpName = LumpName(*b"SECTORS\0");
-		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
-			.expect("All maps MUST have a SECTORS lump!");
+		let lump = &self.sectors;
 		let mut cursor = Cursor::new(&lump.data);
 		lump.data.chunks_exact(mem::size_of::<Sector>()).map(|_| {
 			Sector::read(&mut cursor).map_err(Box::from)
@@ -229,9 +227,7 @@ impl Map {
 	}
 
 	pub fn things(&self) -> Result<Vec<Thing>, Box<dyn Error>> {
-		const LUMP_NAME: LumpName = LumpName(*b"THINGS\0\0");
-		let lump = self.lumps.iter().find(|lump| lump.name == LUMP_NAME)
-			.expect("All maps MUST have a THINGS lump!");
+		let lump = &self.things;
 		let mut cursor = Cursor::new(&lump.data);
 		lump.data.chunks_exact(mem::size_of::<Thing>()).map(|_| {
 			Thing::read(&mut cursor).map_err(Box::from)
@@ -239,53 +235,83 @@ impl Map {
 	}
 }
 
-/// Check a lump to see whether it is a vanilla Doom map lump (or similar)
+/* 
+#[derive(Debug, Clone, Error)]
+pub enum FindMapError {
+	#[error("Required lump {0} not found in map!")]
+	MissingRequiredLump(LumpName),
+}
+ */
+
+/// Look for all the maps in the WAD.
 /// 
-/// Returns the map name, the map format, and the slice of lumps which make up
-/// the map. This does not read the map; that should be done by the application
-/// which uses the output from this function
-/// 
-/// If the map does not have all required lumps, returns None
-pub fn open_map(lump: usize, wad: &DoomWad, force: bool) -> Option<Map> {
-	// The lump must have all of the required lumps following it, and it must
-	// NOT BE one of the lumps that makes up a Doom map.
-	let map_head_lump = &wad.lumps[lump];
-	if !force && !is_map(map_head_lump.name) {
-		return None;
-	}
-	if lumps::ALL_LUMPS.iter().any(|&n| map_head_lump.name == n) {
-		return None;
-	}
-	let map_lump_slice: Vec<Arc<DoomWadLump>> = {
-		let start = lump;
-		// Where is the first lump NOT in the ALL_LUMPS array?
-		let end = wad.lumps.iter().skip(lump + 1).position(|wlump| {
-			lumps::ALL_LUMPS.iter().any(|&n| wlump.name != n)
-		}).unwrap_or(wad.lumps.len());
-		(&wad.lumps[start..end]).iter().map(|lu| Arc::clone(lu)).collect()
-	};
-	let map_lump_names: Box<[&LumpName]> = map_lump_slice.iter()
-		.map(|lump| &lump.name).collect();
-	// Make sure all required lumps are present
-	if !map_lump_names.iter().all(|&ln| lumps::REQUIRED_LUMPS.iter()
-		.any(|lln| ln == lln)) {
-		return None;
-	}
-	// Find map format
-	let format = if map_lump_names.iter().any(|&ln| ln == &lumps::HEXEN_LUMPS) {
-		Format::Hexen
-	} else if map_lump_names.iter().all(|&ln| lumps::D64_LUMPS.iter().any(|lln| ln == lln)) {
-		Format::Doom64
-	} else if map_lump_names.iter().all(|&ln| lumps::PSX_LUMPS.iter().any(|lln| ln == lln)) {
-		Format::PSX
-	} else {
-		Format::Vanilla
-	};
-	Some(Map {
-		name: map_head_lump.name.clone(),
-		format,
-		lumps: map_lump_slice
-	})
+/// Returns a vector of information structs with information about the maps
+pub fn find_maps(wad: &DoomWad, lump: Option<usize>) -> Vec<Map> {
+	let start_index = lump.unwrap_or_default();
+	let lumps = &wad.lumps[start_index..];
+	lumps.windows(lumps::MAX_LUMP_COUNT).filter_map(|map_maybe| {
+		let map_lump_names: Vec<LumpName> = map_maybe.iter()
+			.map(|lump| lump.name).collect();
+		let name = map_lump_names[0];
+		let map_lump_names = &map_lump_names[1..];
+		// Cut map name...
+		let map_maybe = &map_maybe[1..];
+		// ...and lumps from other maps
+		let map_maybe = {
+			// Look for first lump which is NOT a map lump
+			let outer_lump = map_lump_names.iter()
+				.position(|name| !lumps::ALL_MAP_LUMPS.contains(&name))
+				.unwrap_or(map_lump_names.len());
+			let outer_lump = NonZeroUsize::new(outer_lump)?.get();
+			&map_maybe[..outer_lump]
+		};
+		// Since map_maybe was modified...
+		let map_lump_names: Vec<LumpName> = map_maybe.iter()
+			.map(|lump| lump.name).collect();
+		// Does it have all the required lumps for a Doom format map?
+		let is_doom = map_lump_names.starts_with(&lumps::DOOM_START);
+		let is_doom = is_doom && map_lump_names.contains(&lumps::DOOM_SECTORS);
+		if !is_doom { return None; }
+		let mut format = Format::Vanilla;
+		// Check for complete vanilla map
+		let bsp = map_lump_names.starts_with(&lumps::DOOM_VANILLA);
+		// The SECTORS lump is in a weird position, but if the BSP lumps are
+		// omitted, it comes right after the SIDEDEFS lump
+		let sectors_index = if bsp {
+			7  // See lumps.rs
+		} else {
+			map_lump_names.iter()
+			.copied()
+			.position(|name| name == lumps::DOOM_SECTORS)
+			.unwrap()
+		};
+		// Check for other map formats
+		if map_lump_names.ends_with(&[lumps::HEXEN_END]) || map_lump_names.ends_with(&lumps::HEXEN_END_OPTIONAL) {
+			format = Format::Hexen;
+		}
+		if map_lump_names.ends_with(&lumps::PSX_END) {
+			format = Format::PSX;
+		}
+		if map_lump_names.ends_with(&lumps::D64_END) {
+			format = Format::Doom64;
+		}
+		// See lumps::DOOM_VANILLA
+		let things = Arc::clone(&map_maybe[0]);
+		let linedefs = Arc::clone(&map_maybe[1]);
+		let sidedefs = Arc::clone(&map_maybe[2]);
+		let vertexes = Arc::clone(&map_maybe[3]);
+		let sectors = Arc::clone(&map_maybe[sectors_index]);
+		Some(Map {
+			name,
+			format,
+			bsp,
+			things,
+			linedefs,
+			sidedefs,
+			vertexes,
+			sectors,
+		})
+	}).collect()
 }
 
 pub fn is_map(name: LumpName) -> bool {
