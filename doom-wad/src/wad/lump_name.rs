@@ -3,7 +3,7 @@ use std::str;
 
 // TODO: use std::ascii::Char when it gets stabilized
 // https://doc.rust-lang.org/std/ascii/enum.Char.html
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct LumpName(pub(crate) [u8; 8]);
 
 impl LumpName {
@@ -85,6 +85,16 @@ impl std::fmt::Display for LumpName {
 		let string = std::str::from_utf8(&self.0[..first_zero]).map_err(|_| {
 				std::fmt::Error})?;
 		write!(f, "{}", string)
+	}
+}
+
+impl std::fmt::Debug for LumpName {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let first_zero = self.0.iter().position(|&v| v == 0)
+			.unwrap_or(self.0.len());
+		let string = std::str::from_utf8(&self.0[..first_zero]).map_err(|_| {
+				std::fmt::Error})?;
+		write!(f, "LumpName({})", string)
 	}
 }
 

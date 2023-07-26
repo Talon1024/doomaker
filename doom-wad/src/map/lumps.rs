@@ -31,7 +31,10 @@ pub(crate) const ALL_MAP_LUMPS: [LumpName; 16] = [
 	LumpName(*b"BLOCKMAP"), LumpName(*b"LEAFS\0\0\0"),
 	LumpName(*b"LIGHTS\0\0"), LumpName(*b"MACROS\0\0"),
 	LumpName(*b"BEHAVIOR"), LumpName(*b"SCRIPTS\0"), LumpName(*b"DIALOGUE")];
+// Add 1 for map header lump
 pub(crate) const MAX_LUMP_COUNT: usize = 1 + DOOM_VANILLA.len() + D64_END.len();
+// Add 2 for SECTORS lump and map header lump
+pub(crate) const MIN_LUMP_COUNT: usize = DOOM_START.len() + 2;
 /* 
 pub(crate) const UDMF_START: LumpName = LumpName(*b"TEXTMAP\0");
 pub(crate) const UDMF_END: LumpName = LumpName(*b"ENDMAP\0\0");

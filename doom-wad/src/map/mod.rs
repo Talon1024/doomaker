@@ -3,6 +3,7 @@ use crate::{
 	wad::{DoomWad, DoomWadLump, LumpName},
 	util::ReadFromReader,
 };
+use core::slice;
 use std::{
     error::Error,
     sync::Arc,
@@ -249,7 +250,12 @@ pub enum FindMapError {
 pub fn find_maps(wad: &DoomWad, lump: Option<usize>) -> Vec<Map> {
 	let start_index = lump.unwrap_or_default();
 	let lumps = &wad.lumps[start_index..];
-	lumps.windows(lumps::MAX_LUMP_COUNT).filter_map(|map_maybe| {
+	// Manual implementation of slice::windows since that iterator stops before
+	// the end
+	let max_lump = lumps.len();
+	(0..max_lump - lumps::MIN_LUMP_COUNT + 1).map(|index| {
+		&lumps[index..(index + lumps::MAX_LUMP_COUNT).min(max_lump)]
+	}).filter_map(|map_maybe| {
 		let map_lump_names: Vec<LumpName> = map_maybe.iter()
 			.map(|lump| lump.name).collect();
 		let name = map_lump_names[0];
