@@ -256,6 +256,8 @@ pub fn find_maps(wad: &DoomWad, lump: Option<usize>) -> Vec<Map> {
 	(0..max_lump - lumps::MIN_LUMP_COUNT + 1).map(|index| {
 		&lumps[index..(index + lumps::MAX_LUMP_COUNT).min(max_lump)]
 	}).filter_map(|map_maybe| {
+		// Heuristic/optimization: The first lump after the map name is THINGS
+		if map_maybe.get(1)?.name != LumpName(*b"THINGS\0\0") { return None; }
 		let map_lump_names: Vec<LumpName> = map_maybe.iter()
 			.map(|lump| lump.name).collect();
 		let name = map_lump_names[0];

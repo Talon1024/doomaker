@@ -51,11 +51,30 @@ impl Intersection {
 	pub fn split(&self, a: Segment, b: Segment) -> Vec<Segment> {
 		match self {
 			Intersection::Normal(_v) => (),
-			Intersection::Collinear => (),
+			Intersection::Collinear => {
+				if a.0.y == a.1.y && a.1.y == b.0.y && b.0.y == b.1.y {
+					// Go from left to right
+				} else {
+					// Go from top to bottom
+				}
+			},
 		}
-		vec![]
+		todo!()
 	}
 }
+
+/*
+4,8 16,11 collinear 8,9 12,10
+4,8 16,11 collinear 12,10 8,9
+16,11 4,8 collinear 8,9 12,10
+16,11 4,8 collinear 12,10 8,9
+4,8 16,11 collinear 8,9 -4,6
+4,8 16,11 collinear -4,6 8,9
+16,11 4,8 collinear 8,9 -4,6
+16,11 4,8 collinear -4,6 8,9
+4,8 16,11 nontersec -8,5 0,7
+16,11 4,8 nontersec -8,5 0,7
+*/
 
 #[cfg(test)]
 mod tests {
