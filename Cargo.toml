@@ -9,3 +9,4 @@ members = [
     "doom-wad/examples/texbrowse",
     "movearound"
 ]
+resolver = "2"

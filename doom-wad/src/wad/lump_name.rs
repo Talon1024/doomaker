@@ -1,9 +1,10 @@
 use thiserror::Error;
 use std::str;
+use binrw::BinRead;
 
 // TODO: use std::ascii::Char when it gets stabilized
 // https://doc.rust-lang.org/std/ascii/enum.Char.html
-#[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, BinRead)]
 pub struct LumpName(pub(crate) [u8; 8]);
 
 impl LumpName {

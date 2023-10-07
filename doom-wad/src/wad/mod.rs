@@ -11,6 +11,7 @@ use std::{
 use ahash::RandomState;
 pub use lump_name::{LumpName, LumpNameConvertError};
 use derive_deref::*;
+use binrw::BinRead;
 
 use crate::res::{TextureDefinitionsLumps, read_texturex};
 
@@ -34,7 +35,8 @@ pub struct DoomWad {
 	pub wtype: DoomWadType,
 	pub lumps: Vec<Arc<DoomWadLump>>,
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, BinRead)]
+#[br(little)]
 struct DoomWadDirEntry {
 	pos: u32,
 	size: u32,
@@ -86,18 +88,7 @@ impl DoomWad {
 		// Read directory
 		let mut directory: Vec<DoomWadDirEntry> = Vec::with_capacity(lump_count);
 		for _lump_index in 0..lump_count {
-			let mut name_buffer: [u8; 8] = [0; 8];
-			reader.read_exact(&mut num_buffer)?;
-			let pos = u32::from_le_bytes(num_buffer);
-			reader.read_exact(&mut num_buffer)?;
-			let size = u32::from_le_bytes(num_buffer);
-			reader.read_exact(&mut name_buffer)?;
-			let name = LumpName::try_from(&name_buffer)?;
-			let dir_entry = DoomWadDirEntry {
-				name,
-				pos,
-				size,
-			};
+			let dir_entry = DoomWadDirEntry::read(&mut reader)?;
 			directory.push(dir_entry);
 		}
 

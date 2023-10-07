@@ -5,6 +5,7 @@ use std::{
 	io::{Read, Cursor, Seek, SeekFrom},
 	sync::Arc,
 };
+use binrw::BinRead;
 
 #[derive(Debug, Clone)]
 pub struct DoomPicture {
@@ -15,6 +16,16 @@ impl From<Arc<DoomWadLump>> for DoomPicture {
 	fn from(lump: Arc<DoomWadLump>) -> DoomPicture {
 		DoomPicture { lump: Arc::clone(&lump) }
 	}
+}
+
+#[derive(BinRead)]
+#[br(little)]
+struct PictureHeader
+{
+	width: u16,
+	height: u16,
+	x: i16,
+	y: i16,
 }
 
 impl ToImage for DoomPicture {
@@ -34,30 +45,13 @@ impl ToImage for DoomPicture {
 		// In case the patch is bad
 		let bad_image = Image::default();
 
-		let width = {
-			if pos.read_exact(&mut short_buffer).is_err() {
-				return bad_image;
-			}
-			u16::from_le_bytes(short_buffer)
-		} as ImageDimension;
-		let height = {
-			if pos.read_exact(&mut short_buffer).is_err() {
-				return bad_image;
-			}
-			u16::from_le_bytes(short_buffer)
-		} as ImageDimension;
-		let x = {
-			if pos.read_exact(&mut short_buffer).is_err() {
-				return bad_image;
-			}
-			i16::from_le_bytes(short_buffer)
+		let PictureHeader {width, height, x, y} = {
+			let res = PictureHeader::read(&mut pos);
+			if res.is_err() { return bad_image; }
+			res.unwrap()
 		};
-		let y = {
-			if pos.read_exact(&mut short_buffer).is_err() {
-				return bad_image;
-			}
-			i16::from_le_bytes(short_buffer)
-		};
+		let width = width as ImageDimension;
+		let height = height as ImageDimension;
 
 		// Column offsets are relative to the start of the lump
 		let column_offsets: Result<Vec<usize>, Box<dyn Error>> = (0..width).map(|_| {

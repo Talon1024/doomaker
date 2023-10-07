@@ -12,6 +12,7 @@ png = {version = "0.17.5", optional = true}
 derive_deref = "1.1.1"
 image = "0.24.2"
 bitflags = "2.3.3"
+binrw = "0.12.0"
 
 [dev-dependencies]
 futures = "0.3.28"
