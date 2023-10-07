@@ -9,7 +9,7 @@ use fixed::types::I32F32;
 pub struct Segment(pub Vec2, pub Vec2);
 
 impl Segment {
-	pub fn intersection(&self, other: Segment) -> Option<Vec2> {
+	pub fn intersection(&self, other: Segment) -> Option<Intersection> {
 		// Thanks to https://replit.com/@thehappycheese/linetools#LineTools/line_tools.py
 		// and his YouTube video: https://youtu.be/5FkOO1Wwb8w
 		{ // If any of the four points are equal, the segments are connected.
@@ -28,7 +28,7 @@ impl Segment {
 		let ab_cross_cd = ab.perp_dot(cd);
 		if ab_cross_cd == 0. { // Lines are parallel
 			// TODO: Check for collinear segments
-			None
+			Some(Intersection::Collinear)
 		} else {
 			let ac = other.0 - self.0;
 			let ab_factor = ac.perp_dot(cd) / ab_cross_cd;
@@ -36,7 +36,7 @@ impl Segment {
 			if ab_factor < 0. || ab_factor > 1. || cd_factor < 0. || cd_factor > 1. {
 				None
 			} else {
-				Some(self.0 + ab * ab_factor)
+				Some(Intersection::Normal(self.0 + ab * ab_factor))
 			}
 		}
 	}
@@ -49,17 +49,26 @@ pub enum Intersection {
 
 impl Intersection {
 	pub fn split(&self, a: Segment, b: Segment) -> Vec<Segment> {
+		let verts = [a.0, a.1, b.0, b.1];
 		match self {
-			Intersection::Normal(_v) => (),
+			Intersection::Normal(i) => {
+				// Both segments intersect at the intersection point
+				verts.into_iter().map(|v| Segment(v, *i)).collect()
+			},
 			Intersection::Collinear => {
-				if a.0.y == a.1.y && a.1.y == b.0.y && b.0.y == b.1.y {
+				if verts.into_iter().map(|v| v.y).all(|v| v == verts[0].y) {
 					// Go from left to right
+					let mut verts = verts.clone();
+					verts.sort_by(|&a, &b| b.x.partial_cmp(&a.x).unwrap());
+					verts.windows(2).map(|w| Segment(w[0], w[1])).collect()
 				} else {
 					// Go from top to bottom
+					let mut verts = verts.clone();
+					verts.sort_by(|&a, &b| b.y.partial_cmp(&a.y).unwrap());
+					verts.windows(2).map(|w| Segment(w[0], w[1])).collect()
 				}
 			},
 		}
-		todo!()
 	}
 }
 
@@ -87,8 +96,11 @@ mod tests {
 		let intersection_point = pa.intersection(pb);
 		assert!(intersection_point.is_some());
 
+		let Intersection::Normal(intersection_point) = intersection_point.unwrap() else {
+			panic!("Intersection is collinear for some reason!");
+		};
+		let intersection_point = format!("{:.3} {:.3}", intersection_point.x, intersection_point.y);
 		let expected = const_vec2!([0., 0.]);
-		let intersection_point = intersection_point.map(|v| format!("{:.3} {:.3}", v.x, v.y)).unwrap();
 		let expected = format!("{:.3} {:.3}", expected.x, expected.y);
 		assert_eq!(expected, intersection_point);
 	}
@@ -101,8 +113,11 @@ mod tests {
 		let intersection_point = pa.intersection(pb);
 		assert!(intersection_point.is_some());
 
+		let Intersection::Normal(intersection_point) = intersection_point.unwrap() else {
+			panic!("Intersection is collinear for some reason!");
+		}; 
+		let intersection_point = format!("{:.3} {:.3}", intersection_point.x, intersection_point.y);
 		let expected = const_vec2!([2., 2.]);
-		let intersection_point = intersection_point.map(|v| format!("{:.3} {:.3}", v.x, v.y)).unwrap();
 		let expected = format!("{:.3} {:.3}", expected.x, expected.y);
 		assert_eq!(expected, intersection_point);
 	}
@@ -115,8 +130,11 @@ mod tests {
 		let intersection_point = pa.intersection(pb);
 		assert!(intersection_point.is_some());
 
+		let Intersection::Normal(intersection_point) = intersection_point.unwrap() else {
+			panic!("Intersection is collinear for some reason!");
+		}; 
+		let intersection_point = format!("{:.3} {:.3}", intersection_point.x, intersection_point.y);
 		let expected = const_vec2!([8.333333333, 1.666666666]);
-		let intersection_point = intersection_point.map(|v| format!("{:.3} {:.3}", v.x, v.y)).unwrap();
 		let expected = format!("{:.3} {:.3}", expected.x, expected.y);
 		assert_eq!(expected, intersection_point);
 	}
