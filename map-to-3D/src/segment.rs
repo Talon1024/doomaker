@@ -197,8 +197,17 @@ mod tests {
 	#[test]
 	fn intersection_collinear() {
 		// Collinear segments
-		let pa = Segment(Vec2::new(0., 1.), Vec2::new(4., -2.));
-		let pb = Segment(Vec2::new(-4., 4.), Vec2::new(1., 0.25));
+		let pa = Segment(Vec2::new(2., 3.), Vec2::new(6., 1.));
+		let pb = Segment(Vec2::new(4., 2.), Vec2::new(10., -1.));
+		let intersection_point = pa.intersection(pb);
+		assert_eq!(intersection_point, Some(Intersection::Collinear));
+	}
+
+	#[test]
+	fn intersection_collinear_shorter() {
+		// Collinear segments
+		let pa = Segment(Vec2::new(2., 3.), Vec2::new(6., 1.));
+		let pb = Segment(Vec2::new(4., 2.), Vec2::new(5., 1.5));
 		let intersection_point = pa.intersection(pb);
 		assert_eq!(intersection_point, Some(Intersection::Collinear));
 	}
