@@ -752,7 +752,7 @@ dependencies = [
  "egui-macroquad",
  "glam 0.21.3",
  "glam 0.24.2",
- "macroquad 0.4.4",
+ "macroquad",
  "map-to-3D",
 ]
 
@@ -799,7 +799,7 @@ checksum = "04684094ab441cee64e836dac5d07b822c0dd002739a9790023f9d2d08ce2875"
 dependencies = [
  "egui 0.21.0",
  "egui-miniquad",
- "macroquad 0.3.26",
+ "macroquad",
 ]
 
 [[package]]
@@ -812,7 +812,7 @@ dependencies = [
  "copypasta",
  "egui 0.21.0",
  "getrandom",
- "miniquad 0.3.16",
+ "miniquad",
  "quad-rand",
  "quad-url",
 ]
@@ -1634,25 +1634,9 @@ dependencies = [
  "glam 0.21.3",
  "image",
  "macroquad_macro",
- "miniquad 0.3.16",
+ "miniquad",
  "quad-rand",
  "quad-snd",
-]
-
-[[package]]
-name = "macroquad"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0bf249d79f5080e200334fe30ffca25582d682ee2e180768ad7f121ba9f8caa"
-dependencies = [
- "bumpalo",
- "fontdue",
- "glam 0.21.3",
- "image",
- "macroquad_macro",
- "miniquad 0.4.0-alpha.10",
- "quad-rand",
- "slotmap",
 ]
 
 [[package]]
@@ -1745,18 +1729,6 @@ name = "miniquad"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1251d63dfea7109063b2cec354253e8bf150e7878837a6ac0f9185d6a2518b6"
-dependencies = [
- "libc",
- "ndk-sys 0.2.2",
- "objc",
- "winapi",
-]
-
-[[package]]
-name = "miniquad"
-version = "0.4.0-alpha.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18742c400c9aa2d9b4ca72d366a38c9e2d896386e50c2e6d905b6028543a0a0b"
 dependencies = [
  "libc",
  "ndk-sys 0.2.2",

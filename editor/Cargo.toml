@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 ahash = "0.8.3"
-macroquad = "0.4.4"
+macroquad = "0.3.25"
 egui-macroquad = "0.15.0"
 egui = "0.21.0"
 doom-wad = {path = "../doom-wad"}
