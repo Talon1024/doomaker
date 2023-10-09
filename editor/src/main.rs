@@ -1,3 +1,4 @@
+use egui::TextureOptions;
 use macroquad::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,7 +35,7 @@ async fn main() {
 		viewport: None
 	};
 	let mut cube_mesh = sample_data::holey_mesh();
-	cube_mesh.texture = load_image("sky.png").await.ok().map(util::gl::to_texture);
+	cube_mesh.texture = load_image("sky.png").await.ok().as_ref().map(Texture2D::from_image);
 	let mut egui_wants_pointer = false;
 	let mut ptr_mode = PointerMode::Free;
 	let mut last_mouse_pos = (0.0f32, 0.0f32);
@@ -46,7 +47,8 @@ async fn main() {
 			texture_handle = Some(egui_ctx.load_texture(
 				"pointer_lock",
 				egui::ColorImage::from_rgba_unmultiplied(
-					[img.width as usize, img.height as usize], &img.bytes)));
+					[img.width as usize, img.height as usize], &img.bytes),
+				TextureOptions::default()));
 		});
 		texture_handle.unwrap()
 	}).or_else(||{

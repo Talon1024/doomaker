@@ -427,7 +427,9 @@ pub fn triangulate(
 			cur_hole += rv;
 			rv
 		})).take(holes.len()).collect();
-	earcutr::earcut(&vertex_pos, &hole_indices, 2).iter()
+	earcutr::earcut(&vertex_pos, &hole_indices, 2)
+		.unwrap_or_default()
+		.iter()
 		.map(|&ei| orig_index[ei]).collect()
 }
 

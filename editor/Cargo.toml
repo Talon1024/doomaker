@@ -6,11 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ahash = "0.7.6"
-macroquad = "0.3.16"
-egui-macroquad = "0.11.0"
-egui = "0.18.0"
+ahash = "0.8.3"
+macroquad = "0.4.4"
+egui-macroquad = "0.15.0"
+egui = "0.21.0"
 doom-wad = {path = "../doom-wad"}
 map-to-3D = {path = "../map-to-3D"}
 anyhow = "1.0.56"
-glam = "0.14.0"
+# Match the version macroquad uses
+glam = {version = "0.21", features = ["scalar-math"]}
+# map-to-3D uses the latest release available on crates.io
+glam-latest = {version = "0.24.2", package = "glam"}

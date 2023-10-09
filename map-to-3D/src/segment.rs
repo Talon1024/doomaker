@@ -1,8 +1,5 @@
 //! Line segments and intersection calculation
 use glam::Vec2;
-use ahash::RandomState;
-use std::collections::HashSet;
-use fixed::types::I32F32;
 
 // A line segment
 #[derive(Debug, Clone, Copy)]
@@ -13,38 +10,78 @@ impl Segment {
 		// Thanks to https://replit.com/@thehappycheese/linetools#LineTools/line_tools.py
 		// and his YouTube video: https://youtu.be/5FkOO1Wwb8w
 		{ // If any of the four points are equal, the segments are connected.
-			let mut points = HashSet::<[I32F32; 2], RandomState>::default();
-			points.insert([I32F32::saturating_from_num(self.0.x), I32F32::saturating_from_num(self.0.y)]);
-			points.insert([I32F32::saturating_from_num(self.1.x), I32F32::saturating_from_num(self.1.y)]);
-			points.insert([I32F32::saturating_from_num(other.0.x), I32F32::saturating_from_num(other.0.y)]);
-			points.insert([I32F32::saturating_from_num(other.1.x), I32F32::saturating_from_num(other.1.y)]);
-			if points.len() < 4 {
-				// I don't think a connection counts as an intersection
-				return None;
+			let ab = [self.0, self.1];
+			let cd = [other.0, other.1];
+			// Both points of the first segment equal both points of the second
+			if ab.iter().all(|av| cd.iter().any(|bv| av == bv)) {
+				return Some(Intersection::Same);
+			// Either point of the first segment equals either point of the second
+			} else if ab.iter().any(|av| cd.iter().any(|bv| av == bv)) {
+				return Some(Intersection::Connected);
 			}
 		}
 		let ab = self.1 - self.0;
 		let cd = other.1 - other.0;
 		let ab_cross_cd = ab.perp_dot(cd);
 		if ab_cross_cd == 0. { // Lines are parallel
-			// TODO: Check for collinear segments
-			Some(Intersection::Collinear)
+			let ab_slope = self.slope();
+			let cd_slope = other.slope();
+			// Is there a better way of doing this?
+			(ab_slope == cd_slope).then_some(Intersection::Collinear)
 		} else {
 			let ac = other.0 - self.0;
 			let ab_factor = ac.perp_dot(cd) / ab_cross_cd;
 			let cd_factor = -ab.perp_dot(ac) / ab_cross_cd;
-			if ab_factor < 0. || ab_factor > 1. || cd_factor < 0. || cd_factor > 1. {
-				None
-			} else {
-				Some(Intersection::Normal(self.0 + ab * ab_factor))
-			}
+			(!(ab_factor < 0.) && !(ab_factor > 1.) &&
+			 !(cd_factor < 0.) && !(cd_factor > 1.))
+			.then_some(Intersection::Normal(self.0 + ab * ab_factor))
+		}
+	}
+	fn slope(&self) -> Option<Slope> {
+		if self.0 == self.1 {
+			// Highly unlikely
+			None
+		} else if self.0.x == self.1.x {
+			Some(Slope::Vertical { x: self.0.x })
+		} else if self.0.y == self.1.y {
+			Some(Slope::Horizontal { y: self.0.y })
+		} else {
+			let m = {
+				let (a, b) = match self {
+					Segment(a, b) if a.x < b.x => (*a, *b),
+					Segment(a, b) => (*b, *a)
+				};
+				let diff = b - a;
+				diff.y / diff.x
+			};
+			// y = mx + b
+			// y - b = mx
+			// -b = mx - y
+			// b = -(mx - y)
+			let b = -(m * self.0.x - self.0.y);
+			Some(Slope::Sloped { m, b })
 		}
 	}
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Slope {
+	Vertical {x: f32},
+	Horizontal {y: f32},
+	Sloped {m: f32, b: f32}
+}
+
+/// An intersection between two line segments
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Intersection {
+	/// The lines cross each other at this point
 	Normal(Vec2),
-	Collinear
+	/// The lines are collinear
+	Collinear,
+	/// The lines are connected at either point
+	Connected,
+	/// The two lines are the same
+	Same
 }
 
 impl Intersection {
@@ -68,6 +105,12 @@ impl Intersection {
 					verts.windows(2).map(|w| Segment(w[0], w[1])).collect()
 				}
 			},
+			Intersection::Connected => {
+				vec![a, b]
+			},
+			Intersection::Same => {
+				vec![a]
+			}
 		}
 	}
 }
@@ -90,51 +133,45 @@ mod tests {
 	use super::*;
 	#[test]
 	fn intersection_simplea() {
-		use glam::const_vec2;
 		let pa = Segment(Vec2::new(2., 2.), Vec2::new(-2., -2.));
 		let pb = Segment(Vec2::new(-2., 2.), Vec2::new(2., -2.));
 		let intersection_point = pa.intersection(pb);
-		assert!(intersection_point.is_some());
 
 		let Intersection::Normal(intersection_point) = intersection_point.unwrap() else {
 			panic!("Intersection is collinear for some reason!");
 		};
 		let intersection_point = format!("{:.3} {:.3}", intersection_point.x, intersection_point.y);
-		let expected = const_vec2!([0., 0.]);
+		let expected = Vec2::from_array([0., 0.]);
 		let expected = format!("{:.3} {:.3}", expected.x, expected.y);
 		assert_eq!(expected, intersection_point);
 	}
 
 	#[test]
 	fn intersection_simpleb() {
-		use glam::const_vec2;
 		let pa = Segment(Vec2::new(4., 4.), Vec2::new(0., 0.));
 		let pb = Segment(Vec2::new(0., 4.), Vec2::new(4., 0.));
 		let intersection_point = pa.intersection(pb);
-		assert!(intersection_point.is_some());
 
 		let Intersection::Normal(intersection_point) = intersection_point.unwrap() else {
-			panic!("Intersection is collinear for some reason!");
+			panic!("Intersection is not normal for some reason!");
 		}; 
 		let intersection_point = format!("{:.3} {:.3}", intersection_point.x, intersection_point.y);
-		let expected = const_vec2!([2., 2.]);
+		let expected = Vec2::from_array([2., 2.]);
 		let expected = format!("{:.3} {:.3}", expected.x, expected.y);
 		assert_eq!(expected, intersection_point);
 	}
 
 	#[test]
 	fn intersection_complex() {
-		use glam::const_vec2;
 		let pa = Segment(Vec2::new(7., 1.), Vec2::new(9., 2.));
 		let pb = Segment(Vec2::new(7., 3.), Vec2::new(9., 1.));
 		let intersection_point = pa.intersection(pb);
-		assert!(intersection_point.is_some());
 
 		let Intersection::Normal(intersection_point) = intersection_point.unwrap() else {
 			panic!("Intersection is collinear for some reason!");
 		}; 
 		let intersection_point = format!("{:.3} {:.3}", intersection_point.x, intersection_point.y);
-		let expected = const_vec2!([8.333333333, 1.666666666]);
+		let expected = Vec2::from_array([8.333333333, 1.666666666]);
 		let expected = format!("{:.3} {:.3}", expected.x, expected.y);
 		assert_eq!(expected, intersection_point);
 	}
@@ -154,16 +191,16 @@ mod tests {
 		let pa = Segment(Vec2::new(0., 1.), Vec2::new(4., -2.));
 		let pb = Segment(Vec2::new(-3., -2.), Vec2::new(1., -5.));
 		let intersection_point = pa.intersection(pb);
-		assert!(intersection_point.is_none());
+		assert_eq!(intersection_point, None);
 	}
 
 	#[test]
 	fn intersection_collinear() {
 		// Collinear segments
 		let pa = Segment(Vec2::new(0., 1.), Vec2::new(4., -2.));
-		let pb = Segment(Vec2::new(-3., -2.), Vec2::new(1., -5.));
+		let pb = Segment(Vec2::new(-4., 4.), Vec2::new(1., 0.25));
 		let intersection_point = pa.intersection(pb);
-		assert!(intersection_point.is_none());
+		assert_eq!(intersection_point, Some(Intersection::Collinear));
 	}
 
 	#[test]
@@ -172,6 +209,15 @@ mod tests {
 		let pa = Segment(Vec2::new(3., 6.), Vec2::new(4., 2.));
 		let pb = Segment(Vec2::new(4., 2.), Vec2::new(8., -1.));
 		let intersection_point = pa.intersection(pb);
-		assert!(intersection_point.is_none());
+		assert_eq!(intersection_point, Some(Intersection::Connected));
+	}
+
+	#[test]
+	fn intersection_same() {
+		// Connected segments
+		let pa = Segment(Vec2::new(3., 6.), Vec2::new(4., 2.));
+		let pb = Segment(Vec2::new(4., 2.), Vec2::new(3., 6.));
+		let intersection_point = pa.intersection(pb);
+		assert_eq!(intersection_point, Some(Intersection::Same));
 	}
 }

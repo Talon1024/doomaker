@@ -87,6 +87,7 @@ fn sector_vertices(
 	colour: Option<Color>
 ) -> Vec<mq::Vertex> {
 	verts.iter().map(|&v| {
+		let v = glam_latest::Vec2::from_array(v.to_array());
 		mq::Vertex {
 			position: Vec3::new(v.x, v.y, plane.z_at(v)),
 			uv: Vec2::new(v.x / 64., v.y / 64.),
@@ -111,6 +112,9 @@ pub fn holey_mesh() -> Box<Mesh> {
 		Vec2::new(52., -52.),
 		Vec2::new(-44., -52.),	// 12
 	];
+	let vverts = verts.iter()
+		.map(|v| glam_latest::Vec2::from_array(v.to_array()))
+		.collect::<Vec<_>>();
 	let edges = vec![
 		Edge::new(3, 4),	// 0
 		Edge::new(4, 5),
@@ -127,8 +131,8 @@ pub fn holey_mesh() -> Box<Mesh> {
 		Edge::new(2, 0),	// 12
 	];
 	let sp = Plane::Flat(-7.);
-	let polys = spb::build_polygons(&edges, &verts);
-	let ptris = spb::auto_triangulate(&polys, &verts);
+	let polys = spb::build_polygons(&edges, vverts.as_slice());
+	let ptris = spb::auto_triangulate(&polys, vverts.as_slice());
 	// let mut hue = 0;
 	Box::new(Mesh {
 		vertices: sector_vertices(&verts, &sp, None),
