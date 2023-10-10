@@ -35,11 +35,15 @@ impl Segment {
 				let cb = self.1 - other.0;
 				let vectors = [(ac, ab), (ad, ab), (ca, cd), (cb, cd)];
 				vectors.into_iter()
-					.filter_map(|(pt, div)| {
+					.map(|(pt, div)| {
 						let v = pt / div;
 						// It is unlikely that v.x will not equal v.y, since
 						// the dividend and divisor are on the same line
-						if v.x == v.y { Some(v.x) } else { None }
+						match ab_slope.unwrap() {
+							Slope::Vertical { x: _x } => v.y,
+							Slope::Horizontal { y: _y } => v.x,
+							Slope::Sloped { m: _m, b: _b } => v.x,
+						}
 					})
 					.any(|f| (0.0..1.0).contains(&f))
 					.then_some(Intersection::Collinear)
@@ -241,13 +245,52 @@ mod tests {
 		assert_eq!(intersection_point, Some(Intersection::Collinear));
 	}
 
-
 	#[test]
 	fn intersection_collinear_spaced() {
 		// Both segments are on this line, but do not touch each other:
 		// y = -0.5x + 20
 		let pa = Segment(Vec2::new(4., 18.), Vec2::new(6., 17.));
 		let pb = Segment(Vec2::new(8., 16.), Vec2::new(12., 14.));
+		let intersection_point = pa.intersection(pb);
+		assert_eq!(intersection_point, None);
+	}
+
+	#[test]
+	fn intersection_collinear_horizontal() {
+		// Both segments are on this line:
+		// y = 5
+		let pa = Segment(Vec2::new(4., 5.), Vec2::new(6., 5.));
+		let pb = Segment(Vec2::new(8., 5.), Vec2::new(5., 5.));
+		let intersection_point = pa.intersection(pb);
+		assert_eq!(intersection_point, Some(Intersection::Collinear));
+	}
+
+	#[test]
+	fn intersection_collinear_horizontal_spaced() {
+		// Both segments are on this line, but do not touch each other:
+		// y = 5
+		let pa = Segment(Vec2::new(4., 5.), Vec2::new(6., 5.));
+		let pb = Segment(Vec2::new(8., 5.), Vec2::new(10., 5.));
+		let intersection_point = pa.intersection(pb);
+		assert_eq!(intersection_point, None);
+	}
+
+	#[test]
+	fn intersection_collinear_vertical() {
+		// Both segments are on this line:
+		// y = 5
+		let pa = Segment(Vec2::new(5., 4.), Vec2::new(5., 6.));
+		let pb = Segment(Vec2::new(5., 8.), Vec2::new(5., 5.));
+		let intersection_point = pa.intersection(pb);
+		assert_eq!(intersection_point, Some(Intersection::Collinear));
+	}
+
+	#[test]
+	fn intersection_collinear_vertical_spaced() {
+		// Both segments are on this line, but do not touch each other:
+		// x = 5
+		let pa = Segment(Vec2::new(5., 4.), Vec2::new(5., 6.));
+		let pb = Segment(Vec2::new(5., 8.), Vec2::new(5., 10.));
 		let intersection_point = pa.intersection(pb);
 		assert_eq!(intersection_point, None);
 	}
