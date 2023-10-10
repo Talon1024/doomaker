@@ -36,14 +36,14 @@ impl Segment {
 				let vectors = [(ac, ab), (ad, ab), (ca, cd), (cb, cd)];
 				vectors.into_iter()
 					.map(|(pt, div)| {
-						let v = pt / div;
-						// It is unlikely that v.x will not equal v.y, since
-						// the dividend and divisor are on the same line
-						match ab_slope.unwrap() {
-							Slope::Vertical { x: _x } => v.y,
-							Slope::Horizontal { y: _y } => v.x,
-							Slope::Sloped { m: _m, b: _b } => v.x,
-						}
+						let (pt, div) = match ab_slope.unwrap() {
+							Slope::Vertical { x: _x } => (pt.y, div.y),
+							Slope::Horizontal { y: _y } => (pt.x, div.x),
+							// It is unlikely that v.x will not equal v.y, since
+							// the dividend and divisor are on the same line
+							Slope::Sloped { m: _m, b: _b } => (pt.x, div.x),
+						};
+						pt / div
 					})
 					.any(|f| (0.0..1.0).contains(&f))
 					.then_some(Intersection::Collinear)
