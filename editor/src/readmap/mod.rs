@@ -25,7 +25,10 @@ impl From<DVLine> for Line {
 			v.a as usize,
 			v.b as usize,
 			v.front as usize,
-			v.back as usize
+			match v.back {
+				u16::MAX => None,
+				v => Some(v as usize)
+			}
 		);
 		if v.special != 0 {
 			line.set_property("special", Some(PropertyValue::UnsignedInteger(v.special as u32)));

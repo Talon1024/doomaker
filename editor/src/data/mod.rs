@@ -63,12 +63,12 @@ pub(crate) struct Line {
 	/// Front side
 	pub sf: usize,
 	/// Back side
-	pub sb: usize,
+	pub sb: Option<usize>,
 	properties: HashMap<String, PVal, RandomState>,
 }
 
 impl Line {
-	pub fn new(va: usize, vb: usize, sf: usize, sb: usize) -> Line {
+	pub fn new(va: usize, vb: usize, sf: usize, sb: Option<usize>) -> Line {
 		Line {va, vb, sf, sb, ..Default::default()}
 	}
 }
@@ -87,7 +87,7 @@ impl Properties for Line {
 					self.sf = v
 				},
 				"sb" => if let PVal::Index(v) = value {
-					self.sb = v
+					self.sb = Some(v)
 				}
 				_ => {self.properties.insert(prop.to_string(), value);}
 			}
@@ -96,7 +96,7 @@ impl Properties for Line {
 				"va" => (),
 				"vb" => (),
 				"sf" => (),
-				"sb" => (),
+				"sb" => self.sb = None,
 				_ => {self.properties.remove(prop);},
 			}
 		}
@@ -106,7 +106,7 @@ impl Properties for Line {
 			"va" => Some(PVal::Index(self.va)),
 			"vb" => Some(PVal::Index(self.vb)),
 			"sf" => Some(PVal::Index(self.sf)),
-			"sb" => Some(PVal::Index(self.sb)),
+			"sb" => self.sb.map(PVal::Index),
 			_ => self.properties.get(prop).cloned()
 		}
 	}

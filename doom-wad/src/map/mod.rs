@@ -8,19 +8,19 @@ use std::{
 	io::{Cursor, Read},
 };
 use bitflags::bitflags;
-use binrw::BinRead;
+use binrw::{BinRead, BinResult};
 mod lumps;
 #[cfg(feature="console")]
 mod console;
 
-#[derive(Debug, Clone, BinRead)]
+#[derive(Debug, Clone, BinRead, PartialEq, Eq)]
 #[br(little)]
 pub struct Vertex {
 	pub x: i16,
 	pub y: i16
 }
 
-#[derive(Debug, Clone, BinRead)]
+#[derive(Debug, Clone, BinRead, PartialEq, Eq)]
 #[br(little)]
 pub struct Linedef {
 	pub a: u16,
@@ -29,12 +29,40 @@ pub struct Linedef {
 	pub special: u16,
 	pub tag: u16,
 	pub front: u16,
+	// #[br(parse_with(Linedef::backside))]
 	pub back: u16,
 }
 
+// Making "back" an option adds an extra byte to the Linedef struct,
+// which makes it have a different size than the vanilla doom Linedef struct
+/* impl Linedef {
+	#[binrw::parser(reader, endian)]
+	fn backside() -> BinResult<Option<u16>> {
+		let mut num_buf = [0; 2];
+		let parse_fn = match endian {
+			binrw::Endian::Big => i16::from_be_bytes,
+			binrw::Endian::Little => i16::from_le_bytes
+		};
+		reader.read_exact(&mut num_buf)?;
+		let value = match parse_fn(num_buf) {
+			-1 => None,
+			_ => {
+				// The value was interpreted at an i16 so that -1 could be
+				// used as a sentinel value, indicating nothing
+				let parse_fn = match endian {
+					binrw::Endian::Big => u16::from_be_bytes,
+					binrw::Endian::Little => u16::from_le_bytes
+				};
+				Some(parse_fn(num_buf))
+			}
+		};
+		Ok(value)
+	}
+} */
+
 bitflags!{
 	/// Linedef flags. See https://doomwiki.org/wiki/Linedef#Linedef_flags
-	#[derive(Debug, Clone, Copy)]
+	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 	pub struct LinedefFlags: u16 {
 		const BLOCK_PLAYERS = 0x01;
 		const BLOCK_MONSTERS = 0x02;
@@ -66,7 +94,7 @@ impl BinRead for LinedefFlags {
 	}
 }
 
-#[derive(Debug, Clone, BinRead)]
+#[derive(Debug, Clone, BinRead, PartialEq, Eq)]
 #[br(little)]
 pub struct Sidedef {
 	pub x: i16,
@@ -77,7 +105,7 @@ pub struct Sidedef {
 	pub sec: u16,
 }
 
-#[derive(Debug, Clone, BinRead)]
+#[derive(Debug, Clone, BinRead, PartialEq, Eq)]
 #[br(little)]
 pub struct Sector {
 	/// Floor height
@@ -93,7 +121,7 @@ pub struct Sector {
 	pub tag: i16,
 }
 
-#[derive(Debug, Clone, BinRead)]
+#[derive(Debug, Clone, BinRead, PartialEq, Eq)]
 #[br(little)]
 pub struct Thing {
 	pub x: i16,
@@ -115,7 +143,7 @@ pub enum Format {
 pub struct Map {
 	pub name: LumpName,
 	pub format: Format,
-	bsp: bool,
+	// bsp: bool,
 	things: Arc<DoomWadLump>,
 	linedefs: Arc<DoomWadLump>,
 	sidedefs: Arc<DoomWadLump>,
@@ -241,7 +269,6 @@ pub fn find_maps(wad: &DoomWad, lump: Option<usize>) -> Vec<Map> {
 		Some(Map {
 			name,
 			format,
-			bsp,
 			things,
 			linedefs,
 			sidedefs,
@@ -263,5 +290,30 @@ pub fn is_map(name: LumpName) -> bool {
 		episode.is_ascii_digit() && mapnum.is_ascii_digit()
 	} else {
 		false
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	mod the_bronze_room;
+	#[test]
+	fn bronze_room() -> Result<(), Box<dyn Error>> {
+		let the_wad = futures::executor::block_on(DoomWad::load("tests/data/the bronze room.wad"))?;
+		let map_name = LumpName(*b"MAP01\0\0\0");
+		let maps = find_maps(&the_wad, None);
+		assert_eq!(maps.len(), 1);
+		let map = maps.iter().filter(|m| m.name == map_name).next().ok_or(format!("Map {map_name} not found"))?;
+		let linedefs = map.linedefs()?;
+		assert_eq!(linedefs.as_slice(), the_bronze_room::LINEDEFS.as_slice());
+		let sidedefs = map.sidedefs()?;
+		assert_eq!(sidedefs.as_slice(), the_bronze_room::SIDEDEFS.as_slice());
+		let vertices = map.vertices()?;
+		assert_eq!(vertices.as_slice(), the_bronze_room::VERTICES.as_slice());
+		let things = map.things()?;
+		assert_eq!(things.as_slice(), the_bronze_room::THINGS.as_slice());
+		let sectors = map.sectors()?;
+		assert_eq!(sectors.as_slice(), the_bronze_room::SECTORS.as_slice());
+		Ok(())
 	}
 }
