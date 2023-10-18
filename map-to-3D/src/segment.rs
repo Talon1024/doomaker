@@ -48,13 +48,15 @@ impl Segment {
 					.any(|f| (0.0..1.0).contains(&f))
 					.then_some(Intersection::Collinear)
 			} else {
+				// Lines are parallel with different intercepts
 				None
 			}
 		} else {
+			// Lines are perpendicular
 			let ab_factor = ac.perp_dot(cd) / ab_cross_cd;
 			let cd_factor = -ab.perp_dot(ac) / ab_cross_cd;
-			(!(ab_factor < 0.) && !(ab_factor > 1.) &&
-			 !(cd_factor < 0.) && !(cd_factor > 1.))
+			((0.0..1.0).contains(&ab_factor) &&
+			 (0.0..1.0).contains(&cd_factor))
 			.then_some(Intersection::Normal(self.0 + ab * ab_factor))
 		}
 	}
