@@ -5,8 +5,8 @@ use std::num::Wrapping;
 /*
 hash_(1315423911)
 for (int i = 0; i < 8 && str[i]; ++i) {
-	int c = str[i];
-	hash_ ^= (hash_ << 5) + toupper(c) + (hash_ >> 2);
+    int c = str[i];
+    hash_ ^= (hash_ << 5) + toupper(c) + (hash_ >> 2);
 }
 hash_ &= 0xffff;
 */
