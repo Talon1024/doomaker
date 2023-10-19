@@ -8,7 +8,7 @@ use std::{
     io::{Cursor, Read},
 };
 use bitflags::bitflags;
-use binrw::{BinRead, BinResult};
+use binrw::BinRead;
 mod lumps;
 #[cfg(feature="console")]
 mod console;
@@ -23,8 +23,8 @@ pub struct Vertex {
 #[derive(Debug, Clone, BinRead, PartialEq, Eq)]
 #[br(little)]
 pub struct Linedef {
-    pub a: u16,
-    pub b: u16,
+    pub v1: u16,
+    pub v2: u16,
     pub flags: LinedefFlags,
     pub special: u16,
     pub tag: u16,
@@ -138,6 +138,17 @@ pub enum Format {
     PSX,
     Doom64,
 }
+
+/* 
+pub enum BspData {
+    Vanilla {
+        nodes: Option<Arc<DoomWadLump>>
+    },
+    ZDoom {
+        znodes: Option<Arc<DoomWadLump>>
+    }
+}
+ */
 
 #[derive(Debug, Clone)]
 pub struct Map {

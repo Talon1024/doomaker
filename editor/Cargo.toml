@@ -7,13 +7,7 @@ edition = "2021"
 
 [dependencies]
 ahash = "0.8.3"
-macroquad = "0.3.25"
-egui-macroquad = "0.15.0"
-egui = "0.21.0"
 doom-wad = {path = "../doom-wad"}
 map-to-3D = {path = "../map-to-3D"}
 anyhow = "1.0.56"
-# Match the version macroquad uses
-glam = {version = "0.21", features = ["scalar-math"]}
-# map-to-3D uses the latest release available on crates.io
-glam-latest = {version = "0.24.2", package = "glam"}
+glam = "0.24.2"

@@ -1,8 +1,10 @@
+use std::num::NonZeroU32;
+
 use glam::Vec2;
 use map_to_3D::plane::Plane;
 use crate::{
     data::{Vertex, Line, Side, Sector, Thing},
-    property::{Properties, PropertyValue}
+    data::property::{Properties, PropertyValue}
 };
 use doom_wad::map::{
     Vertex as DVVertex,
@@ -19,52 +21,54 @@ impl From<DVVertex> for Vertex {
     }
 }
 
+macro_rules! non_negative_integer {
+    ($in: expr, $ty: ty) => {
+        match $in {
+            <$ty>::MAX => None,
+            v => Some(v.into())
+        }
+    };
+}
+
 impl From<DVLine> for Line {
     fn from(v: DVLine) -> Self {
-        let mut line = Line::new(
-            v.a as usize,
-            v.b as usize,
-            v.front as usize,
-            match v.back {
-                u16::MAX => None,
-                v => Some(v as usize)
-            }
-        );
-        if v.special != 0 {
-            line.set_property("special", Some(PropertyValue::UnsignedInteger(v.special as u32)));
+        Line {
+            id: None,
+            v1: v.v1.into(),
+            v2: v.v2.into(),
+            blocking: v.flags.contains(LinedefFlags::BLOCK_PLAYERS),
+            blockmonsters: v.flags.contains(LinedefFlags::BLOCK_MONSTERS),
+            twosided: v.flags.contains(LinedefFlags::TWO_SIDED),
+            dontpegtop: v.flags.contains(LinedefFlags::UPPER_UNPEGGED),
+            dontpegbottom: v.flags.contains(LinedefFlags::LOWER_UNPEGGED),
+            secret: v.flags.contains(LinedefFlags::AUTOMAP_SOLID),
+            blocksound: v.flags.contains(LinedefFlags::BLOCK_SOUND),
+            dontdraw: v.flags.contains(LinedefFlags::AUTOMAP_HIDDEN),
+            mapped: v.flags.contains(LinedefFlags::AUTOMAP_SHOWN),
+            passuse: false,
+            translucent: false,
+            jumpover: false,
+            blockfloaters: false,
+            playercross: false,
+            playeruse: false,
+            monstercross: false,
+            monsteruse: false,
+            impact: false,
+            playerpush: false,
+            monsterpush: false,
+            missilecross: false,
+            repeatspecial: false,
+            special: v.special.into(),
+            arg0: v.tag.into(),
+            arg1: 0,
+            arg2: 0,
+            arg3: 0,
+            arg4: 0,
+            sidefront: v.front.into(),
+            sideback: non_negative_integer!(v.back, u16),
+            comment: Default::default(),
+            properties: Default::default(),
         }
-        if v.tag != 0 {
-            line.set_property("tag", Some(PropertyValue::UnsignedInteger(v.tag as u32)));
-        }
-        // Flags
-        if !(v.flags & LinedefFlags::BLOCK_PLAYERS).is_empty() {
-            line.set_property("blocking", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::BLOCK_MONSTERS).is_empty() {
-            line.set_property("blockmonsters", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::TWO_SIDED).is_empty() {
-            line.set_property("twosided", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::UPPER_UNPEGGED).is_empty() {
-            line.set_property("dontpegtop", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::LOWER_UNPEGGED).is_empty() {
-            line.set_property("dontpegbottom", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::AUTOMAP_SOLID).is_empty() {
-            line.set_property("secret", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::BLOCK_SOUND).is_empty() {
-            line.set_property("blocksound", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::AUTOMAP_HIDDEN).is_empty() {
-            line.set_property("dontdraw", Some(PropertyValue::Boolean(true)));
-        }
-        if !(v.flags & LinedefFlags::AUTOMAP_SHOWN).is_empty() {
-            line.set_property("mapped", Some(PropertyValue::Boolean(true)));
-        }
-        line
     }
 }
 

@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, num::NonZeroU32};
 use ahash::RandomState;
 use glam::Vec2;
 use map_to_3D::plane::Plane;
-use crate::property::{Properties, PropertyValue as PVal};
+pub mod property;
+use property::{Properties, PropertyValue as PVal};
 
 #[derive(Default, Clone, Debug)]
 pub(crate) struct Vertex {
@@ -54,40 +55,118 @@ impl Properties for Vertex {
     }
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Line {
-    /// Vertex A
-    pub va: usize,
-    /// Vertex B
-    pub vb: usize,
-    /// Front side
-    pub sf: usize,
-    /// Back side
-    pub sb: Option<usize>,
-    properties: HashMap<String, PVal, RandomState>,
+    /// ID of line. Interpreted as tag or scripting id.
+    /// Default: -1. *** see below.
+    pub id: Option<NonZeroU32>,
+
+    /// Index of first vertex. No valid default.
+    pub v1: usize,
+    /// Index of second vertex. No valid default.
+    pub v2: usize,
+
+    /// All flags default to false.
+
+    /// true: line blocks things.
+    pub blocking: bool,
+    /// true: line blocks monsters.
+    pub blockmonsters: bool,
+    /// true: line is 2S.
+    pub twosided: bool,
+    /// true: upper texture unpegged.
+    pub dontpegtop: bool,
+    /// true: lower texture unpegged.
+    pub dontpegbottom: bool,
+    /// true: drawn as 1S on map.
+    pub secret: bool,
+    /// true: blocks sound.
+    pub blocksound: bool,
+    /// true: line never drawn on map.
+    pub dontdraw: bool,
+    /// true: always appears on map.
+    pub mapped: bool,
+
+    /// BOOM passuse flag not supported in Strife/Heretic/Hexen namespaces.
+
+    /// true: passes use action.
+    pub passuse: bool,
+
+    /// Strife specific flags. Support for other games is not defined by
+    /// default and these flags should be ignored when reading maps not for
+    /// the Strife namespace or maps for a port which supports these flags.
+
+    /// true: line is a Strife translucent line.
+    pub translucent: bool,
+    /// true: line is a Strife railing.
+    pub jumpover: bool,
+    /// true: line is a Strife float-blocker.
+    pub blockfloaters: bool,
+
+    /// Note: SPAC flags should be set false in Doom/Heretic/Strife
+    /// namespace maps. Specials in those games do not support this
+    /// mechanism and instead imply activation parameters through the
+    /// special number. All flags default to false.
+
+    /// true: player can cross.
+    pub playercross: bool,
+    /// true: player can use.
+    pub playeruse: bool,
+    /// true: monster can cross.
+    pub monstercross: bool,
+    /// true: monster can use.
+    pub monsteruse: bool,
+    /// true: projectile can activate.
+    pub impact: bool,
+    /// true: player can push.
+    pub playerpush: bool,
+    /// true: monster can push.
+    pub monsterpush: bool,
+    /// true: projectile can cross.
+    pub missilecross: bool,
+    /// true: repeatable special.
+    pub repeatspecial: bool,
+
+    /// Special. Default: 0.
+    pub special: u32,
+    /// Argument 0. Default: 0.
+    pub arg0: i32,
+    /// Argument 1. Default: 0.
+    pub arg1: i32,
+    /// Argument 2. Default: 0.
+    pub arg2: i32,
+    /// Argument 3. Default: 0.
+    pub arg3: i32,
+    /// Argument 4. Default: 0.
+    pub arg4: i32,
+
+    /// Sidedef 1 index. No valid default.
+    pub sidefront: usize,
+    /// Sidedef 2 index. Default: -1.
+    pub sideback: Option<usize>,
+    /// A comment. Implementors should attach no special
+    /// semantic meaning to this field.
+    pub comment: String,
+    pub properties: HashMap<String, PVal, RandomState>,
 }
 
-impl Line {
-    pub fn new(va: usize, vb: usize, sf: usize, sb: Option<usize>) -> Line {
-        Line {va, vb, sf, sb, ..Default::default()}
-    }
-}
-
+/* 
+// TODO: Macro-ize!
 impl Properties for Line {
     fn set_property(&mut self, prop: &str, value: Option<PVal>) {
         if let Some(value) = value {
             match prop {
                 "va" => if let PVal::Index(v) = value {
-                    self.va = v
+                    self.va: v
                 },
                 "vb" => if let PVal::Index(v) = value {
-                    self.vb = v
+                    self.vb: v
                 },
                 "sf" => if let PVal::Index(v) = value {
-                    self.sf = v
+                    self.sf: v
                 },
                 "sb" => if let PVal::Index(v) = value {
-                    self.sb = Some(v)
+                    self.sb: Some(v)
                 }
                 _ => {self.properties.insert(prop.to_string(), value);}
             }
@@ -96,7 +175,7 @@ impl Properties for Line {
                 "va" => (),
                 "vb" => (),
                 "sf" => (),
-                "sb" => self.sb = None,
+                "sb" => self.sb: None,
                 _ => {self.properties.remove(prop);},
             }
         }
@@ -110,7 +189,7 @@ impl Properties for Line {
             _ => self.properties.get(prop).cloned()
         }
     }
-}
+} */
 
 #[derive(Default, Clone, Debug)]
 pub(crate) struct Side {
