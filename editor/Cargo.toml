@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 ahash = "0.8.3"
-doom-wad = { git = "https://github.com/Talon1024/doom-wad-rs.git" }
+doom-wad = { git = "https://github.com/Talon1024/doom-wad-rs.git", rev = "5c13563cc52ae29adadb3ced9831a9bbaae4c294" }
 map-to-3D = {path = "../map-to-3D"}
 anyhow = "1.0.56"
 glam = "0.24.2"
