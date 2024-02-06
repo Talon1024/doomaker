@@ -3,8 +3,6 @@
 members = [
     "map-to-3D",
     "doom64-hash",
-    "editor",
     "parsers",
-    "movearound"
 ]
 resolver = "2"
